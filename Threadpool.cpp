@@ -5,66 +5,67 @@
 #include <functional>
 #include <queue>
 
-class Threadpool{
+#include "Threadpool.h"
 
-    bool closed;
+const int Threadpool::THR_CNT = std::thread::hardware_concurrency() != 0 ? std::thread::hardware_concurrency() : 12;
 
-    std::vector <std::thread *> * threads;
-    std::queue <std::function <void ()>> * tasks;
+Threadpool::Threadpool(): threads(THR_CNT){}
 
-    std::mutex tasks_mutex;
-    std::condition_variable tasks_condition;
+Threadpool * Threadpool::make_threadpool(){
 
-    void wait_for_tasks(){
+    Threadpool * created = new Threadpool();
 
-        while(true){
-            
-            {
-                std::unique_lock <std::mutex> tasks_lock (this -> tasks_mutex);
+    for(int i = 0; i < THR_CNT; i++)
+        created -> threads[i] = new std::thread(&Threadpool::wait_for_tasks, created);
 
-                this -> tasks_condition.wait(tasks_lock,
-                                                [this]{
-                                                    return 
-                                                    !(this -> tasks -> empty()) ||
-                                                    this -> closed;
-                                                });
-            }
+    return created;
+}
+
+void Threadpool::wait_for_tasks(){
+
+    while(true){
+
+        std::function <void()> to_execute;
+        
+        {
+            std::unique_lock <std::mutex> tasks_lock (this -> tasks_mutex);
+
+            this -> tasks_condition.wait(tasks_lock,
+                                            [this]{
+                                                return 
+                                                !(this -> tasks.empty()) ||
+                                                this -> closed;
+                                            });
 
             if(this -> closed)
                 return;
-            
-            std::function <void()> to_execute = this -> tasks -> front();
-            this -> tasks -> pop();
-
-            to_execute();
-        }
-    }
-
-public:
-
-    static const int THR_CNT; 
-
-    Threadpool(){
-
-        closed = false;
         
-        threads = new std::vector <std::thread>(THR_CNT);
+            to_execute = this -> tasks.front();
+            this -> tasks.pop();
+        }
 
-        for(int i = 0; i < THR_CNT; i++)
-            threads[i] = new std::thread(&Threadpool::wait_for_tasks, threads + i);
+        to_execute();
+    }
+}
+
+// TODO: nr variabil de argumente
+void Threadpool::add_task(std::function <void()> to_execute){
+
+    {
+        std::unique_lock <std::mutex> tasks_lock (this -> tasks_mutex);
+        this -> tasks.push(to_execute);
     }
     
-    // TODO: nr variabil de argumente
-    void add_task(std::function <void()> to_execute){
+    this -> tasks_condition.notify_one();
+}
 
-        {
-            std::unique_lock <std::mutex> tasks_lock (this -> tasks_mutex);
-            this -> tasks -> push(to_execute);
-        }
-        
-        this -> tasks_condition.notify_one();
-    }
-    
-};
+void Threadpool::close(){
 
-const int Threadpool::THR_CNT = std::thread::hardware_concurrency() != 0 ? std::thread::hardware_concurrency() : 12;
+    this -> closed = true;
+    this -> tasks_condition.notify_all();
+
+    for(int i = 0; i < THR_CNT; i++)
+        this -> threads[i] -> join();
+}
+
+

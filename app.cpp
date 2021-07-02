@@ -3,10 +3,11 @@
 #include <vector>
 #include <chrono>
 #include <mutex>
+#include <string>
 #include <stdlib.h>
 
 #include "certFHE.h"
-#include "Threadpool.cpp"
+#include "Threadpool.h"
 using namespace certFHE;
 
 class Timervar{
@@ -83,11 +84,31 @@ void test_time(const int test_count, const int FIRST_LEN = 100, const int SECOND
     }
 }
 
+void testfct(){
+
+    std::thread::id id = std::this_thread::get_id();
+
+    for(int i = 0; i < 100; i++)
+        std::cout << id << " " << i << '\n';
+}
+
+void test_threadpool(){
+
+    Threadpool * thp = Threadpool::make_threadpool();
+
+    for(int i = 0; i < 8; i++)
+        thp -> add_task(&testfct);
+
+    thp -> close();
+}
+
 int main(){
 
     srand(time(0));
 
-    test_time(10);
+    //test_time(10);
+
+    test_threadpool();
 
     return 0;
 }
