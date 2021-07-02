@@ -7,7 +7,8 @@
 #include <stdlib.h>
 
 #include "certFHE.h"
-#include "Threadpool.h"
+#include "Threadpool.hpp"
+
 using namespace certFHE;
 
 class Timervar{
@@ -27,6 +28,12 @@ public:
         
         return t - old_t;
     }
+};
+
+class Taskarg{
+public:
+    int k;
+    double y;
 };
 
 void test_time(const int test_count, const int FIRST_LEN = 100, const int SECOND_LEN = 79){
@@ -84,31 +91,36 @@ void test_time(const int test_count, const int FIRST_LEN = 100, const int SECOND
     }
 }
 
-void testfct(){
+void testfct(Taskarg * arg){
 
     std::thread::id id = std::this_thread::get_id();
 
     for(int i = 0; i < 100; i++)
-        std::cout << id << " " << i << '\n';
+        std::cout << arg -> k << " " << i << '\n';
 }
 
 void test_threadpool(){
 
-    Threadpool * thp = Threadpool::make_threadpool();
+    /*Threadpool <Taskarg *> * thp = Threadpool <Taskarg *>::make_threadpool();
+    for(int i = 0; i < 8; i++){
 
-    for(int i = 0; i < 8; i++)
-        thp -> add_task(&testfct);
+        Taskarg * arg = new Taskarg();
+        arg -> k = i * 1000;
+        arg -> y = 39;
 
-    thp -> close();
+        thp -> add_task(&testfct, arg);
+    }
+
+    thp -> close();*/
 }
 
 int main(){
 
     srand(time(0));
 
-    //test_time(10);
+    test_time(10);
 
-    test_threadpool();
+    //test_threadpool();
 
     return 0;
 }

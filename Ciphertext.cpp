@@ -1,4 +1,5 @@
 #include "Ciphertext.h"
+#include "Threadpool.hpp"
 
 using namespace certFHE;
 
@@ -155,6 +156,27 @@ uint64_t* Ciphertext::defaultN_multiply(uint64_t* c1, uint64_t* c2, uint64_t len
 	return res;
 }
 
+void certFHE::chunk_multiply(MulArgs * args){
+
+    uint64_t * result = args -> result;
+    uint64_t * fst_chunk = args -> fst_chunk;
+    uint64_t * snd_chunk = args -> snd_chunk;
+    uint64_t * input_bitlen = args -> input_bitlen;
+    uint64_t * result_bitlen = args -> result_bitlen;
+    uint64_t fst_chlen = args -> fst_chlen;
+    uint64_t snd_chlen = args -> snd_chlen;
+    uint64_t default_len = args -> default_len;
+
+    for(int i = args -> res_fst_deflen_pos; i < args -> res_snd_deflen_pos; i++)
+        for(int k = 0; k < default_len; k++){
+
+            result[i * default_len + k] = fst_chunk[(i / fst_chlen) * default_len + k] & snd_chunk[(i % snd_chlen) * default_len + k];
+
+            result_bitlen[i * default_len + k] = input_bitlen[(i / fst_chlen) * default_len + k];
+        } 
+    
+}
+
 uint64_t* Ciphertext::multiply(const Context& ctx,uint64_t *c1,uint64_t*c2,uint64_t len1,uint64_t len2, uint64_t& newlen,uint64_t* bitlenin1,uint64_t* bitlenin2,uint64_t*& bitlenout) const
 {
  newlen=len1;
@@ -175,30 +197,74 @@ uint64_t* Ciphertext::multiply(const Context& ctx,uint64_t *c1,uint64_t*c2,uint6
     uint64_t times1 = len1/_defaultLen;
     uint64_t times2 = len2/_defaultLen;
 
-    for(int i =0;i<times1;i++)
-    {
-            for(int j=0;j<times2;j++)
-            {
-                for(int k=0;k<_defaultLen;k++)
-                  {  
-                      res[k+_defaultLen*i*times2+_defaultLen*j] = c1[k+_defaultLen*i]  & c2[k+_defaultLen*j];
-                  }
-            }	
+    // TODO: de initializat in alta parte, clar nu de fiecare data cand se apeleaza metoda
+    Threadpool <MulArgs *> * threadpool = Threadpool <MulArgs *> :: make_threadpool();
 
+    int thread_count = threadpool -> THR_CNT;
+    int res_defChunks_len = times1 * times2;
+
+    // if there are more threads than final chunks, assign a thread 
+    // for each multiplication of two default len chunks
+    //
+    // else
+    // each thread is assigned an equal number (+- 1) of default len multiplications
+    // (differences appear when number of deflen multiplications does not divide by the number of threads)
+    if(thread_count >= res_defChunks_len){
+
+        // static allocation to overcome heap allocation overhead
+        MulArgs args[res_defChunks_len];
+
+        for(int ch = 0; ch < res_defChunks_len; ch++){
+
+            args[ch].fst_chunk = c1;
+            args[ch].snd_chunk = c2;
+            args[ch].input_bitlen = bitlenin1;
+
+            args[ch].result = res;
+            args[ch].result_bitlen = bitlenout;
+
+            args[ch].res_fst_deflen_pos = ch;
+            args[ch].res_snd_deflen_pos = ch + 1;
+
+            args[ch].fst_chlen = times1;
+            args[ch].snd_chlen = times2;
+
+            threadpool -> add_task(&chunk_multiply, args + ch);
+        }
     }
+    else{
 
-	int index = 0;
-	for(int i =0;i<times1;i++)
-    {
-		  for(int j=0;j<times2;j++)
-		  {
-			for(int k=0;k<_defaultLen;k++)
-			{
-				bitlenout[index] = bitlenin1[k+i*_defaultLen];
-				index++;
-			}
-		  }
-	}
+        int r = res_defChunks_len % thread_count;
+        int q = res_defChunks_len / thread_count;
+
+        MulArgs args[thread_count];
+
+        int prevchnk = 0;
+
+        for(int tsk = 0; tsk < thread_count; tsk++){
+
+            args[tsk].fst_chunk = c1;
+            args[tsk].snd_chunk = c2;
+            args[tsk].input_bitlen = bitlenin1;
+
+            args[tsk].result = res;
+            args[tsk].result_bitlen = bitlenout;
+
+            args[tsk].res_fst_deflen_pos = prevchnk;
+            args[tsk].res_snd_deflen_pos = prevchnk + q;
+
+            args[tsk].fst_chlen = times1;
+            args[tsk].snd_chlen = times2;
+
+            if(r > 0){
+
+                args[tsk].res_snd_deflen_pos += 1;
+                r -= 1;
+            }
+
+            threadpool -> add_task(&chunk_multiply, args + tsk);
+        }
+    }
 
 	return res;
 }

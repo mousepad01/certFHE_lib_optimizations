@@ -10,6 +10,28 @@ using namespace std;
 namespace certFHE{
 
     /**
+     * Structure used for passing arguments 
+     * to the multiplying function in the multithreading context
+    **/
+    struct MulArgs{
+
+        uint64_t * fst_chunk;
+        uint64_t * snd_chunk;
+        uint64_t * input_bitlen;
+
+        uint64_t * result;
+        uint64_t * result_bitlen;
+
+        uint64_t fst_chlen;
+        uint64_t snd_chlen;
+
+        uint64_t default_len;
+
+        int res_fst_deflen_pos;
+        int res_snd_deflen_pos;
+    };
+
+    /**
      * Class used for storing a ciphertext
     **/
     class Ciphertext{
@@ -111,6 +133,13 @@ namespace certFHE{
         **/
         Ciphertext operator+(const Ciphertext& c) const;
         Ciphertext& operator+=(const Ciphertext& c);
+
+        /**
+         * Multiply two chunks of ciphertxts --- for multithreading only ---
+         * @param[in] args: input sent as a pointer to a MulArgs object
+         * @return value : nothing
+        **/
+        friend void chunk_multiply(MulArgs * args);
 
         /**
          * Operators for multiplication of ciphertexts
