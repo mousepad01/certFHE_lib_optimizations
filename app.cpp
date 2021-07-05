@@ -39,7 +39,11 @@ void test_time(const int test_count, const int FIRST_LEN = 3, const int SECOND_L
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\first_version_multithreading_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\multithreading_stats.txt", std::fstream::out | std::fstream::app);
+
+	certFHE::Library::initializeLibrary();
+	certFHE::Context context(1247, 16);
+	certFHE::SecretKey seckey(context);
 
 	for (int ts = 0; ts < test_count; ts++) {
 
@@ -50,13 +54,11 @@ void test_time(const int test_count, const int FIRST_LEN = 3, const int SECOND_L
 
 		t.start_timer();
 
-		certFHE::Library::initializeLibrary();
-		certFHE::Context context(1247, 16);
-		certFHE::SecretKey seckey(context);
-
 		//std::cout << context.getDefaultN();
 
-		f << "TEST\nafter init context and key init_time=" << t.stop_timer() << " miliseconds\n";
+		uint64_t ti = t.stop_timer();
+		f << "TEST\nafter init context and key init_time=" << ti << " miliseconds\n";
+		t.stop_timer();
 
 		Ciphertext ctxt1;
 
@@ -89,21 +91,24 @@ void test_time(const int test_count, const int FIRST_LEN = 3, const int SECOND_L
 		for (int i = 0; i < MUL_CNT; i++) {
 
 			ctxt1 *= ctxt2;
+
+			uint64_t ti = t.stop_timer();
 			f << "mul between len1=" << first_len_cpy << " and len2=" << snd_len_cpy << " time_cost="
-				<< t.stop_timer() << " miliseconds\n";
+				<< ti << " miliseconds\n";
+			t.stop_timer();
 
 			first_len_cpy *= snd_len_cpy;
 		}
 
 		f.flush();
 	}
+
+	certFHE::Library::getMulThreadpool()->close();
 }
 
 int main(){
 
-    srand(time(0));
-
-    test_time(25, 3, 4, 11);
+    test_time(25, 3, 2, 22);
 
     return 0;
 }

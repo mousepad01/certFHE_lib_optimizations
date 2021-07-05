@@ -166,8 +166,7 @@ uint64_t* Ciphertext::multiply(const Context& ctx,uint64_t *c1,uint64_t*c2,uint6
     uint64_t times1 = len1/_defaultLen;
     uint64_t times2 = len2/_defaultLen;
 
-    // TODO: de initializat in alta parte, clar nu de fiecare data cand se apeleaza metoda
-    Threadpool <MulArgs *> * threadpool = Threadpool <MulArgs *> :: make_threadpool();
+	Threadpool <MulArgs *> * threadpool = Library::getMulThreadpool();
 
     int thread_count = threadpool -> THR_CNT;
     int res_defChunks_len = times1 * times2;
@@ -203,8 +202,6 @@ uint64_t* Ciphertext::multiply(const Context& ctx,uint64_t *c1,uint64_t*c2,uint6
 
 			args[ch].task_is_done = false;
 
-			//std::cout << "launching " << ch << "/" << res_defChunks_len << "\n";
-
             threadpool -> add_task(&chunk_multiply, args + ch);
         }
 
@@ -212,14 +209,10 @@ uint64_t* Ciphertext::multiply(const Context& ctx,uint64_t *c1,uint64_t*c2,uint6
 
 			std:unique_lock <std::mutex> lock(args[ch].done_mutex);
 
-			//std::cout << "waiting " << ch << "/" << res_defChunks_len << '\n';
-
 			args[ch].done.wait(lock, [ch, args]{
 				return args[ch].task_is_done;
 			});
 		}
-
-		threadpool->close();
 
 		return res;
     }
@@ -257,8 +250,6 @@ uint64_t* Ciphertext::multiply(const Context& ctx,uint64_t *c1,uint64_t*c2,uint6
 
 			prevchnk = args[tsk].res_snd_deflen_pos;
 
-			//std::cout << "launching " << tsk << "/" << thread_count << "\n";
-
             threadpool -> add_task(&chunk_multiply, args + tsk);
         }
 
@@ -266,14 +257,10 @@ uint64_t* Ciphertext::multiply(const Context& ctx,uint64_t *c1,uint64_t*c2,uint6
 
 			std::unique_lock <std::mutex> lock(args[tsk].done_mutex);
 
-			//std::cout << "waiting " << tsk << "/" << thread_count << '\n';
-
 			args[tsk].done.wait(lock, [tsk, args] {
 				return args[tsk].task_is_done;
 			});
 		}
-
-		threadpool->close();
 
 		return res;
     }

@@ -8,3 +8,9 @@
 #include <chrono>
 #include <bitset>
 #include <string>
+
+#include <condition_variable>
+#include <mutex>
+#include <thread>
+#include <functional>
+#include <queue>

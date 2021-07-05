@@ -15,8 +15,6 @@ Context::Context(const Context& context)
 	this->defaultLen = context.getDefaultN();
 }
 
-
-
 Context::Context(const uint64_t pN,const uint64_t pD) : N(pN),D(pD)
 {
     this->S = N/(2*D);

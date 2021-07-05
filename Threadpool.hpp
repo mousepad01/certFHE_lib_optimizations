@@ -1,110 +1,107 @@
 #ifndef THREADPOOL_H
 #define THREADPOOL_H
+#include "utils.h"
 
-#include <thread>
-#include <mutex>
-#include <vector>
-#include <condition_variable>
-#include <functional>
-#include <queue>
+namespace certFHE {
 
-template <typename T>
-class Threadpool{
+	template <typename T>
+	class Threadpool {
 
-    bool closed;
+		bool closed;
 
-    std::vector <std::thread *> threads;
-    std::queue <std::function <void(T)>> tasks;
-    std::queue <T> tasks_args;
+		std::vector <std::thread *> threads;
+		std::queue <std::function <void(T)>> tasks;
+		std::queue <T> tasks_args;
 
-    std::mutex tasks_mutex;
-    std::condition_variable tasks_condition;
+		std::mutex tasks_mutex;
+		std::condition_variable tasks_condition;
 
-    void wait_for_tasks();
+		void wait_for_tasks();
 
-    Threadpool();
+		Threadpool();
 
-public:
+	public:
 
-    static const int THR_CNT;
+		static const int THR_CNT;
 
-    static Threadpool <T> * make_threadpool();
-    
-    void add_task(std::function <void(T)> to_execute, T to_execute_args);
+		static Threadpool <T> * make_threadpool();
 
-    void close();
-};
+		void add_task(std::function <void(T)> to_execute, T to_execute_args);
 
-template <typename T>
-const int Threadpool <T>::THR_CNT = std::thread::hardware_concurrency() != 0 ? std::thread::hardware_concurrency() : 12;
+		void close();
+	};
 
-template <typename T>
-Threadpool <T>::Threadpool(): threads(THR_CNT){}
+	template <typename T>
+	const int Threadpool <T>::THR_CNT = std::thread::hardware_concurrency() != 0 ? std::thread::hardware_concurrency() : 12;
 
-template <typename T>
-Threadpool<T> * Threadpool <T>::make_threadpool(){
+	template <typename T>
+	Threadpool <T>::Threadpool() : threads(THR_CNT) {}
 
-    Threadpool * created = new Threadpool();
+	template <typename T>
+	Threadpool<T> * Threadpool <T>::make_threadpool() {
 
-    for(int i = 0; i < THR_CNT; i++)
-        created -> threads[i] = new std::thread(&Threadpool<T>::wait_for_tasks, created);
+		Threadpool * created = new Threadpool();
 
-    return created;
-}
+		for (int i = 0; i < THR_CNT; i++)
+			created->threads[i] = new std::thread(&Threadpool<T>::wait_for_tasks, created);
 
-template <typename T>
-void Threadpool <T>::wait_for_tasks(){
+		return created;
+	}
 
-    while(true){
+	template <typename T>
+	void Threadpool <T>::wait_for_tasks() {
 
-        std::function <void(T)> to_execute;
-        T to_execute_args;
-        
-        {
-            std::unique_lock <std::mutex> tasks_lock (this -> tasks_mutex);
+		while (true) {
 
-            this -> tasks_condition.wait(tasks_lock,
-                                            [this]{
-                                                return 
-                                                !(this -> tasks.empty()) ||
-                                                (this -> tasks.empty() && this -> closed);
-                                            });
+			std::function <void(T)> to_execute;
+			T to_execute_args;
 
-            if(this -> closed && this -> tasks.empty())
-                return;
-        
-            to_execute = this -> tasks.front();
-            this -> tasks.pop();
+			{
+				std::unique_lock <std::mutex> tasks_lock(this->tasks_mutex);
 
-            to_execute_args = this -> tasks_args.front();
-            this -> tasks_args.pop();
-        }
+				this->tasks_condition.wait(tasks_lock,
+					[this] {
+					return
+						!(this->tasks.empty()) ||
+						(this->tasks.empty() && this->closed);
+				});
 
-        to_execute(to_execute_args);
-    }
-}
+				if (this->closed && this->tasks.empty())
+					return;
 
-template <typename T>
-void Threadpool <T>::add_task(std::function <void(T)> to_execute, T to_execute_args){
+				to_execute = this->tasks.front();
+				this->tasks.pop();
 
-    {
-        std::unique_lock <std::mutex> tasks_lock (this -> tasks_mutex);
+				to_execute_args = this->tasks_args.front();
+				this->tasks_args.pop();
+			}
 
-        this -> tasks.push(to_execute);
-        this -> tasks_args.push(to_execute_args);
-    }
-    
-    this -> tasks_condition.notify_one();
-}
+			to_execute(to_execute_args);
+		}
+	}
 
-template <typename T>
-void Threadpool <T>::close(){
+	template <typename T>
+	void Threadpool <T>::add_task(std::function <void(T)> to_execute, T to_execute_args) {
 
-    this -> closed = true;
-    this -> tasks_condition.notify_all();
+		{
+			std::unique_lock <std::mutex> tasks_lock(this->tasks_mutex);
 
-    for(int i = 0; i < THR_CNT; i++)
-        this -> threads[i] -> join();
+			this->tasks.push(to_execute);
+			this->tasks_args.push(to_execute_args);
+		}
+
+		this->tasks_condition.notify_one();
+	}
+
+	template <typename T>
+	void Threadpool <T>::close() {
+
+		this->closed = true;
+		this->tasks_condition.notify_all();
+
+		for (int i = 0; i < THR_CNT; i++)
+			this->threads[i]->join();
+	}
 }
 
 #endif
