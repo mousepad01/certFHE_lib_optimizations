@@ -384,7 +384,7 @@ Ciphertext& Ciphertext::operator*=(const Ciphertext& c)
     if (this->v != nullptr)
         delete [] this->v;
     if (this->bitlen != nullptr)
-        delete this->bitlen;
+        delete [] this->bitlen;
     
     this->v = _values;
     this->bitlen = _bitlen;

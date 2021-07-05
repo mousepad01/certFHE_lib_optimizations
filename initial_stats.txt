@@ -1,0 +1,123 @@
+RUN 1 ------------------------------------
+
+after init context and key: 1 miliseconds
+179 adds time cost: 37 miliseconds
+100 and 79 multiplication time cost: 3 miliseconds
+
+7900 and 79 multiplication time cost: 124 miliseconds
+
+after init context and key: 0 miliseconds
+179 adds time cost: 11 miliseconds
+100 and 79 multiplication time cost: 2 miliseconds
+
+7900 and 79 multiplication time cost: 123 miliseconds
+
+after init context and key: 0 miliseconds
+179 adds time cost: 11 miliseconds
+100 and 79 multiplication time cost: 2 miliseconds
+
+7900 and 79 multiplication time cost: 122 miliseconds
+
+after init context and key: 0 miliseconds
+179 adds time cost: 10 miliseconds
+100 and 79 multiplication time cost: 2 miliseconds
+
+7900 and 79 multiplication time cost: 128 miliseconds
+
+after init context and key: 0 miliseconds
+179 adds time cost: 10 miliseconds
+100 and 79 multiplication time cost: 2 miliseconds
+
+7900 and 79 multiplication time cost: 126 miliseconds
+
+after init context and key: 0 miliseconds
+179 adds time cost: 10 miliseconds
+100 and 79 multiplication time cost: 2 miliseconds
+
+7900 and 79 multiplication time cost: 127 miliseconds
+
+after init context and key: 0 miliseconds
+179 adds time cost: 12 miliseconds
+100 and 79 multiplication time cost: 2 miliseconds
+
+7900 and 79 multiplication time cost: 128 miliseconds
+
+after init context and key: 0 miliseconds
+179 adds time cost: 11 miliseconds
+100 and 79 multiplication time cost: 2 miliseconds
+
+7900 and 79 multiplication time cost: 123 miliseconds
+
+after init context and key: 0 miliseconds
+179 adds time cost: 10 miliseconds
+100 and 79 multiplication time cost: 2 miliseconds
+
+7900 and 79 multiplication time cost: 122 miliseconds
+
+after init context and key: 0 miliseconds
+179 adds time cost: 12 miliseconds
+100 and 79 multiplication time cost: 2 miliseconds
+
+7900 and 79 multiplication time cost: 140 miliseconds
+
+RUN 2 ------------------------------------------------------
+
+after init context and key: 1 miliseconds
+179 adds time cost: 37 miliseconds
+100 and 79 multiplication time cost: 3 miliseconds
+
+7900 and 79 multiplication time cost: 124 miliseconds
+
+after init context and key: 0 miliseconds
+179 adds time cost: 11 miliseconds
+100 and 79 multiplication time cost: 2 miliseconds
+
+7900 and 79 multiplication time cost: 123 miliseconds
+
+after init context and key: 0 miliseconds
+179 adds time cost: 11 miliseconds
+100 and 79 multiplication time cost: 2 miliseconds
+
+7900 and 79 multiplication time cost: 122 miliseconds
+
+after init context and key: 0 miliseconds
+179 adds time cost: 10 miliseconds
+100 and 79 multiplication time cost: 2 miliseconds
+
+7900 and 79 multiplication time cost: 128 miliseconds
+
+after init context and key: 0 miliseconds
+179 adds time cost: 10 miliseconds
+100 and 79 multiplication time cost: 2 miliseconds
+
+7900 and 79 multiplication time cost: 126 miliseconds
+
+after init context and key: 0 miliseconds
+179 adds time cost: 10 miliseconds
+100 and 79 multiplication time cost: 2 miliseconds
+
+7900 and 79 multiplication time cost: 127 miliseconds
+
+after init context and key: 0 miliseconds
+179 adds time cost: 12 miliseconds
+100 and 79 multiplication time cost: 2 miliseconds
+
+7900 and 79 multiplication time cost: 128 miliseconds
+
+after init context and key: 0 miliseconds
+179 adds time cost: 11 miliseconds
+100 and 79 multiplication time cost: 2 miliseconds
+
+7900 and 79 multiplication time cost: 123 miliseconds
+
+after init context and key: 0 miliseconds
+179 adds time cost: 10 miliseconds
+100 and 79 multiplication time cost: 2 miliseconds
+
+7900 and 79 multiplication time cost: 122 miliseconds
+
+after init context and key: 0 miliseconds
+179 adds time cost: 12 miliseconds
+100 and 79 multiplication time cost: 2 miliseconds
+
+7900 and 79 multiplication time cost: 140 miliseconds
