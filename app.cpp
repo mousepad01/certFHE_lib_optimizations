@@ -5,9 +5,13 @@
 #include <mutex>
 #include <string>
 #include <stdlib.h>
+#include <string>
+#include <fstream>
 
 #include "certFHE.h"
 #include "Threadpool.hpp"
+
+static string STATS_PATH = "C:\\Users\\intern.andreis\\Desktop\\certfhe_stats";
 
 using namespace certFHE;
 
@@ -30,124 +34,71 @@ public:
     }
 };
 
-class Taskarg{
-public:
-    int k;
-    double y;
-};
+void test_time(const int test_count, int FIRST_LEN = 3, int SECOND_LEN = 5, const int MUL_CNT = 10) {
 
-void test(){
+	Timervar t;
 
-    Timervar t;
-    t.start_timer();
+	std::fstream f;
+	f.open(STATS_PATH + "\\first_version_multithreading_stats.txt", std::fstream::out | std::fstream::app);
 
-    certFHE::Library::initializeLibrary();
-    certFHE::Context context(1247,16);
-    certFHE::SecretKey sk(context);
+	for (int ts = 0; ts < test_count; ts++) {
 
-    Plaintext p0(0);
-    Ciphertext c0 = sk.encrypt(p0);
+		t.start_timer();
 
-    Plaintext p1(1);
-    Ciphertext c1 = sk.encrypt(p1);
+		certFHE::Library::initializeLibrary();
+		certFHE::Context context(1247, 16);
+		certFHE::SecretKey seckey(context);
 
-    c0 += c1;
-    std::cout << "after add\n";
+		//std::cout << context.getDefaultN();
 
-	c1 += c1;
-	std::cout << "after add\n";
-    
-    c1 *= c0;
+		f << "TEST\nafter init context and key init_time=" << t.stop_timer() << " miliseconds\n";
 
-    std::cout << sk.decrypt(c1) << '\n';
-}
+		Ciphertext ctxt1;
 
-void test_time(const int test_count, const int FIRST_LEN = 100, const int SECOND_LEN = 79){
+		for (int i = 0; i < FIRST_LEN; i++) {
 
-    Timervar t;
+			Plaintext p(rand() % 2);
+			Ciphertext c = seckey.encrypt(p);
 
-    for(int ts = 0; ts < test_count; ts++){
+			if (i == 0)
+				ctxt1 = c;
+			else
+				ctxt1 += c;
+		}
 
-        t.start_timer();
+		Ciphertext ctxt2;
 
-        certFHE::Library::initializeLibrary();
-        certFHE::Context context(1247,16);
-        certFHE::SecretKey seckey(context);
+		for (int i = 0; i < SECOND_LEN; i++) {
 
-        //std::cout << context.getDefaultN();
+			Plaintext p(rand() % 2);
+			Ciphertext c = seckey.encrypt(p);
 
-        std::cout << "after init context and key: " << t.stop_timer() << " miliseconds\n";
+			if (i == 0)
+				ctxt2 = c;
+			else
+				ctxt2 += c;
+		}
 
-        Ciphertext ctxt1;
+		t.stop_timer();
 
-        for(int i = 0; i < FIRST_LEN; i++){
-            
-            Plaintext p(rand() % 2);
-            Ciphertext c = seckey.encrypt(p);
-            
-            if(i == 0)
-                ctxt1 = c;
-            else
-                ctxt1 += c;
-        }
+		for (int i = 0; i < MUL_CNT; i++) {
 
-        Ciphertext ctxt2;
+			ctxt1 *= ctxt2;
+			f << "mul between len1=" << FIRST_LEN << " and len2=" << SECOND_LEN << " time_cost="
+				<< t.stop_timer() << " miliseconds\n";
 
-        for(int i = 0; i < 79; i++){
-            
-            Plaintext p(rand() % 2);
-            Ciphertext c = seckey.encrypt(p);
-            
-            if(i == 0)
-                ctxt2 = c;
-            else
-                ctxt2 += c;
-        }
+			FIRST_LEN *= SECOND_LEN;
+		}
 
-        std::cout << FIRST_LEN + SECOND_LEN << " adds time cost: " 
-                    << t.stop_timer() << " miliseconds\n";
-
-        ctxt1 *= ctxt2;
-        std::cout << FIRST_LEN << " and " << SECOND_LEN << " multiplication time cost: " 
-                    << t.stop_timer() << " miliseconds\n\n";
-
-        ctxt1 *= ctxt2;
-        std::cout << FIRST_LEN * SECOND_LEN << " and " << SECOND_LEN << " multiplication time cost: " 
-                    << t.stop_timer() << " miliseconds\n\n";
-    }
-}
-
-void testfct(Taskarg * arg){
-
-    std::thread::id id = std::this_thread::get_id();
-
-    for(int i = 0; i < 100; i++)
-        std::cout << arg -> k << " " << i << '\n';
-}
-
-void test_threadpool(){
-
-    Threadpool <Taskarg *> * thp = Threadpool <Taskarg *>::make_threadpool();
-    for(int i = 0; i < 8; i++){
-
-        Taskarg * arg = new Taskarg();
-        arg -> k = i * 1000;
-        arg -> y = 39;
-
-        thp -> add_task(&testfct, arg);
-    }
-
-    thp -> close();
+		f.flush();
+	}
 }
 
 int main(){
 
     srand(time(0));
 
-    //test();
-
-    test_time(10);
-    //test_threadpool();
+    test_time(50, 3, 4, 10);
 
     return 0;
 }
