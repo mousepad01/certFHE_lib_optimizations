@@ -138,9 +138,12 @@ void certFHE::chunk_multiply(MulArgs * args){
 		}
 	}
 
-	args->task_is_done = true;
-	args->done.notify_all();
+	{
+		std::lock_guard <std::mutex> lock(args->done_mutex);
+		args->task_is_done = true;
+	}
 
+	args->done.notify_all();
 }
 
 uint64_t* Ciphertext::multiply(const Context& ctx,uint64_t *c1,uint64_t*c2,uint64_t len1,uint64_t len2, uint64_t& newlen,uint64_t* bitlenin1,uint64_t* bitlenin2,uint64_t*& bitlenout) const
@@ -200,6 +203,8 @@ uint64_t* Ciphertext::multiply(const Context& ctx,uint64_t *c1,uint64_t*c2,uint6
 
 			args[ch].task_is_done = false;
 
+			//std::cout << "launching " << ch << "/" << res_defChunks_len << "\n";
+
             threadpool -> add_task(&chunk_multiply, args + ch);
         }
 
@@ -207,10 +212,14 @@ uint64_t* Ciphertext::multiply(const Context& ctx,uint64_t *c1,uint64_t*c2,uint6
 
 			std:unique_lock <std::mutex> lock(args[ch].done_mutex);
 
+			//std::cout << "waiting " << ch << "/" << res_defChunks_len << '\n';
+
 			args[ch].done.wait(lock, [ch, args]{
 				return args[ch].task_is_done;
 			});
 		}
+
+		threadpool->close();
 
 		return res;
     }
@@ -248,6 +257,8 @@ uint64_t* Ciphertext::multiply(const Context& ctx,uint64_t *c1,uint64_t*c2,uint6
 
 			prevchnk = args[tsk].res_snd_deflen_pos;
 
+			//std::cout << "launching " << tsk << "/" << thread_count << "\n";
+
             threadpool -> add_task(&chunk_multiply, args + tsk);
         }
 
@@ -255,10 +266,14 @@ uint64_t* Ciphertext::multiply(const Context& ctx,uint64_t *c1,uint64_t*c2,uint6
 
 			std::unique_lock <std::mutex> lock(args[tsk].done_mutex);
 
+			//std::cout << "waiting " << tsk << "/" << thread_count << '\n';
+
 			args[tsk].done.wait(lock, [tsk, args] {
 				return args[tsk].task_is_done;
 			});
 		}
+
+		threadpool->close();
 
 		return res;
     }
@@ -361,7 +376,6 @@ Ciphertext& Ciphertext::operator+=(const Ciphertext& c)
     this->bitlen = _bitlen;
     this->v = _values;
     this->len = newlen;
-
 
     return *this;
 }

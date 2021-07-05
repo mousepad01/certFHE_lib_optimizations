@@ -34,7 +34,7 @@ public:
     }
 };
 
-void test_time(const int test_count, int FIRST_LEN = 3, int SECOND_LEN = 5, const int MUL_CNT = 10) {
+void test_time(const int test_count, const int FIRST_LEN = 3, const int SECOND_LEN = 5, const int MUL_CNT = 10) {
 
 	Timervar t;
 
@@ -42,6 +42,11 @@ void test_time(const int test_count, int FIRST_LEN = 3, int SECOND_LEN = 5, cons
 	f.open(STATS_PATH + "\\first_version_multithreading_stats.txt", std::fstream::out | std::fstream::app);
 
 	for (int ts = 0; ts < test_count; ts++) {
+
+		int first_len_cpy = FIRST_LEN;
+		int snd_len_cpy = SECOND_LEN;
+
+		Timervar t;
 
 		t.start_timer();
 
@@ -55,7 +60,7 @@ void test_time(const int test_count, int FIRST_LEN = 3, int SECOND_LEN = 5, cons
 
 		Ciphertext ctxt1;
 
-		for (int i = 0; i < FIRST_LEN; i++) {
+		for (int i = 0; i < first_len_cpy; i++) {
 
 			Plaintext p(rand() % 2);
 			Ciphertext c = seckey.encrypt(p);
@@ -68,7 +73,7 @@ void test_time(const int test_count, int FIRST_LEN = 3, int SECOND_LEN = 5, cons
 
 		Ciphertext ctxt2;
 
-		for (int i = 0; i < SECOND_LEN; i++) {
+		for (int i = 0; i < snd_len_cpy; i++) {
 
 			Plaintext p(rand() % 2);
 			Ciphertext c = seckey.encrypt(p);
@@ -84,10 +89,10 @@ void test_time(const int test_count, int FIRST_LEN = 3, int SECOND_LEN = 5, cons
 		for (int i = 0; i < MUL_CNT; i++) {
 
 			ctxt1 *= ctxt2;
-			f << "mul between len1=" << FIRST_LEN << " and len2=" << SECOND_LEN << " time_cost="
+			f << "mul between len1=" << first_len_cpy << " and len2=" << snd_len_cpy << " time_cost="
 				<< t.stop_timer() << " miliseconds\n";
 
-			FIRST_LEN *= SECOND_LEN;
+			first_len_cpy *= snd_len_cpy;
 		}
 
 		f.flush();
@@ -98,7 +103,7 @@ int main(){
 
     srand(time(0));
 
-    test_time(50, 3, 4, 10);
+    test_time(25, 3, 4, 11);
 
     return 0;
 }
