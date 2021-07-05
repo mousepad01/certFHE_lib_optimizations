@@ -5,6 +5,9 @@
 #include "Context.h"
 #include "Permutation.h"
 
+#include <condition_variable>
+#include <mutex>
+
 using namespace std;
 
 namespace certFHE{
@@ -29,6 +32,10 @@ namespace certFHE{
 
         int res_fst_deflen_pos;
         int res_snd_deflen_pos;
+
+		bool task_is_done;
+		condition_variable done;
+		mutex done_mutex;
     };
 
     /**

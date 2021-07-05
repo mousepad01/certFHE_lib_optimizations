@@ -29,12 +29,6 @@ void Ciphertext::applyPermutation_inplace(const Permutation& permutation)
 			temp[pos++] = tval;
 		}
 	}
-
-	/*for (int i = 0; i < size; i++) 
-		temp2[i] = temp[perm[i%this->certFHEcontext->getN()]];*/
-
-	//---- am modificat a.i. sa se permute toate bucatile de lungime default N din ciphertext
-	//		nu doar prima
 	
 	uint64_t defBitSize = this -> certFHEcontext -> getN();
 	for (int i = 0; i < size; i++) 
@@ -57,42 +51,6 @@ void Ciphertext::applyPermutation_inplace(const Permutation& permutation)
 
 		offset += bitlen[i];
 	}
-	//----
-	
-	/*uint64_t div = this->certFHEcontext->getN() / (sizeof(uint64_t) * 8);
-	uint64_t rem =this->certFHEcontext->getN() % (sizeof(uint64_t) * 8);
-	result_len = div;
-	if (rem != 0)
-		result_len++;
-
-	result_bitlen = new uint64_t[result_len];
-	for (int i = 0; i < div; i++)
-		result_bitlen[i] = sizeof(uint64_t) * 8;
-	result_bitlen[div] = rem;
-
-	result_v = new uint64_t[result_len];
-	int uint64index = 0;
-	for (int step = 0; step < div; step++)
-	{
-		result_v[uint64index] = 0x00;
-		for (int s = 0; s < 64; s++)
-		{
-			uint64_t inter = ((temp2[step * 64 + s]) & 0x01) << sizeof(uint64_t) * 8 - 1 - s;
-			result_v[uint64index] = (result_v[uint64index]) | (inter);
-		}
-		uint64index++;
-	}
-
-	if (rem != 0)
-	{
-		result_v[uint64index] = 0x00;
-		for (int r = 0; r < rem; r++)
-		{
-			uint64_t inter = ((temp2[div * 64 + r]) & 0x01) << sizeof(uint64_t) * 8 - 1 - r;
-			result_v[uint64index] = (result_v[uint64index]) | (inter);
-		}
-
-	}*/
 
 	if (temp)
 		delete[] temp;
@@ -167,14 +125,22 @@ void certFHE::chunk_multiply(MulArgs * args){
     uint64_t snd_chlen = args -> snd_chlen;
     uint64_t default_len = args -> default_len;
 
-    for(int i = args -> res_fst_deflen_pos; i < args -> res_snd_deflen_pos; i++)
-        for(int k = 0; k < default_len; k++){
+	for (int i = args->res_fst_deflen_pos; i < args->res_snd_deflen_pos; i++) {
 
-            result[i * default_len + k] = fst_chunk[(i / fst_chlen) * default_len + k] & snd_chunk[(i % snd_chlen) * default_len + k];
+		int fst_ch_i = (i / snd_chlen) * default_len;
+		int snd_ch_j = (i % snd_chlen) * default_len;
 
-            result_bitlen[i * default_len + k] = input_bitlen[(i / fst_chlen) * default_len + k];
-        } 
-    
+		for (int k = 0; k < default_len; k++) {
+
+			result[i * default_len + k] = fst_chunk[fst_ch_i + k] & snd_chunk[snd_ch_j + k];
+
+			result_bitlen[i * default_len + k] = input_bitlen[fst_ch_i + k]; // input_bitlen[k] also works ???
+		}
+	}
+
+	args->task_is_done = true;
+	args->done.notify_all();
+
 }
 
 uint64_t* Ciphertext::multiply(const Context& ctx,uint64_t *c1,uint64_t*c2,uint64_t len1,uint64_t len2, uint64_t& newlen,uint64_t* bitlenin1,uint64_t* bitlenin2,uint64_t*& bitlenout) const
@@ -230,8 +196,23 @@ uint64_t* Ciphertext::multiply(const Context& ctx,uint64_t *c1,uint64_t*c2,uint6
             args[ch].fst_chlen = times1;
             args[ch].snd_chlen = times2;
 
+			args[ch].default_len = _defaultLen;
+
+			args[ch].task_is_done = false;
+
             threadpool -> add_task(&chunk_multiply, args + ch);
         }
+
+		for (int ch = 0; ch < res_defChunks_len; ch++) {
+
+			std:unique_lock <std::mutex> lock(args[ch].done_mutex);
+
+			args[ch].done.wait(lock, [ch, args]{
+				return args[ch].task_is_done;
+			});
+		}
+
+		return res;
     }
     else{
 
@@ -255,17 +236,32 @@ uint64_t* Ciphertext::multiply(const Context& ctx,uint64_t *c1,uint64_t*c2,uint6
             args[tsk].fst_chlen = times1;
             args[tsk].snd_chlen = times2;
 
+			args[tsk].default_len = _defaultLen;
+
+			args[tsk].task_is_done = false;
+
             if(r > 0){
 
                 args[tsk].res_snd_deflen_pos += 1;
                 r -= 1;
             }
 
+			prevchnk = args[tsk].res_snd_deflen_pos;
+
             threadpool -> add_task(&chunk_multiply, args + tsk);
         }
-    }
 
-	return res;
+		for (int tsk = 0; tsk < thread_count; tsk++) {
+
+			std::unique_lock <std::mutex> lock(args[tsk].done_mutex);
+
+			args[tsk].done.wait(lock, [tsk, args] {
+				return args[tsk].task_is_done;
+			});
+		}
+
+		return res;
+    }
 }
 
 #pragma endregion
@@ -406,12 +402,10 @@ Ciphertext& Ciphertext::operator=(const Ciphertext& c)
     this->v  = new uint64_t [this->len];
     this->bitlen  = new uint64_t [this->len];
 
-	//-----
 	if (c.certFHEcontext != nullptr)
 		this -> certFHEcontext = new Context(*c.certFHEcontext); 
 	else
 		this -> certFHEcontext = nullptr;
-	//-----
 
     uint64_t* _v = c.getValues();
     uint64_t* _bitlen = c.getBitlen();
@@ -449,10 +443,9 @@ Ciphertext::Ciphertext(const uint64_t* V,const uint64_t * Bitlen,const uint64_t 
         this->v[i] = V[i];
         this->bitlen[i] = Bitlen[i];
     }
-	//---- probleme cand context == nullptr
+
 	if(&context != nullptr)
 		this->certFHEcontext = new Context(context);
-	//----
 }
 
 Ciphertext::Ciphertext(const Ciphertext& ctxt) : Ciphertext(ctxt.v,ctxt.bitlen,ctxt.len,(const Context&)*ctxt.certFHEcontext)

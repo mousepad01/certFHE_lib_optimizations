@@ -53,6 +53,9 @@ void test(){
 
     c0 += c1;
     std::cout << "after add\n";
+
+	c1 += c1;
+	std::cout << "after add\n";
     
     c1 *= c0;
 
@@ -141,9 +144,9 @@ int main(){
 
     srand(time(0));
 
-    test();
+    //test();
 
-    //test_time(1);
+    test_time(10);
     //test_threadpool();
 
     return 0;
