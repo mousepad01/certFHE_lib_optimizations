@@ -39,9 +39,9 @@ void test_time(const int test_count, const int FIRST_LEN = 3, const int SECOND_L
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\multithreading_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\minor_ch_multithreading_stats.txt", std::fstream::out | std::fstream::app);
 
-	certFHE::Library::initializeLibrary();
+	certFHE::Library::initializeLibrary(true);
 	certFHE::Context context(1247, 16);
 	certFHE::SecretKey seckey(context);
 

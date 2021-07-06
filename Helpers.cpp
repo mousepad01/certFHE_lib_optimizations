@@ -10,14 +10,14 @@ void Library::initializeLibrary()
 	srand(time(NULL));
 }
 
-Threadpool <MulArgs *> * Library::mulThreadpool = 0;
+Threadpool <MulArgs *> * Library::mulThreadpool = NULL;
 
 void Library::initializeLibrary(bool initPools)
 {
 	//Introducing local time as seed for further pseudo random generator calls
 	srand(time(NULL));
 
-	if (initPools == true)
+	if (initPools == true) 
 		Library::mulThreadpool = Threadpool <MulArgs *> ::make_threadpool();
 }
 

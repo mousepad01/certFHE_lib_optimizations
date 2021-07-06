@@ -46,13 +46,6 @@ namespace certFHE{
 			**/
 			static Threadpool <MulArgs *> * mulThreadpool;
 
-			/**
-			* Object pool for multithreading multiplication 
-			* NOT YET USED
-			* TODO: dynamic std::vector-like pre-allocation of objects in pool, in relation with the number of requests
-			**/
-			//static MulArgs * mulArgs;
-
         public:
 
         /**
@@ -67,7 +60,6 @@ namespace certFHE{
 		**/
 		static Threadpool <MulArgs *> * getMulThreadpool();
 
-		//static MulArgs * getMulArgs();
     };
 
     /**

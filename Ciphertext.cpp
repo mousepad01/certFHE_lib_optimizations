@@ -171,10 +171,6 @@ uint64_t* Ciphertext::multiply(const Context& ctx,uint64_t *c1,uint64_t*c2,uint6
     int thread_count = threadpool -> THR_CNT;
     int res_defChunks_len = times1 * times2;
 
-    // TODO: de initializat un pool de obiecte MulArgs pentru a evita overhead ul alocarii dinamice
-    //          in timpul executarii operatiilor propriu-zise
-    MulArgs * args = new MulArgs[thread_count];
-
     // if there are more threads than final chunks, assign a thread 
     // for each multiplication of two default len chunks
     //
@@ -182,6 +178,8 @@ uint64_t* Ciphertext::multiply(const Context& ctx,uint64_t *c1,uint64_t*c2,uint6
     // each thread is assigned an equal number (+- 1) of default len multiplications
     // (differences appear when number of deflen multiplications does not divide by the number of threads)
     if(thread_count >= res_defChunks_len){
+
+		MulArgs * args = new MulArgs[res_defChunks_len];
 
         for(int ch = 0; ch < res_defChunks_len; ch++){
 
@@ -217,6 +215,8 @@ uint64_t* Ciphertext::multiply(const Context& ctx,uint64_t *c1,uint64_t*c2,uint6
 		return res;
     }
     else{
+
+		MulArgs * args = new MulArgs[thread_count];
 
         int r = res_defChunks_len % thread_count;
         int q = res_defChunks_len / thread_count;
