@@ -69,6 +69,28 @@ namespace certFHE{
 		~MulArgs(){}
 	};
 
+	/*
+	 * Structure for decryption multithreading function
+	*/
+	class DecArgs : public Args {
+
+	public:
+
+		uint64_t * to_decrypt;
+		uint64_t * sk;
+
+		uint64_t default_len;
+		uint64_t d;
+		uint64_t n;
+
+		uint64_t fst_deflen_pos;
+		uint64_t snd_deflen_pos;
+
+		uint64_t * decrypted;
+
+		~DecArgs(){}
+	};
+
     /**
      * Library clased, used to perform operations at the library level, such as library initialization
     **/

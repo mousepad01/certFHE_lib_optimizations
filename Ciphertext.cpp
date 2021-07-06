@@ -193,9 +193,9 @@ uint64_t* Ciphertext::add(uint64_t* c1,uint64_t* c2,uint64_t len1,uint64_t len2,
 
 			std:unique_lock <std::mutex> lock(args[thr].done_mutex);
 
-				args[thr].done.wait(lock, [thr, args] {
-					return args[thr].task_is_done;
-				});
+			args[thr].done.wait(lock, [thr, args] {
+				return args[thr].task_is_done;
+			});
 		}
 	}
 
@@ -233,7 +233,7 @@ void certFHE::chunk_multiply(Args * raw_args){
 
 			result[i * default_len + k] = fst_chunk[fst_ch_i + k] & snd_chunk[snd_ch_j + k];
 
-			result_bitlen[i * default_len + k] = input_bitlen[fst_ch_i + k]; // input_bitlen[k] also works ???
+			result_bitlen[i * default_len + k] = input_bitlen[k]; // input_bitlen[fst_ch_i + k] also works 
 		}
 	}
 

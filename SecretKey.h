@@ -49,7 +49,7 @@ namespace certFHE
         /**
          * Decrypts an encrypted value 
          * @param[in] v: vector of bits, size in multiple of n
-         * @param[in] len: size of vector v in bytes
+         * @param[in] len: size of vector v in chunks of 8 bytes
          * @param[in] defLen: default length of N
          * @param[in] n: n value from context
          * @param[in] d: d value from context
@@ -104,6 +104,11 @@ namespace certFHE
          * @return value: a permuted secret key object
         **/
         SecretKey applyPermutation(const Permutation& permutation);
+
+		/**
+		 * Decrypt in chunks -- only for multithreading --
+		**/
+		friend void chunk_decrypt(Args * raw_args);
 
         /**
          * Friend class for operator<<

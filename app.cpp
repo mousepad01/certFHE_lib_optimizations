@@ -89,6 +89,142 @@ void test_res_correct() {
 	std::cout << "done";
 }
 
+/*
+ * Relevant only for multithreading decryption testing
+*/
+void only_dec_test_time(const int test_count, const int C_MAX_LEN) {
+
+	Timervar t;
+
+	std::fstream f;
+	f.open(STATS_PATH + "\\add_mul_decr_multithreading_stats\\only_dec_with_all_multithreading_stats.txt", std::fstream::out | std::fstream::app);
+
+	certFHE::Library::initializeLibrary();
+	certFHE::Context context(1247, 16);
+	certFHE::SecretKey sk(context);
+
+	for (int ts = 0; ts < test_count; ts++) {
+
+		f << "TEST\n";
+
+		Plaintext p(rand() % 2);
+		Ciphertext ctxt = sk.encrypt(p);
+
+		Timervar t;
+		t.start_timer();
+
+		for (int i = 1; i < C_MAX_LEN; i *= 2) {
+
+			ctxt += ctxt;
+
+			t.stop_timer();
+
+			sk.decrypt(ctxt);
+
+			uint64_t ti = t.stop_timer();
+
+			f << "decrypting len=" << i << " in time_cost=" << ti << " miliseconds\n";
+		}
+	}
+}
+
+/*
+ * Relevant for multithreading decryption, addition and multiplication testing
+*/
+void dec_mul_add_test_time(const int test_count, const int FIRST_LEN = 15, const int SECOND_LEN = 25,
+	const int THIRD_LEN = 2, const int ROUND_CNT = 5) {
+
+	Timervar t;
+
+	std::fstream f;
+	f.open(STATS_PATH + "\\add_mul_decr_multithreading_stats\\all_no_decr_multithreading_stats.txt", std::fstream::out | std::fstream::app);
+
+	certFHE::Library::initializeLibrary();
+	certFHE::Context context(1247, 16);
+	certFHE::SecretKey seckey(context);
+
+	for (int ts = 0; ts < test_count; ts++) {
+
+		int first_len_cpy = FIRST_LEN;
+		int snd_len_cpy = SECOND_LEN;
+		int trd_len_cpy = THIRD_LEN;
+
+		Timervar t;
+
+		t.start_timer();
+
+		uint64_t ti = t.stop_timer();
+		f << "TEST\n";
+		t.stop_timer();
+
+		Ciphertext ctxt1, ctxt2, ctxt3;
+
+		for (int i = 0; i < first_len_cpy; i++) {
+
+			Plaintext p(rand() % 2);
+			Ciphertext c = seckey.encrypt(p);
+
+			if (i == 0)
+				ctxt1 = c;
+			else
+				ctxt1 += c;
+		}
+
+		for (int i = 0; i < snd_len_cpy; i++) {
+
+			Plaintext p(rand() % 2);
+			Ciphertext c = seckey.encrypt(p);
+
+			if (i == 0)
+				ctxt2 = c;
+			else
+				ctxt2 += c;
+		}
+
+		for (int i = 0; i < trd_len_cpy; i++) {
+
+			Plaintext p(rand() % 2);
+			Ciphertext c = seckey.encrypt(p);
+
+			if (i == 0)
+				ctxt3 = c;
+			else
+				ctxt3 += c;
+		}
+
+		t.stop_timer();
+
+		for (int i = 0; i < ROUND_CNT; i++) {
+
+			ctxt1 *= ctxt3;
+			ctxt2 *= ctxt3;
+
+			ctxt1 += ctxt2;
+
+			uint64_t ti = t.stop_timer();
+			f << "round with len1=" << first_len_cpy << " len2=" << snd_len_cpy << " len3="
+				<< trd_len_cpy << " time_cost=" << ti << " miliseconds\n";
+			t.stop_timer();
+
+			first_len_cpy *= trd_len_cpy;
+			snd_len_cpy *= trd_len_cpy;
+
+			first_len_cpy += snd_len_cpy;
+
+			t.stop_timer();
+			seckey.decrypt(ctxt1);
+
+			ti = t.stop_timer();
+			f << "decrypting len=" << first_len_cpy << " in time_cost=" << ti << " miliseconds\n";
+		}
+
+		f.flush();
+	}
+}
+
+/*
+ * Relevant only for multithreading addition and multiplication testing
+*/
 void mul_add_test_time(const int test_count, const int FIRST_LEN = 15, const int SECOND_LEN = 25,
 						const int THIRD_LEN = 2, const int ROUND_CNT = 5) {
 
@@ -177,7 +313,7 @@ void mul_add_test_time(const int test_count, const int FIRST_LEN = 15, const int
 }
 
 /*
-Relevant only for multiplication multithreading testing
+ * Relevant only for multiplication multithreading testing
 */
 void only_mul_test_time(const int test_count, const int FIRST_LEN = 3, const int SECOND_LEN = 5, const int MUL_CNT = 10) {
 
@@ -258,6 +394,10 @@ int main(){
 	//mul_add_test_time(20, 15, 25, 2, 15);
 
 	//test_res_correct();
+
+	only_dec_test_time(20, 1000000);
+
+	//dec_mul_add_test_time(10, 15, 25, 2, 12);
 
     return 0;
 }
