@@ -10,7 +10,7 @@ void Library::initializeLibrary()
 	srand(time(NULL));
 }
 
-Threadpool <MulArgs *> * Library::mulThreadpool = NULL;
+Threadpool <Args *> * Library::threadpool = NULL;
 
 void Library::initializeLibrary(bool initPools)
 {
@@ -18,15 +18,15 @@ void Library::initializeLibrary(bool initPools)
 	srand(time(NULL));
 
 	if (initPools == true) 
-		Library::mulThreadpool = Threadpool <MulArgs *> ::make_threadpool();
+		Library::threadpool = Threadpool <Args *> ::make_threadpool();
 }
 
-Threadpool <MulArgs *> * Library::getMulThreadpool() {
+Threadpool <Args *> * Library::getThreadpool() {
 
-	if(Library::mulThreadpool == NULL)
-		Library::mulThreadpool = Threadpool <MulArgs *> ::make_threadpool();
+	if(Library::threadpool == NULL)
+		Library::threadpool = Threadpool <Args *> ::make_threadpool();
 
-	return Library::mulThreadpool;
+	return Library::threadpool;
 }
 
 #pragma endregion 

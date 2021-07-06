@@ -34,12 +34,157 @@ public:
     }
 };
 
-void test_time(const int test_count, const int FIRST_LEN = 3, const int SECOND_LEN = 5, const int MUL_CNT = 10) {
+/*
+ * test to check if operations are implemented correctly
+*/
+void test_res_correct() {
+
+	certFHE::Library::initializeLibrary();
+	certFHE::Context context(1247, 16);
+	certFHE::SecretKey sk(context);
+
+	for (int tst = 0; tst < 1000; tst++) {
+
+		Plaintext p0(0);
+		Plaintext p1(1);
+
+		Ciphertext c0 = sk.encrypt(p0);
+		Ciphertext c1 = sk.encrypt(p1);
+
+		int c00 = 0;
+		int c11 = 1;
+
+		for (int i = 0; i < 10; i++) {
+
+			int r = rand() % 2;
+			c00 += r;
+			c00 %= 2;
+
+			Plaintext p(r);
+			Ciphertext c = sk.encrypt(p);
+
+			c0 += c;
+		}
+
+		for (int i = 0; i < 10; i++) {
+
+			int r = rand() % 2;
+			c11 += r;
+			c11 %= 2;
+
+			Plaintext p(r);
+			Ciphertext c = sk.encrypt(p);
+
+			c1 += c;
+		}
+
+		c1 *= c0;
+
+		c11 *= c00;
+
+		if ((((sk.decrypt(c0).getValue() & 0x01) == c00) && ((sk.decrypt(c1).getValue() & 0x01) == c11)) == false)
+			std::cout << "aici";
+
+	}
+	std::cout << "done";
+}
+
+void mul_add_test_time(const int test_count, const int FIRST_LEN = 15, const int SECOND_LEN = 25,
+						const int THIRD_LEN = 2, const int ROUND_CNT = 5) {
 
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\minor_ch_multithreading_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\add_mul_multithreading_stats\\mul_add_multithreading_stats.txt", std::fstream::out | std::fstream::app);
+
+	certFHE::Library::initializeLibrary(true);
+	certFHE::Context context(1247, 16);
+	certFHE::SecretKey seckey(context);
+
+	for (int ts = 0; ts < test_count; ts++) {
+
+		int first_len_cpy = FIRST_LEN;
+		int snd_len_cpy = SECOND_LEN;
+		int trd_len_cpy = THIRD_LEN;
+
+		Timervar t;
+
+		t.start_timer();
+
+		uint64_t ti = t.stop_timer();
+		f << "TEST\n";
+		t.stop_timer();
+
+		Ciphertext ctxt1, ctxt2, ctxt3;
+
+		for (int i = 0; i < first_len_cpy; i++) {
+
+			Plaintext p(rand() % 2);
+			Ciphertext c = seckey.encrypt(p);
+
+			if (i == 0)
+				ctxt1 = c;
+			else
+				ctxt1 += c;
+		}
+
+		for (int i = 0; i < snd_len_cpy; i++) {
+
+			Plaintext p(rand() % 2);
+			Ciphertext c = seckey.encrypt(p);
+
+			if (i == 0)
+				ctxt2 = c;
+			else
+				ctxt2 += c;
+		}
+
+		for (int i = 0; i < trd_len_cpy; i++) {
+
+			Plaintext p(rand() % 2);
+			Ciphertext c = seckey.encrypt(p);
+
+			if (i == 0)
+				ctxt3 = c;
+			else
+				ctxt3 += c;
+		}
+
+		t.stop_timer();
+
+		for (int i = 0; i < ROUND_CNT; i++) {
+
+			ctxt1 *= ctxt3;
+			ctxt2 *= ctxt3;
+
+			ctxt1 += ctxt2;
+
+			uint64_t ti = t.stop_timer();
+			f << "round with len1=" << first_len_cpy << " len2=" << snd_len_cpy << " len3=" 
+				<< trd_len_cpy << " time_cost=" << ti << " miliseconds\n";
+			t.stop_timer();
+
+			first_len_cpy *= trd_len_cpy;
+			snd_len_cpy *= trd_len_cpy;
+
+			first_len_cpy += snd_len_cpy;
+		}
+
+		f.flush();
+	}
+
+	certFHE::Library::getThreadpool()->close();
+}
+
+/*
+Relevant only for multiplication multithreading testing
+*/
+void only_mul_test_time(const int test_count, const int FIRST_LEN = 3, const int SECOND_LEN = 5, const int MUL_CNT = 10) {
+
+	Timervar t;
+
+	std::fstream f;
+	f.open(STATS_PATH + "\\only_multiplication_multithreading_stats\\multiplication_multithreading_stats.txt", std::fstream::out | std::fstream::app);
 
 	certFHE::Library::initializeLibrary(true);
 	certFHE::Context context(1247, 16);
@@ -103,12 +248,16 @@ void test_time(const int test_count, const int FIRST_LEN = 3, const int SECOND_L
 		f.flush();
 	}
 
-	certFHE::Library::getMulThreadpool()->close();
+	certFHE::Library::getThreadpool()->close();
 }
 
 int main(){
 
-    test_time(25, 3, 2, 22);
+	//only_mul_test_time(25, 3, 2, 22);
+
+	//mul_add_test_time(20, 15, 25, 2, 15);
+
+	//test_res_correct();
 
     return 0;
 }

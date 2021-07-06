@@ -7,10 +7,49 @@
 namespace certFHE{
 
 	/**
-	 * Structure used for passing arguments
-	 * to the multiplying function in the multithreading multiplication context
+	 * Base structure used for passing arguments
 	**/
-	struct MulArgs {
+	class Args {
+
+	public:
+
+		bool task_is_done;
+		std::condition_variable done;
+		std::mutex done_mutex;
+
+		~Args(){}
+	};
+
+	/**
+	 * Structure for addition multithreading function
+	**/
+	class AddArgs : public Args {
+
+	public:
+
+		uint64_t * fst_chunk;
+		uint64_t * snd_chunk;
+		uint64_t * fst_input_bitlen;
+		uint64_t * snd_input_bitlen;
+
+		uint64_t * result;
+		uint64_t * result_bitlen;
+
+		uint64_t fst_len;
+		uint64_t snd_len;
+
+		uint64_t res_fst_deflen_pos;
+		uint64_t res_snd_deflen_pos;
+
+		~AddArgs(){}
+	};
+
+	/*
+	 * Structure for multiplication multithreading function
+	*/
+	class MulArgs : public Args{
+
+	public:
 
 		uint64_t * fst_chunk;
 		uint64_t * snd_chunk;
@@ -24,12 +63,10 @@ namespace certFHE{
 
 		uint64_t default_len;
 
-		int res_fst_deflen_pos;
-		int res_snd_deflen_pos;
+		uint64_t res_fst_deflen_pos;
+		uint64_t res_snd_deflen_pos;
 
-		bool task_is_done;
-		std::condition_variable done;
-		std::mutex done_mutex;
+		~MulArgs(){}
 	};
 
     /**
@@ -44,7 +81,7 @@ namespace certFHE{
 			/**
 			 * Threadpool for multithreading multiplication at the library level
 			**/
-			static Threadpool <MulArgs *> * mulThreadpool;
+			static Threadpool <Args *> * threadpool;
 
         public:
 
@@ -58,7 +95,7 @@ namespace certFHE{
 		/**
 		 * Getter for multiplication threadpool
 		**/
-		static Threadpool <MulArgs *> * getMulThreadpool();
+		static Threadpool <Args *> * getThreadpool();
 
     };
 

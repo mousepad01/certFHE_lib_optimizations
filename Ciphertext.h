@@ -29,9 +29,12 @@ namespace certFHE{
              * @param[in] len1: length of c1 in blocks of 8 bytes
              * @param[in] len2: length of c2 in blocks of 8 bytes
              * @param[out] newlen: the length of the returning vector, in bytes
+			 * @param[in]  bitlenin1: vector of size len1 which contains the number of bits from c1[i]
+			 * @param[in]  bitlenin2: vector of size len2 which contains the number of bits from c2[i]
+			 * @param[in]  bitlenout: vector of size newlen which containts the number of bits from resulting vector
              * @return value: the result of addition 
             **/
-            uint64_t* add(uint64_t* c1,uint64_t* c2,uint64_t len1,uint64_t len2, uint64_t &newlen) const;
+			uint64_t* add(uint64_t* c1, uint64_t* c2, uint64_t len1, uint64_t len2, uint64_t &newlen, uint64_t* bitlenin1, uint64_t* bitlenin2, uint64_t*& bitlenout) const;
 
             /**
              * Multiply two ciphertxts with both with same dimension = defaultN
@@ -112,12 +115,19 @@ namespace certFHE{
         Ciphertext operator+(const Ciphertext& c) const;
         Ciphertext& operator+=(const Ciphertext& c);
 
+		/**
+		 * Add two chunks of ciphertxts --- for multithreading only ---
+		 * @param[in] args: input sent as a pointer to an AddArgs object
+		 * @return value : nothing
+		**/
+		friend void chunk_add(Args * args);
+
         /**
          * Multiply two chunks of ciphertxts --- for multithreading only ---
          * @param[in] args: input sent as a pointer to a MulArgs object
          * @return value : nothing
         **/
-        friend void chunk_multiply(MulArgs * args);
+        friend void chunk_multiply(Args * args);
 
         /**
          * Operators for multiplication of ciphertexts

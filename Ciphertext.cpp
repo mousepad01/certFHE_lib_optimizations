@@ -88,19 +88,116 @@ long Ciphertext::size()
 
 #pragma region Private methods
 
-uint64_t* Ciphertext::add(uint64_t* c1,uint64_t* c2,uint64_t len1,uint64_t len2, uint64_t &newlen) const
-{
+void certFHE::chunk_add(Args * raw_args) {
+
+	AddArgs * args = (AddArgs *)raw_args;
+
+	uint64_t * result = args->result;
+	uint64_t * result_bitlen = args->result_bitlen;
+	uint64_t * fst_chunk = args->fst_chunk;
+	uint64_t * snd_chunk = args->snd_chunk;
+	uint64_t * fst_input_bitlen = args->fst_input_bitlen;
+	uint64_t * snd_input_bitlen = args->snd_input_bitlen;
+	uint64_t fst_len = args->fst_len;
+	uint64_t snd_len = args->snd_len;
+
+	for (uint64_t i = args->res_fst_deflen_pos; i < args->res_snd_deflen_pos; i++) 
+
+		if (i < fst_len) {
+
+			result[i] = fst_chunk[i];
+			result_bitlen[i] = fst_input_bitlen[i];
+		}
+		else {
+
+			result[i] = snd_chunk[i - fst_len];
+			result_bitlen[i] = snd_input_bitlen[i - fst_len];
+		}
+	
+
+	{
+		std::lock_guard <std::mutex> lock(args->done_mutex);
+		args->task_is_done = true;
+	}
+
+	args->done.notify_all();
+}
+
+uint64_t* Ciphertext::add(uint64_t* c1,uint64_t* c2,uint64_t len1,uint64_t len2, uint64_t &newlen, uint64_t* bitlenin1, uint64_t* bitlenin2, uint64_t*& bitlenout) const
+{	
     uint64_t* res = new uint64_t[len1+len2];
     newlen = len1+len2;
-	for (int i = 0; i < len1; i++)
-		{
-            res[i] = c1[i];
-        }
 
-    for (int i = 0; i < len2; i++)
+	if (newlen < 10000) {
+
+		for (int i = 0; i < len1; i++)
 		{
-            res[i+len1] = c2[i];
-        }
+			res[i] = c1[i];
+		}
+
+		for (int i = 0; i < len2; i++)
+		{
+			res[i + len1] = c2[i];
+		}
+
+		for (int i = 0; i < len1; i++)
+		{
+			bitlenout[i] = bitlenin1[i];
+		}
+		for (int i = 0; i < len2; i++)
+		{
+			bitlenout[len1 + i] = bitlenin2[i];
+		}
+	}
+	else {
+
+		Threadpool <Args *> * threadpool = Library::getThreadpool();
+		int thread_count = threadpool->THR_CNT;
+
+		AddArgs * args = new AddArgs[thread_count];
+
+		uint64_t r = newlen % thread_count;
+		uint64_t q = newlen / thread_count;
+
+		int prevchnk = 0;
+
+		for (int thr = 0; thr < thread_count; thr++) {
+
+			args[thr].fst_chunk = c1;
+			args[thr].snd_chunk = c2;
+			args[thr].fst_input_bitlen = bitlenin1;
+			args[thr].snd_input_bitlen = bitlenin2;
+
+			args[thr].result = res;
+			args[thr].result_bitlen = bitlenout;
+
+			args[thr].res_fst_deflen_pos = prevchnk;
+			args[thr].res_snd_deflen_pos = prevchnk + q;
+
+			if (r > 0) {
+
+				args[thr].res_snd_deflen_pos += 1;
+				r -= 1;
+			}
+			prevchnk = args[thr].res_snd_deflen_pos;
+
+			args[thr].fst_len = len1;
+			args[thr].snd_len = len2;
+
+			args[thr].task_is_done = false;
+
+			threadpool->add_task(&chunk_add, args + thr);
+		}
+
+		for (int thr = 0; thr < thread_count; thr++) {
+
+			std:unique_lock <std::mutex> lock(args[thr].done_mutex);
+
+				args[thr].done.wait(lock, [thr, args] {
+					return args[thr].task_is_done;
+				});
+		}
+	}
 
 	return res;
 }
@@ -114,7 +211,9 @@ uint64_t* Ciphertext::defaultN_multiply(uint64_t* c1, uint64_t* c2, uint64_t len
 	return res;
 }
 
-void certFHE::chunk_multiply(MulArgs * args){
+void certFHE::chunk_multiply(Args * raw_args){
+
+	MulArgs * args = (MulArgs *)raw_args;
 
     uint64_t * result = args -> result;
     uint64_t * fst_chunk = args -> fst_chunk;
@@ -125,10 +224,10 @@ void certFHE::chunk_multiply(MulArgs * args){
     uint64_t snd_chlen = args -> snd_chlen;
     uint64_t default_len = args -> default_len;
 
-	for (int i = args->res_fst_deflen_pos; i < args->res_snd_deflen_pos; i++) {
+	for (uint64_t i = args->res_fst_deflen_pos; i < args->res_snd_deflen_pos; i++) {
 
-		int fst_ch_i = (i / snd_chlen) * default_len;
-		int snd_ch_j = (i % snd_chlen) * default_len;
+		uint64_t fst_ch_i = (i / snd_chlen) * default_len;
+		uint64_t snd_ch_j = (i % snd_chlen) * default_len;
 
 		for (int k = 0; k < default_len; k++) {
 
@@ -166,10 +265,10 @@ uint64_t* Ciphertext::multiply(const Context& ctx,uint64_t *c1,uint64_t*c2,uint6
     uint64_t times1 = len1/_defaultLen;
     uint64_t times2 = len2/_defaultLen;
 
-	Threadpool <MulArgs *> * threadpool = Library::getMulThreadpool();
+	Threadpool <Args *> * threadpool = Library::getThreadpool();
 
     int thread_count = threadpool -> THR_CNT;
-    int res_defChunks_len = times1 * times2;
+	uint64_t res_defChunks_len = times1 * times2;
 
     // if there are more threads than final chunks, assign a thread 
     // for each multiplication of two default len chunks
@@ -218,8 +317,8 @@ uint64_t* Ciphertext::multiply(const Context& ctx,uint64_t *c1,uint64_t*c2,uint6
 
 		MulArgs * args = new MulArgs[thread_count];
 
-        int r = res_defChunks_len % thread_count;
-        int q = res_defChunks_len / thread_count;
+		uint64_t r = res_defChunks_len % thread_count;
+		uint64_t q = res_defChunks_len / thread_count;
 
         int prevchnk = 0;
 
@@ -235,20 +334,19 @@ uint64_t* Ciphertext::multiply(const Context& ctx,uint64_t *c1,uint64_t*c2,uint6
             args[tsk].res_fst_deflen_pos = prevchnk;
             args[tsk].res_snd_deflen_pos = prevchnk + q;
 
+			if (r > 0) {
+
+				args[tsk].res_snd_deflen_pos += 1;
+				r -= 1;
+			}
+			prevchnk = args[tsk].res_snd_deflen_pos;
+
             args[tsk].fst_chlen = times1;
             args[tsk].snd_chlen = times2;
 
 			args[tsk].default_len = _defaultLen;
 
 			args[tsk].task_is_done = false;
-
-            if(r > 0){
-
-                args[tsk].res_snd_deflen_pos += 1;
-                r -= 1;
-            }
-
-			prevchnk = args[tsk].res_snd_deflen_pos;
 
             threadpool -> add_task(&chunk_multiply, args + tsk);
         }
@@ -298,17 +396,7 @@ Ciphertext Ciphertext::operator+(const Ciphertext& c) const
     uint64_t* bitlenCtxt2 = c.getBitlen();
 
     uint64_t outlen = 0;
-    uint64_t* _values = add(this->v,c.v,this->len,len2,outlen);
-    
-	for (int i = 0;i<this->len;i++)
-	{
-		_bitlen[i] = this->bitlen[i];
-
-	}
-	for (int i = 0;i<len2;i++)
-	{
-		_bitlen[this->len+ i] = bitlenCtxt2[i];
-	}
+    uint64_t* _values = add(this->v,c.v,this->len,len2,outlen,this->bitlen,c.bitlen,_bitlen);
 
     Ciphertext result(_values,_bitlen,newlen,*this->certFHEcontext);
     delete [] _bitlen;
@@ -343,17 +431,7 @@ Ciphertext& Ciphertext::operator+=(const Ciphertext& c)
     uint64_t* bitlenCtxt2 = c.getBitlen();
 
     uint64_t outlen = 0;
-    uint64_t* _values = add(this->v,c.v,this->len,len2,outlen);
-    
-	for (int i = 0;i<this->len;i++)
-	{
-		_bitlen[i] = this->bitlen[i];
-
-	}
-	for (int i = 0;i<len2;i++)
-	{
-		_bitlen[this->len+ i] = bitlenCtxt2[i];
-	}
+    uint64_t* _values = add(this->v,c.v,this->len,len2,outlen,this->bitlen, c.bitlen, _bitlen);
 
     if (this->v != nullptr)
         delete [] this->v;
