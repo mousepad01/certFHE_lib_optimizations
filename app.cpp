@@ -39,9 +39,20 @@ public:
 */
 void test_res_correct() {
 
-	certFHE::Library::initializeLibrary();
+	certFHE::Library::initializeLibrary(true);
 	certFHE::Context context(1247, 16);
 	certFHE::SecretKey sk(context);
+
+	for (int tst = 0; tst < 10000; tst++) {
+
+		int r = rand() % 2;
+		Plaintext p(r);
+
+		Ciphertext c = sk.encrypt(p);
+
+		if (r != sk.decrypt(c).getValue() & 0x01)
+			std::cout << "FAIL " << r << " " << (sk.decrypt(c).getValue() & 0x01) << '\n';
+	}
 
 	for (int tst = 0; tst < 1000; tst++) {
 
@@ -397,7 +408,7 @@ int main(){
 
 	//mul_add_test_time(20, 15, 25, 2, 15);
 
-	//test_res_correct();
+	test_res_correct();
 
 	//only_dec_test_time(20, 1000000);
 

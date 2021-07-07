@@ -81,24 +81,17 @@ uint64_t* SecretKey::encrypt(unsigned char bit, uint64_t n, uint64_t d, uint64_t
 
 uint64_t SecretKey::defaultN_decrypt(uint64_t* v,uint64_t len, uint64_t n, uint64_t d, uint64_t* s,uint64_t* bitlen)
 {
-  int totalLen = 0;
-	for (int i = 0;  i < len; i++)
-		totalLen = totalLen + bitlen[i];
-	uint8_t *values = new uint8_t [totalLen];
-	int index = 0;
-	for (int i = 0;  i < len; i++)
-		for (int k = 0;  k < bitlen[i]; k++)
-		{
-			int shifts = sizeof(uint64_t)*8-1 -k ;
-			values[index] =  ( v[i] >> shifts) & 0x01;
-			index++;
-		}
+	uint64_t decrypted = 0x01;
 
-    uint64_t dec = values[s[0]];
-	for (int i = 1;  i <d; i++)
-		dec = dec && values[s[i]];
-	delete [] values;
-	return dec;   
+	for (int j = 0; j < d; j++) {
+
+		int u64_i = s[j] / 64;
+		int b = 63 - (s[j] % 64);
+
+		decrypted &= v[u64_i] >> b;
+	}
+
+	return decrypted;
 }
 
 void certFHE::chunk_decrypt(Args * raw_args) {
@@ -214,40 +207,6 @@ uint64_t SecretKey::decrypt(uint64_t* v,uint64_t len,uint64_t defLen, uint64_t n
 
 	return dec;
 }
-
-/*uint64_t SecretKey::decrypt(uint64_t* v, uint64_t len, uint64_t defLen, uint64_t n, uint64_t d, uint64_t* s, uint64_t* bitlen)
-{
-	//if (len == defLen)
-		//return defaultN_decrypt(v, len, n, d, s, bitlen);
-
-	uint64_t deflen_cnt = len / defLen;
-
-	uint64_t * decrypted = new uint64_t;
-
-	*decrypted = 0;
-
-	//std::cout << "from decr:\n";
-
-	for (uint64_t i = 0; i < deflen_cnt; i++) {
-
-		uint64_t * current_chunk = v + i * defLen;
-		uint64_t current_decrypted = 0x01;
-
-		for (int j = 0; j < d; j++) {
-
-			//std::cout << "j = " << j << ", s[j] = " << s[j] << '\n';
-
-			int u64_i = s[j] / 64;
-			int b = 63 - (s[j] % 64);
-
-			current_decrypted &= current_chunk[u64_i] >> b;
-		}
-
-		*decrypted ^= current_decrypted;
-	}
-
-	return *decrypted;
-}*/
 
 #pragma endregion
 
