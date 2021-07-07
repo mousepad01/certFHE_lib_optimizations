@@ -197,6 +197,8 @@ uint64_t* Ciphertext::add(uint64_t* c1,uint64_t* c2,uint64_t len1,uint64_t len2,
 				return args[thr].task_is_done;
 			});
 		}
+
+		delete[] args;
 	}
 
 	return res;
@@ -270,98 +272,78 @@ uint64_t* Ciphertext::multiply(const Context& ctx,uint64_t *c1,uint64_t*c2,uint6
     int thread_count = threadpool -> THR_CNT;
 	uint64_t res_defChunks_len = times1 * times2;
 
-    // if there are more threads than final chunks, assign a thread 
-    // for each multiplication of two default len chunks
-    //
-    // else
-    // each thread is assigned an equal number (+- 1) of default len multiplications
-    // (differences appear when number of deflen multiplications does not divide by the number of threads)
-    if(thread_count >= res_defChunks_len){
+	// if there are more threads than final chunks, assign a thread 
+	// for each multiplication of two default len chunks
+	//
+	// else
+	// each thread is assigned an equal number (+- 1) of default len multiplications
+	// (differences appear when number of deflen multiplications does not divide by the number of threads)
 
-		MulArgs * args = new MulArgs[res_defChunks_len];
+	uint64_t q;
+	uint64_t r;
 
-        for(int ch = 0; ch < res_defChunks_len; ch++){
+	int worker_cnt;
 
-            args[ch].fst_chunk = c1;
-            args[ch].snd_chunk = c2;
-            args[ch].input_bitlen = bitlenin1;
+	if (thread_count >= res_defChunks_len) {
 
-            args[ch].result = res;
-            args[ch].result_bitlen = bitlenout;
+		q = 1;
+		r = 0;
 
-            args[ch].res_fst_deflen_pos = ch;
-            args[ch].res_snd_deflen_pos = ch + 1;
+		worker_cnt = res_defChunks_len;
+	}
+	else {
 
-            args[ch].fst_chlen = times1;
-            args[ch].snd_chlen = times2;
+		q = res_defChunks_len / thread_count;
+		r = res_defChunks_len % thread_count;
 
-			args[ch].default_len = _defaultLen;
+		worker_cnt = thread_count;
+	}
 
-			args[ch].task_is_done = false;
+	MulArgs * args = new MulArgs[worker_cnt];
 
-            threadpool -> add_task(&chunk_multiply, args + ch);
-        }
+    int prevchnk = 0;
 
-		for (int ch = 0; ch < res_defChunks_len; ch++) {
+    for(int thr = 0; thr < worker_cnt; thr++){
 
-			std:unique_lock <std::mutex> lock(args[ch].done_mutex);
+        args[thr].fst_chunk = c1;
+        args[thr].snd_chunk = c2;
+        args[thr].input_bitlen = bitlenin1;
 
-			args[ch].done.wait(lock, [ch, args]{
-				return args[ch].task_is_done;
-			});
+        args[thr].result = res;
+        args[thr].result_bitlen = bitlenout;
+
+        args[thr].res_fst_deflen_pos = prevchnk;
+        args[thr].res_snd_deflen_pos = prevchnk + q;
+
+		if (r > 0) {
+
+			args[thr].res_snd_deflen_pos += 1;
+			r -= 1;
 		}
+		prevchnk = args[thr].res_snd_deflen_pos;
 
-		return res;
+        args[thr].fst_chlen = times1;
+        args[thr].snd_chlen = times2;
+
+		args[thr].default_len = _defaultLen;
+
+		args[thr].task_is_done = false;
+
+        threadpool -> add_task(&chunk_multiply, args + thr);
     }
-    else{
 
-		MulArgs * args = new MulArgs[thread_count];
+	for (int thr = 0; thr < thread_count; thr++) {
 
-		uint64_t r = res_defChunks_len % thread_count;
-		uint64_t q = res_defChunks_len / thread_count;
+		std::unique_lock <std::mutex> lock(args[thr].done_mutex);
 
-        int prevchnk = 0;
+		args[thr].done.wait(lock, [thr, args] {
+			return args[thr].task_is_done;
+		});
+	}
 
-        for(int tsk = 0; tsk < thread_count; tsk++){
+	delete[] args;
 
-            args[tsk].fst_chunk = c1;
-            args[tsk].snd_chunk = c2;
-            args[tsk].input_bitlen = bitlenin1;
-
-            args[tsk].result = res;
-            args[tsk].result_bitlen = bitlenout;
-
-            args[tsk].res_fst_deflen_pos = prevchnk;
-            args[tsk].res_snd_deflen_pos = prevchnk + q;
-
-			if (r > 0) {
-
-				args[tsk].res_snd_deflen_pos += 1;
-				r -= 1;
-			}
-			prevchnk = args[tsk].res_snd_deflen_pos;
-
-            args[tsk].fst_chlen = times1;
-            args[tsk].snd_chlen = times2;
-
-			args[tsk].default_len = _defaultLen;
-
-			args[tsk].task_is_done = false;
-
-            threadpool -> add_task(&chunk_multiply, args + tsk);
-        }
-
-		for (int tsk = 0; tsk < thread_count; tsk++) {
-
-			std::unique_lock <std::mutex> lock(args[tsk].done_mutex);
-
-			args[tsk].done.wait(lock, [tsk, args] {
-				return args[tsk].task_is_done;
-			});
-		}
-
-		return res;
-    }
+	return res;
 }
 
 #pragma endregion

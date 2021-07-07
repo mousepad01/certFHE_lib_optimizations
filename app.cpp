@@ -54,6 +54,9 @@ void test_res_correct() {
 		int c00 = 0;
 		int c11 = 1;
 
+		if ((((sk.decrypt(c0).getValue() & 0x01) == c00) && ((sk.decrypt(c1).getValue() & 0x01) == c11)) == false)
+			std::cout << "INITIALIZE FAIL\n";
+
 		for (int i = 0; i < 10; i++) {
 
 			int r = rand() % 2;
@@ -79,11 +82,12 @@ void test_res_correct() {
 		}
 
 		c1 *= c0;
-
 		c11 *= c00;
 
 		if ((((sk.decrypt(c0).getValue() & 0x01) == c00) && ((sk.decrypt(c1).getValue() & 0x01) == c11)) == false)
-			std::cout << "aici";
+			std::cout << "FAIL\n";
+		//else
+			//std::cout << "OK\n";
 
 	}
 	std::cout << "done";
@@ -97,9 +101,9 @@ void only_dec_test_time(const int test_count, const int C_MAX_LEN) {
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\add_mul_decr_multithreading_stats\\only_dec_with_all_multithreading_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\add_mul_decr_multithreading_stats\\only_decryption\\only_dec_with_all_multithreading_stats.txt", std::fstream::out | std::fstream::app);
 
-	certFHE::Library::initializeLibrary();
+	certFHE::Library::initializeLibrary(true);
 	certFHE::Context context(1247, 16);
 	certFHE::SecretKey sk(context);
 
@@ -137,7 +141,7 @@ void dec_mul_add_test_time(const int test_count, const int FIRST_LEN = 15, const
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\add_mul_decr_multithreading_stats\\all_no_decr_multithreading_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\add_mul_decr_multithreading_stats\\all_ops\\all_multithreading_stats.txt", std::fstream::out | std::fstream::app);
 
 	certFHE::Library::initializeLibrary();
 	certFHE::Context context(1247, 16);
@@ -395,7 +399,7 @@ int main(){
 
 	//test_res_correct();
 
-	only_dec_test_time(20, 1000000);
+	//only_dec_test_time(20, 1000000);
 
 	//dec_mul_add_test_time(10, 15, 25, 2, 12);
 

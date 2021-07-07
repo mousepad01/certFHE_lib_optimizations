@@ -17,6 +17,8 @@ namespace certFHE{
 		std::condition_variable done;
 		std::mutex done_mutex;
 
+		Args(): task_is_done(false){}
+
 		~Args(){}
 	};
 

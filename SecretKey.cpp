@@ -122,7 +122,7 @@ void certFHE::chunk_decrypt(Args * raw_args) {
 		for (int j = 0; j < args->d; j++) {
 
 			int u64_i = sk[j] / 64;
-			int b = sk[j] % 64;
+			int b = 63 - (sk[j] % 64);
 
 			current_decrypted &= current_chunk[u64_i] >> b;
 		}
@@ -151,14 +151,31 @@ uint64_t SecretKey::decrypt(uint64_t* v,uint64_t len,uint64_t defLen, uint64_t n
 	Threadpool <Args *> * threadpool = Library::getThreadpool();
 	int thread_count = threadpool->THR_CNT;
 
-	DecArgs * args = new DecArgs[thread_count];
+	uint64_t q; 
+	uint64_t r; 
 	
-	uint64_t q = deflen_cnt / thread_count;
-	uint64_t r = deflen_cnt % thread_count;
+	int worker_cnt;
+
+	if (thread_count >= deflen_cnt) {
+
+		q = 1;
+		r = 0;
+
+		worker_cnt = deflen_cnt;
+	}
+	else {
+
+		q = deflen_cnt / thread_count;
+		r = deflen_cnt % thread_count;
+
+		worker_cnt = thread_count;
+	}
+
+	DecArgs * args = new DecArgs[worker_cnt];
 
 	uint64_t prevchnk = 0;
 
-	for (int thr = 0; thr < thread_count; thr++) {
+	for (int thr = 0; thr < worker_cnt; thr++) {
 
 		args[thr].to_decrypt = v;
 		args[thr].sk = this->s;
@@ -177,22 +194,60 @@ uint64_t SecretKey::decrypt(uint64_t* v,uint64_t len,uint64_t defLen, uint64_t n
 		}
 		prevchnk = args[thr].snd_deflen_pos;
 
-		args[thr].decrypted = &dec;
+		args[thr].decrypted = new uint64_t;
 
 		threadpool->add_task(&chunk_decrypt, args + thr);
 	}
 
-	for (int thr = 0; thr < thread_count; thr++) {
+	for (int thr = 0; thr < worker_cnt; thr++) {
 
 		std:unique_lock <std::mutex> lock(args[thr].done_mutex);
 
 		args[thr].done.wait(lock, [thr, args] {
 			return args[thr].task_is_done;
 		});
+
+		dec ^= *(args[thr].decrypted);
 	}
+
+	delete[] args;
 
 	return dec;
 }
+
+/*uint64_t SecretKey::decrypt(uint64_t* v, uint64_t len, uint64_t defLen, uint64_t n, uint64_t d, uint64_t* s, uint64_t* bitlen)
+{
+	//if (len == defLen)
+		//return defaultN_decrypt(v, len, n, d, s, bitlen);
+
+	uint64_t deflen_cnt = len / defLen;
+
+	uint64_t * decrypted = new uint64_t;
+
+	*decrypted = 0;
+
+	//std::cout << "from decr:\n";
+
+	for (uint64_t i = 0; i < deflen_cnt; i++) {
+
+		uint64_t * current_chunk = v + i * defLen;
+		uint64_t current_decrypted = 0x01;
+
+		for (int j = 0; j < d; j++) {
+
+			//std::cout << "j = " << j << ", s[j] = " << s[j] << '\n';
+
+			int u64_i = s[j] / 64;
+			int b = 63 - (s[j] % 64);
+
+			current_decrypted &= current_chunk[u64_i] >> b;
+		}
+
+		*decrypted ^= current_decrypted;
+	}
+
+	return *decrypted;
+}*/
 
 #pragma endregion
 
