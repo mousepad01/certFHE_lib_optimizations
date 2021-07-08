@@ -41,10 +41,9 @@ namespace certFHE
          * @param[in] n: n value from context
          * @param[in] d: d value from context
          * @param[in] s: secret key s
-         * @param[in] bitlen: length in bits of each v[i]
          * @return value: decrypted bit (F2 space)
         **/
-        uint64_t defaultN_decrypt(uint64_t* v,uint64_t len, uint64_t n, uint64_t d, uint64_t* s,uint64_t* bitlen);
+        uint64_t defaultN_decrypt(uint64_t* v,uint64_t len, uint64_t n, uint64_t d, uint64_t* s);
 
         /**
          * Decrypts an encrypted value 
@@ -54,10 +53,9 @@ namespace certFHE
          * @param[in] n: n value from context
          * @param[in] d: d value from context
          * @param[in] s: secret key s
-         * @param[in] bitlen: length in bits of each v[i]
          * @return value: decrypted bit (F2 space)
         **/
-        uint64_t decrypt(uint64_t* v,uint64_t len,uint64_t defLen, uint64_t n, uint64_t d, uint64_t* s,uint64_t* bitlen);
+        uint64_t decrypt(uint64_t* v,uint64_t len,uint64_t defLen, uint64_t n, uint64_t d, uint64_t* s);
 
     public:
 

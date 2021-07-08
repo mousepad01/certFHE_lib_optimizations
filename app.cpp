@@ -11,7 +11,7 @@
 #include "certFHE.h"
 #include "Threadpool.hpp"
 
-static string STATS_PATH = "C:\\Users\\intern.andreis\\Desktop\\certfhe_stats";
+static string STATS_PATH = "C:\\Users\\intern.andreis\\Desktop\\certfhe_stats\\certfhe_nobitlen_stats";
 
 using namespace certFHE;
 
@@ -39,11 +39,13 @@ public:
 */
 void test_res_correct() {
 
-	certFHE::Library::initializeLibrary(true);
+	certFHE::Library::initializeLibrary();
 	certFHE::Context context(1247, 16);
 	certFHE::SecretKey sk(context);
 
-	for (int tst = 0; tst < 10000; tst++) {
+	const int TEST_COUNT = 0; // sansa fals pozition: 2^(-TEST_COUNT)
+
+	for (int tst = 0; tst < TEST_COUNT; tst++) {  // decriptare deflen
 
 		int r = rand() % 2;
 		Plaintext p(r);
@@ -51,10 +53,39 @@ void test_res_correct() {
 		Ciphertext c = sk.encrypt(p);
 
 		if (r != sk.decrypt(c).getValue() & 0x01)
-			std::cout << "FAIL " << r << " " << (sk.decrypt(c).getValue() & 0x01) << '\n';
+			std::cout << "DEFLEN DECRYPTION FAIL " << r << " " << (sk.decrypt(c).getValue() & 0x01) << '\n';
 	}
 
-	for (int tst = 0; tst < 1000; tst++) {
+	for (int tst = 0; tst < 100; tst++) {  // copiere lungime > deflen, adunare, decriptare
+
+		Plaintext paux(1);
+		int pauxn = 1;
+		Ciphertext caux = sk.encrypt(paux);
+
+		for (int i = 0; i < 1000; i++) {
+
+			int r = rand() % 2;
+			Plaintext p(r);
+
+			Ciphertext c = sk.encrypt(p);
+			caux += c;
+
+			pauxn ^= r;
+		}
+
+		Ciphertext caux_c;
+		caux_c = caux;
+
+		Ciphertext caux_c2(caux);
+
+		if ((sk.decrypt(caux).getValue() & 0x01 != pauxn) || 
+			(sk.decrypt(caux_c).getValue() & 0x01 != pauxn) ||
+			(sk.decrypt(caux_c2).getValue() & 0x01 != pauxn))
+
+			std::cout << "COPY FAIL\n";
+	}
+
+	for (int tst = 0; tst < TEST_COUNT; tst++) { // adunare, inmultire, permutare, decriptare
 
 		Plaintext p0(0);
 		Plaintext p1(1);
@@ -65,10 +96,7 @@ void test_res_correct() {
 		int c00 = 0;
 		int c11 = 1;
 
-		if ((((sk.decrypt(c0).getValue() & 0x01) == c00) && ((sk.decrypt(c1).getValue() & 0x01) == c11)) == false)
-			std::cout << "INITIALIZE FAIL\n";
-
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 100; i++) {
 
 			int r = rand() % 2;
 			c00 += r;
@@ -80,7 +108,7 @@ void test_res_correct() {
 			c0 += c;
 		}
 
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 17; i++) {
 
 			int r = rand() % 2;
 			c11 += r;
@@ -95,13 +123,19 @@ void test_res_correct() {
 		c1 *= c0;
 		c11 *= c00;
 
-		if ((((sk.decrypt(c0).getValue() & 0x01) == c00) && ((sk.decrypt(c1).getValue() & 0x01) == c11)) == false)
-			std::cout << "FAIL\n";
+		Permutation perm(context);
+		SecretKey psk = sk.applyPermutation(perm);
+
+		Ciphertext pc0 = c0.applyPermutation(perm);
+		Ciphertext pc1 = c1.applyPermutation(perm);
+
+		if ((((psk.decrypt(pc0).getValue() & 0x01) == c00) && ((psk.decrypt(pc1).getValue() & 0x01) == c11)) == false)
+			std::cout << "ADDITION / MULTIPLICATION / PERMUTATION FAIL \n";
 		//else
 			//std::cout << "OK\n";
 
 	}
-	std::cout << "done";
+	std::cout << "\nTESTS DONE\n\n";
 }
 
 /*
@@ -128,7 +162,7 @@ void only_dec_test_time(const int test_count, const int C_MAX_LEN) {
 		Timervar t;
 		t.start_timer();
 
-		for (int i = 1; i < C_MAX_LEN; i *= 2) {
+		for (int i = 2; i <= C_MAX_LEN; i *= 2) {
 
 			ctxt += ctxt;
 
@@ -152,7 +186,7 @@ void dec_mul_add_test_time(const int test_count, const int FIRST_LEN = 15, const
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\add_mul_decr_multithreading_stats\\all_ops\\all_multithreading_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\no_bitlen_all_multithreading_stats.txt", std::fstream::out | std::fstream::app);
 
 	certFHE::Library::initializeLibrary();
 	certFHE::Context context(1247, 16);
@@ -238,168 +272,208 @@ void dec_mul_add_test_time(const int test_count, const int FIRST_LEN = 15, const
 }
 
 /*
- * Relevant only for multithreading addition and multiplication testing
+ * Relevant only for permutation testing
 */
-void mul_add_test_time(const int test_count, const int FIRST_LEN = 15, const int SECOND_LEN = 25,
-						const int THIRD_LEN = 2, const int ROUND_CNT = 5) {
+void only_perm_test_time(const int test_count, const int C_MAX_LEN) {
 
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\add_mul_multithreading_stats\\mul_add_multithreading_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\only_perm\\no_bitlen_only_perm_all_multithreading_stats.txt", std::fstream::out | std::fstream::app);
 
-	certFHE::Library::initializeLibrary(true);
+	certFHE::Library::initializeLibrary();
 	certFHE::Context context(1247, 16);
-	certFHE::SecretKey seckey(context);
+	certFHE::SecretKey sk(context);
 
 	for (int ts = 0; ts < test_count; ts++) {
 
-		int first_len_cpy = FIRST_LEN;
-		int snd_len_cpy = SECOND_LEN;
-		int trd_len_cpy = THIRD_LEN;
+		f << "TEST\n";
+
+		Plaintext p(rand() % 2);
+		Ciphertext ctxt = sk.encrypt(p);
+
+		Permutation perm(context);
 
 		Timervar t;
-
 		t.start_timer();
 
-		uint64_t ti = t.stop_timer();
-		f << "TEST\n";
-		t.stop_timer();
+		for (int i = 2; i <= C_MAX_LEN; i *= 2) {
 
-		Ciphertext ctxt1, ctxt2, ctxt3;
+			ctxt += ctxt;
 
-		for (int i = 0; i < first_len_cpy; i++) {
-
-			Plaintext p(rand() % 2);
-			Ciphertext c = seckey.encrypt(p);
-
-			if (i == 0)
-				ctxt1 = c;
-			else
-				ctxt1 += c;
-		}
-
-		for (int i = 0; i < snd_len_cpy; i++) {
-
-			Plaintext p(rand() % 2);
-			Ciphertext c = seckey.encrypt(p);
-
-			if (i == 0)
-				ctxt2 = c;
-			else
-				ctxt2 += c;
-		}
-
-		for (int i = 0; i < trd_len_cpy; i++) {
-
-			Plaintext p(rand() % 2);
-			Ciphertext c = seckey.encrypt(p);
-
-			if (i == 0)
-				ctxt3 = c;
-			else
-				ctxt3 += c;
-		}
-
-		t.stop_timer();
-
-		for (int i = 0; i < ROUND_CNT; i++) {
-
-			ctxt1 *= ctxt3;
-			ctxt2 *= ctxt3;
-
-			ctxt1 += ctxt2;
-
-			uint64_t ti = t.stop_timer();
-			f << "round with len1=" << first_len_cpy << " len2=" << snd_len_cpy << " len3=" 
-				<< trd_len_cpy << " time_cost=" << ti << " miliseconds\n";
 			t.stop_timer();
 
-			first_len_cpy *= trd_len_cpy;
-			snd_len_cpy *= trd_len_cpy;
+			Ciphertext pctxt = ctxt.applyPermutation(perm);
 
-			first_len_cpy += snd_len_cpy;
+			uint64_t ti = t.stop_timer();
+
+			f << "permuting len=" << i << " in time_cost=" << ti << " miliseconds\n";
 		}
-
-		f.flush();
 	}
-
-	certFHE::Library::getThreadpool()->close();
 }
 
 /*
- * Relevant only for multiplication multithreading testing
+ * Relevant only for copying testing
 */
-void only_mul_test_time(const int test_count, const int FIRST_LEN = 3, const int SECOND_LEN = 5, const int MUL_CNT = 10) {
-
-	Timervar t;
+void only_cpy_test_time(const int test_count, const int C_MAX_LEN) {
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\only_multiplication_multithreading_stats\\multiplication_multithreading_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\only_cpy\\stats.txt", std::fstream::out | std::fstream::app);
 
-	certFHE::Library::initializeLibrary(true);
+	certFHE::Library::initializeLibrary();
 	certFHE::Context context(1247, 16);
-	certFHE::SecretKey seckey(context);
+	certFHE::SecretKey sk(context);
 
 	for (int ts = 0; ts < test_count; ts++) {
 
-		int first_len_cpy = FIRST_LEN;
-		int snd_len_cpy = SECOND_LEN;
+		f << "TEST\n";
 
 		Timervar t;
-
 		t.start_timer();
 
-		//std::cout << context.getDefaultN();
+		Plaintext paux(1);
+		Ciphertext caux = sk.encrypt(paux);
 
-		uint64_t ti = t.stop_timer();
-		f << "TEST\nafter init context and key init_time=" << ti << " miliseconds\n";
-		t.stop_timer();
+		for (int i = 2; i <= C_MAX_LEN; i *= 2) {
 
-		Ciphertext ctxt1;
+			caux += caux;
 
-		for (int i = 0; i < first_len_cpy; i++) {
-
-			Plaintext p(rand() % 2);
-			Ciphertext c = seckey.encrypt(p);
-
-			if (i == 0)
-				ctxt1 = c;
-			else
-				ctxt1 += c;
-		}
-
-		Ciphertext ctxt2;
-
-		for (int i = 0; i < snd_len_cpy; i++) {
-
-			Plaintext p(rand() % 2);
-			Ciphertext c = seckey.encrypt(p);
-
-			if (i == 0)
-				ctxt2 = c;
-			else
-				ctxt2 += c;
-		}
-
-		t.stop_timer();
-
-		for (int i = 0; i < MUL_CNT; i++) {
-
-			ctxt1 *= ctxt2;
-
-			uint64_t ti = t.stop_timer();
-			f << "mul between len1=" << first_len_cpy << " and len2=" << snd_len_cpy << " time_cost="
-				<< ti << " miliseconds\n";
 			t.stop_timer();
 
-			first_len_cpy *= snd_len_cpy;
-		}
+			Ciphertext caux_c;
+			caux_c = caux;
 
+			Ciphertext caux_c2(caux);
+
+			uint64_t ti = t.stop_timer();
+
+			f << "copy and assignment with len=" << i << " in time_cost=" << ti << " miliseconds\n";
+		}
+	}
+}
+
+/*
+ * Relevant for testing multithreading with threshold
+*/
+void conditional_multithreading_cpy_test_time(const int test_count, const int MAX_L) {
+
+	std::fstream f;
+	f.open(STATS_PATH + "\\conditional_multithreading\\for_cpy\\aabwith_threshold_all_multithreading_stats.txt", std::fstream::out | std::fstream::app);
+
+	certFHE::Library::initializeLibrary(true);
+	certFHE::Context context(1247, 16);
+	certFHE::SecretKey sk(context);
+
+	for (int ts = 0; ts < test_count; ts++) {
+
+		f << "TEST " << 0 << "\n";
+
+		Plaintext paux(1);
+		Ciphertext caux = sk.encrypt(paux);
+
+		for (int i = 1; i < 16; i *= 2)
+			caux += caux;
+
+		Timervar t;
+		t.start_timer();
+
+		MTValues::cpy_m_threshold = 0;
+
+		for (int l = 16; l < MAX_L; l *= 2) {
+
+			t.stop_timer();
+
+			for (int rnd = 0; rnd < 100; rnd++) {
+
+				Ciphertext caux_c;
+				caux_c = caux;
+
+				Ciphertext caux_c2(caux);
+			}
+
+			uint64_t ti2 = t.stop_timer();
+
+			f << "copy and assignment with len=" << l << " time_cost=" << ti2 << '\n';
+
+			caux += caux;
+		}
+		f.flush();
+
+		f << "TEST " << 1000000000 << "\n";
+
+		caux = sk.encrypt(paux);
+
+		for (int i = 1; i < 16; i *= 2)
+			caux += caux;
+
+		t.stop_timer();
+
+		MTValues::cpy_m_threshold = 1000000000;
+
+		for (int l = 16; l < MAX_L; l *= 2) {
+
+			t.stop_timer();
+
+			for (int rnd = 0; rnd < 100; rnd++) {
+
+				Ciphertext caux_c;
+				caux_c = caux;
+
+				Ciphertext caux_c2(caux);
+			}
+
+			uint64_t ti2 = t.stop_timer();
+
+			f << "copy and assignment with len=" << l << " time_cost=" << ti2 << '\n';
+
+			caux += caux;
+		}
 		f.flush();
 	}
+}
 
-	certFHE::Library::getThreadpool()->close();
+void only_cpy_autoselect_test_time(const int test_count, const int C_MAX_LEN) {
+
+	std::fstream f;
+	f.open(STATS_PATH + "\\conditional_multithreading\\for_cpy\\no_autoselect_sequential_stats.txt", std::fstream::out | std::fstream::app);
+
+	certFHE::Library::initializeLibrary();
+	certFHE::Context context(1247, 16);
+	certFHE::SecretKey sk(context);
+
+	//MTValues::cpy_m_threshold_autoselect(context);
+	MTValues::cpy_m_threshold = (1 << 64) - 1;
+
+	for (int ts = 0; ts < test_count; ts++) {
+
+		f << "TEST\n";
+
+		Timervar t;
+		t.start_timer();
+
+		Plaintext paux(1);
+		Ciphertext caux = sk.encrypt(paux);
+
+		for (int i = 2; i <= C_MAX_LEN; i *= 2) {
+
+			caux += caux;
+
+			t.stop_timer();
+
+			for (int rnd = 0; rnd < 200; rnd++) {
+
+				Ciphertext caux_c;
+				caux_c = caux;
+
+				Ciphertext caux_c2(caux);
+			}
+			
+			uint64_t ti = t.stop_timer();
+
+			f << "copy and assignment with len=" << i << " in time_cost=" << ti << " miliseconds\n";
+		}
+		f.flush();
+	}
 }
 
 int main(){
@@ -408,11 +482,19 @@ int main(){
 
 	//mul_add_test_time(20, 15, 25, 2, 15);
 
-	test_res_correct();
+	//test_res_correct();
 
 	//only_dec_test_time(20, 1000000);
 
-	//dec_mul_add_test_time(10, 15, 25, 2, 12);
+	//dec_mul_add_test_time(10, 15, 25, 2, 14);
 
+	//only_perm_test_time(10, 100000);
+
+	//only_cpy_test_time(10, 1000000);
+
+	//conditional_multithreading_cpy_test_time(5, 100000);
+
+	only_cpy_autoselect_test_time(10, 100000);
+	
     return 0;
 }

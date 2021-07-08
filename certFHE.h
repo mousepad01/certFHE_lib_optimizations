@@ -8,5 +8,6 @@
 #include "Context.h"
 #include "Permutation.h"
 #include "Helpers.h"
+#include "GlobalParams.h"
 
 #endif

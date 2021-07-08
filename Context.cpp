@@ -40,7 +40,7 @@ ostream& operator<<(ostream &out, const Context &c)
 	out<<"N= "<<c.getN()<<endl;
 	out<<"D= "<<c.getD()<<endl;
 	out<<"S= "<<c.getS();	
-	out<<endl;
+	out<<'\n';
 	return out;
 }
 

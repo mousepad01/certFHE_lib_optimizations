@@ -1,4 +1,5 @@
 diferite surse parcurse, pe langa documentatiile oficiale
 
+https://pabloariasal.github.io/2020/01/02/static-variable-initialization/
 https://www.chipfire.de/index.php?/archives/12-C++-mutex-performance.html
 https://stackoverflow.com/questions/15752659/thread-pooling-in-c11

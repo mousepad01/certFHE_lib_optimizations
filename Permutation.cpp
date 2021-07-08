@@ -37,11 +37,11 @@ ostream& certFHE::operator<<(ostream &out, const Permutation &p)
     out <<"(";
     for(uint64_t i = 0; i<l;i++)
         out<<i<<" ";
-    out<<")"<<endl;
+    out<<")"<<'\n';
      out <<"(";
     for(uint64_t i = 0; i<l;i++)
         out<<_p[i]<<" ";
-    out<<")"<<endl;
+    out<<")"<<'\n';
     return out;
 }
 

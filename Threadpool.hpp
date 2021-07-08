@@ -9,7 +9,7 @@ namespace certFHE {
 
 		bool closed;
 
-		std::vector <std::thread *> threads;
+		std::vector <std::thread *> * threads;
 		std::queue <std::function <void(T)>> tasks;
 		std::queue <T> tasks_args;
 
@@ -25,7 +25,7 @@ namespace certFHE {
 		/*
 		Thread count 
 		*/
-		static const int THR_CNT;
+		static int THR_CNT;
 
 		/*
 		Thread count automatically initialized with std::thread::hardware_concurrency()
@@ -49,15 +49,24 @@ namespace certFHE {
 	};
 
 	template <typename T>
-	const int Threadpool <T>::THR_CNT = std::thread::hardware_concurrency() != 0 ? std::thread::hardware_concurrency() : 12;
+	int Threadpool <T>::THR_CNT = 0;
 
+	/*
+	 * !!! HAS EFFECT ONLY BEFORE THE THREADPOOL IS USED !!!
+	*/
 	template <typename T>
-	static void set_threadcount(const int new_threadcount) {
-		Threadpool <T>::THR_CNT = new_threadcount;
+	void Threadpool <T>::set_threadcount(int new_threadcount) {
+		THR_CNT = new_threadcount;
 	}
 
 	template <typename T>
-	Threadpool <T>::Threadpool() : threads(THR_CNT) {}
+	Threadpool <T>::Threadpool(){
+
+		if(THR_CNT == 0)
+			THR_CNT = std::thread::hardware_concurrency() != 0 ? std::thread::hardware_concurrency() : 12;
+
+		threads = new std::vector <std::thread *>(THR_CNT);
+	}
 
 	template <typename T>
 	Threadpool<T> * Threadpool <T>::make_threadpool() {
@@ -65,7 +74,7 @@ namespace certFHE {
 		Threadpool * created = new Threadpool();
 
 		for (int i = 0; i < THR_CNT; i++)
-			created->threads[i] = new std::thread(&Threadpool<T>::wait_for_tasks, created);
+			created->threads->at(i) = new std::thread(&Threadpool<T>::wait_for_tasks, created);
 
 		return created;
 	}
@@ -132,7 +141,7 @@ namespace certFHE {
 		this->tasks_condition.notify_all();
 
 		for (int i = 0; i < THR_CNT; i++)
-			this->threads[i]->join();
+			this->threads->at(i)->join();
 	}
 }
 

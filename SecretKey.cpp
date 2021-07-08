@@ -71,24 +71,24 @@ uint64_t* SecretKey::encrypt(unsigned char bit, uint64_t n, uint64_t d, uint64_t
 			}
 
 		if (v == 0x01)
-		res[s[sRandom]] = 0;
+			res[s[sRandom]] = 0;
 		else
-		res[s[sRandom]] = rand() %2;
+			res[s[sRandom]] = rand() %2;
 
 	}
 	return res;
 }
 
-uint64_t SecretKey::defaultN_decrypt(uint64_t* v,uint64_t len, uint64_t n, uint64_t d, uint64_t* s,uint64_t* bitlen)
+uint64_t SecretKey::defaultN_decrypt(uint64_t* v,uint64_t len, uint64_t n, uint64_t d, uint64_t* s)
 {
 	uint64_t decrypted = 0x01;
 
 	for (int j = 0; j < d; j++) {
 
-		int u64_i = s[j] / 64;
+		int u64_j = s[j] / 64;
 		int b = 63 - (s[j] % 64);
 
-		decrypted &= v[u64_i] >> b;
+		decrypted &= v[u64_j] >> b;
 	}
 
 	return decrypted;
@@ -114,10 +114,10 @@ void certFHE::chunk_decrypt(Args * raw_args) {
 
 		for (int j = 0; j < args->d; j++) {
 
-			int u64_i = sk[j] / 64;
+			int u64_j = sk[j] / 64;
 			int b = 63 - (sk[j] % 64);
 
-			current_decrypted &= current_chunk[u64_i] >> b;
+			current_decrypted &= current_chunk[u64_j] >> b;
 		}
 
 		*decrypted ^= current_decrypted;
@@ -125,17 +125,17 @@ void certFHE::chunk_decrypt(Args * raw_args) {
 
 	{
 		std::lock_guard <std::mutex> lock(args->done_mutex);
-		args->task_is_done = true;
-	}
 
-	args->done.notify_all();
+		args->task_is_done = true;
+		args->done.notify_all();
+	}
 }
 
-uint64_t SecretKey::decrypt(uint64_t* v,uint64_t len,uint64_t defLen, uint64_t n, uint64_t d, uint64_t* s,uint64_t* bitlen)
+uint64_t SecretKey::decrypt(uint64_t* v,uint64_t len,uint64_t defLen, uint64_t n, uint64_t d, uint64_t* s)
 {
       
 	if (len == defLen)
-        return defaultN_decrypt(v,len,n,d,s,bitlen);
+        return defaultN_decrypt(v,len,n,d,s);
 
 	uint64_t dec;
 
@@ -175,7 +175,6 @@ uint64_t SecretKey::decrypt(uint64_t* v,uint64_t len,uint64_t defLen, uint64_t n
 
 		args[thr].default_len = defLen;
 		args[thr].d = d;
-		args[thr].n = n;
 
 		args[thr].fst_deflen_pos = prevchnk;
 		args[thr].snd_deflen_pos = prevchnk + q;
@@ -227,12 +226,7 @@ Ciphertext SecretKey::encrypt(Plaintext &plaintext)
 
     unsigned char value = BIT(plaintext.getValue());
     uint64_t * vect =  encrypt(value,n,d,s);
-	uint64_t * _bitlen = new uint64_t [len];
     uint64_t * _encValues = new uint64_t [len];
-
-	for (int i = 0;i<div;i++)
-		_bitlen[i] = sizeof(uint64_t)*8;
-	_bitlen[div] = rem;
 
 	int uint64index = 0;
 	for (int step =0;step<div;step++)
@@ -258,9 +252,8 @@ Ciphertext SecretKey::encrypt(Plaintext &plaintext)
 
 	}
 	
-    Ciphertext c(_encValues,_bitlen,len,*this->certFHEContext);
-    delete [] vect;
-    delete [] _bitlen;    
+    Ciphertext c(_encValues,len,*this->certFHEContext);
+    delete [] vect;  
     delete [] _encValues;
 
     return c;
@@ -279,9 +272,8 @@ Plaintext SecretKey::decrypt(Ciphertext& ciphertext)
 		defLen++;	
 
     uint64_t* _v = ciphertext.getValues();
-    uint64_t* _bitlen = ciphertext.getBitlen();
 
-    uint64_t decV =  decrypt(_v,ciphertext.getLen(),defLen,n,d,s,_bitlen);
+    uint64_t decV =  decrypt(_v,ciphertext.getLen(),defLen,n,d,s);
     return Plaintext(decV);
 }
 
