@@ -1,4 +1,5 @@
 #include "Permutation.h"
+#include "GlobalParams.h"
 
 using namespace certFHE;
 using namespace std;
@@ -136,23 +137,69 @@ Permutation::Permutation()
 
 }
 
-Permutation::Permutation(const uint64_t size) : Permutation()
-{
-     this->permutation = new uint64_t[size];
-     this->length = size;
+Permutation::Permutation(const uint64_t size) {
 
-	uint64_t sRandom = 0;
-	for (int i = 0; i < size; i++)
-		permutation[i] = -1;
+	this->permutation = new uint64_t[size];
+	this->length = size;
 
-	for (int i = 0; i < size; i++)
-	{
-		sRandom = rand() % size;
-		while (Helper::exists(permutation, size, sRandom))
+	if (size < PMValues::perm_gen_threshold) {
+
+		uint64_t sRandom = 0;
+		for (int i = 0; i < size; i++)
+			permutation[i] = -1;
+
+#if _MSC_VER && !__INTEL_COMPILER
+
+		std::random_device csprng;
+
+		for (int i = 0; i < size; i++)
+		{
+			sRandom = csprng() % size;
+			while (Helper::exists(permutation, size, sRandom))
+			{
+				sRandom = csprng() % size;
+			}
+			permutation[i] = sRandom;
+		}
+
+#else
+
+		for (int i = 0; i < size; i++)
 		{
 			sRandom = rand() % size;
+			while (Helper::exists(permutation, size, sRandom))
+			{
+				sRandom = rand() % size;
+			}
+			permutation[i] = sRandom;
 		}
-		permutation[i] = sRandom;
+#endif
+	}
+	else {
+
+		uint64_t sRandom = 0;
+		for (int i = 0; i < size; i++)
+			permutation[i] = i;
+
+#if _MSC_VER && !__INTEL_COMPILER // std::random_devide guaranteed by MSVC to be criptographically secure
+
+		std::random_device csprng;
+
+		for (int i = 0; i < PMValues::perm_gen_threshold * size; i++) {
+
+			int r = csprng();
+			std::swap(permutation[r % size], permutation[(r >> 16) % size]);
+		}
+
+#else // for now, the default (insecure) rand
+
+		for (int i = 0; i < inv_cnt; i++) {
+
+			int r = rand();
+			std::swap(permutation[r % size], permutation[(r >> 16) % size]);
+		}
+
+#endif
 	}
 }
 
@@ -160,7 +207,6 @@ Permutation::Permutation(const Context& context) : Permutation(context.getN())
 {
 
 }        
-
 
 Permutation::Permutation(const uint64_t *perm, const uint64_t len) : Permutation()
 {

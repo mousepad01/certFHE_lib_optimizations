@@ -31,6 +31,8 @@ namespace certFHE{
         **/
         Permutation(const uint64_t *perm, const uint64_t len);
 
+		Permutation(const uint64_t len, int inv_cnt);
+
         /**
          * Custom constructor - generates a random permutation using the N from context
         **/

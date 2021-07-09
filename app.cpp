@@ -713,7 +713,7 @@ void only_perm_autoselect_test_time(const int test_count, const int C_MAX_LEN) {
 	}
 }
 
-void all_autoselect_test_time() {
+void all_autoselect_calc_test_time() {
 
 	certFHE::Library::initializeLibrary(true);
 	certFHE::Context context(1247, 16);
@@ -728,35 +728,72 @@ void all_autoselect_test_time() {
 		<< MTValues::perm_m_threshold << " ";
 }
 
+void perm_generator_autoselect_test_time(const int test_count, const int MAX_PERM_SIZE) {
+
+	std::fstream f;
+	f.open(STATS_PATH + "\\perm_gen_stats\\autoselect_stats.txt", std::fstream::out | std::fstream::app);
+
+	PMValues::perm_gen_threshold_autoselect(false);
+	//std::cout << PMValues::perm_gen_threshold << '\n';
+	//PMValues::perm_gen_threshold = 0;
+	//PMValues::perm_gen_threshold = -1;
+
+	for (int ts = 0; ts < test_count; ts++) {
+
+		f << "TEST\n";
+
+		for (int perm_size = 2; perm_size < MAX_PERM_SIZE; perm_size *= 1.5) {
+
+			uint64_t acc;
+
+			Timervar t;
+			t.start_timer();
+
+			for (int rnd = 0; rnd < 10000; rnd++) 
+				Permutation p(perm_size);
+
+			acc = t.stop_timer();
+
+			f << "perm gen len=" << perm_size << " time_cost=" << acc << '\n';
+		}
+
+		f.flush();
+	}
+}
+
 int main(){
 
-	//only_mul_test_time(25, 3, 2, 22);
+	{
+		//only_mul_test_time(25, 3, 2, 22);
 
-	//mul_add_test_time(20, 15, 25, 2, 15);
+		//mul_add_test_time(20, 15, 25, 2, 15);
 
-	//test_res_correct();
+		//test_res_correct();
 
-	//only_dec_test_time(20, 1000000);
+		//only_dec_test_time(20, 1000000);
 
-	//dec_mul_add_test_time(10, 15, 25, 2, 14);
+		//dec_mul_add_test_time(10, 15, 25, 2, 14);
 
-	//only_perm_test_time(10, 100000);
+		//only_perm_test_time(10, 100000);
 
-	//only_cpy_test_time(10, 1000000);
+		//only_cpy_test_time(10, 1000000);
 
-	//conditional_multithreading_cpy_test_time(5, 100000);
+		//conditional_multithreading_cpy_test_time(5, 100000);
 
-	//only_cpy_autoselect_test_time(10, 100000);
+		//only_cpy_autoselect_test_time(10, 100000);
 
-	//only_dec_autoselect_test_time(10, 100000);
+		//only_dec_autoselect_test_time(10, 100000);
 
-	//only_mul_autoselect_test_time(10, 3, 2, 18);
+		//only_mul_autoselect_test_time(10, 3, 2, 18);
 
-	//only_add_autoselect_test_time(10, 3, 18);
+		//only_add_autoselect_test_time(10, 3, 18);
 
-	//only_perm_autoselect_test_time(10, 1000);
+		//only_perm_autoselect_test_time(10, 1000);
 
-	all_autoselect_test_time();
+		//all_autoselect_calc_test_time();
+	}
+
+	perm_generator_autoselect_test_time(5, 256);
 	
     return 0;
 }

@@ -43,6 +43,25 @@ namespace certFHE {
 		static void m_threshold_autoselect(const Context & context, bool cache_in_file = true, string cache_file_name = "m_thrsh_cache.bin");
 	};
 
+	/*
+	 * Class for permutation parameters
+	 * and their management
+	 */
+	class PMValues {
+
+		static const int AUTOSELECT_TEST_CNT = 3;  // number of tests, to be averaged
+		static const int ROUND_PER_TEST_CNT = 10000;  // number of counted operations per test
+
+		static void __perm_gen_threshold_autoselect();
+
+	public:
+
+		static int inv_factor;  // number of inversions (relative to perm size) to apply when creating a permutation
+		static int perm_gen_threshold;  // threshold used for selecting permutation generation algorithm
+
+		static void perm_gen_threshold_autoselect(bool cache_in_file = true, string cache_file_name = "perm_gen_thrsh_cache.bin");
+	};
+
 }
 
 #endif
