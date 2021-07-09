@@ -1,4 +1,5 @@
 #include "SecretKey.h"
+#include "GlobalParams.h"
 
 using namespace certFHE;
 using namespace std;
@@ -141,68 +142,89 @@ uint64_t SecretKey::decrypt(uint64_t* v,uint64_t len,uint64_t defLen, uint64_t n
 
 	uint64_t deflen_cnt = len / defLen;
 
-	Threadpool <Args *> * threadpool = Library::getThreadpool();
-	int thread_count = threadpool->THR_CNT;
+	if (deflen_cnt < MTValues::dec_m_threshold) {
 
-	uint64_t q; 
-	uint64_t r; 
-	
-	int worker_cnt;
+		for (uint64_t i = 0; i < deflen_cnt; i++) {
 
-	if (thread_count >= deflen_cnt) {
+			uint64_t * current_chunk = v + i * defLen;
+			uint64_t current_decrypted = 0x01;
 
-		q = 1;
-		r = 0;
+			for (int j = 0; j < d; j++) {
 
-		worker_cnt = deflen_cnt;
+				int u64_j = s[j] / 64;
+				int b = 63 - (s[j] % 64);
+
+				current_decrypted &= current_chunk[u64_j] >> b;
+			}
+
+			dec ^= current_decrypted;
+		}
 	}
 	else {
 
-		q = deflen_cnt / thread_count;
-		r = deflen_cnt % thread_count;
+		Threadpool <Args *> * threadpool = Library::getThreadpool();
+		int thread_count = threadpool->THR_CNT;
 
-		worker_cnt = thread_count;
-	}
+		uint64_t q;
+		uint64_t r;
 
-	DecArgs * args = new DecArgs[worker_cnt];
+		int worker_cnt;
 
-	uint64_t prevchnk = 0;
+		if (thread_count >= deflen_cnt) {
 
-	for (int thr = 0; thr < worker_cnt; thr++) {
+			q = 1;
+			r = 0;
 
-		args[thr].to_decrypt = v;
-		args[thr].sk = this->s;
-
-		args[thr].default_len = defLen;
-		args[thr].d = d;
-
-		args[thr].fst_deflen_pos = prevchnk;
-		args[thr].snd_deflen_pos = prevchnk + q;
-
-		if (r > 0) {
-
-			args[thr].snd_deflen_pos += 1;
-			r -= 1;
+			worker_cnt = deflen_cnt;
 		}
-		prevchnk = args[thr].snd_deflen_pos;
+		else {
 
-		args[thr].decrypted = new uint64_t;
+			q = deflen_cnt / thread_count;
+			r = deflen_cnt % thread_count;
 
-		threadpool->add_task(&chunk_decrypt, args + thr);
-	}
+			worker_cnt = thread_count;
+		}
 
-	for (int thr = 0; thr < worker_cnt; thr++) {
+		DecArgs * args = new DecArgs[worker_cnt];
+
+		uint64_t prevchnk = 0;
+
+		for (int thr = 0; thr < worker_cnt; thr++) {
+
+			args[thr].to_decrypt = v;
+			args[thr].sk = this->s;
+
+			args[thr].default_len = defLen;
+			args[thr].d = d;
+
+			args[thr].fst_deflen_pos = prevchnk;
+			args[thr].snd_deflen_pos = prevchnk + q;
+
+			if (r > 0) {
+
+				args[thr].snd_deflen_pos += 1;
+				r -= 1;
+			}
+			prevchnk = args[thr].snd_deflen_pos;
+
+			args[thr].decrypted = new uint64_t;
+
+			threadpool->add_task(&chunk_decrypt, args + thr);
+		}
+
+		for (int thr = 0; thr < worker_cnt; thr++) {
 
 		std:unique_lock <std::mutex> lock(args[thr].done_mutex);
 
-		args[thr].done.wait(lock, [thr, args] {
-			return args[thr].task_is_done;
-		});
+			args[thr].done.wait(lock, [thr, args] {
+				return args[thr].task_is_done;
+			});
 
-		dec ^= *(args[thr].decrypted);
+			dec ^= *(args[thr].decrypted);
+		}
+
+		delete[] args;
 	}
-
-	delete[] args;
 
 	return dec;
 }

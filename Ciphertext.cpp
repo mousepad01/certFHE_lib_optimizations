@@ -55,66 +55,90 @@ void Ciphertext::applyPermutation_inplace(const Permutation& permutation)
 
 	uint64_t deflen_cnt = len / default_len;
 
-	Threadpool <Args *> * threadpool = Library::getThreadpool();
-	int thread_count = threadpool->THR_CNT;
+	if (deflen_cnt < MTValues::perm_m_threshold) {
 
-	uint64_t q;
-	uint64_t r;
+		uint64_t n = this->certFHEcontext->getN();
 
-	int worker_cnt;
+		for (uint64_t i = 0; i < deflen_cnt; i++) {
 
-	if (thread_count >= deflen_cnt) {
+			uint64_t * current_chunk_original = this->v + i * default_len;
+			uint64_t * current_chunk_result = result_v + i * default_len;
 
-		q = 1;
-		r = 0;
+			for (uint64_t k = 0; k < n; k++) {
 
-		worker_cnt = deflen_cnt;
+				int u64_k = k / 64;
+				int b_k = 63 - (k % 64);
+
+				int u64_p = perm[k] / 64;
+				int b_p = 63 - (perm[k] % 64);
+
+				current_chunk_result[u64_k] |= ((current_chunk_original[u64_p] >> b_p) & 0x01) << b_k;
+			}
+		}
 	}
 	else {
 
-		q = deflen_cnt / thread_count;
-		r = deflen_cnt % thread_count;
+		Threadpool <Args *> * threadpool = Library::getThreadpool();
+		int thread_count = threadpool->THR_CNT;
 
-		worker_cnt = thread_count;
-	}
+		uint64_t q;
+		uint64_t r;
 
-	PermArgs * args = new PermArgs[worker_cnt];
+		int worker_cnt;
 
-	int prevchnk = 0;
+		if (thread_count >= deflen_cnt) {
 
-	for (int thr = 0; thr < worker_cnt; thr++) {
+			q = 1;
+			r = 0;
 
-		args[thr].perm = perm;
-
-		args[thr].original_c = this->v;
-		args[thr].result_c = result_v;
-
-		args[thr].fst_deflen_pos = prevchnk;
-		args[thr].snd_deflen_pos = prevchnk + q;
-
-		if (r > 0) {
-
-			args[thr].snd_deflen_pos += 1;
-			r -= 1;
+			worker_cnt = deflen_cnt;
 		}
-		prevchnk = args[thr].snd_deflen_pos;
+		else {
 
-		args[thr].n = this->certFHEcontext->getN();
-		args[thr].default_len = default_len;
+			q = deflen_cnt / thread_count;
+			r = deflen_cnt % thread_count;
 
-		threadpool->add_task(&chunk_permute, args + thr);
+			worker_cnt = thread_count;
+		}
+
+		PermArgs * args = new PermArgs[worker_cnt];
+
+		int prevchnk = 0;
+
+		for (int thr = 0; thr < worker_cnt; thr++) {
+
+			args[thr].perm = perm;
+
+			args[thr].original_c = this->v;
+			args[thr].result_c = result_v;
+
+			args[thr].fst_deflen_pos = prevchnk;
+			args[thr].snd_deflen_pos = prevchnk + q;
+
+			if (r > 0) {
+
+				args[thr].snd_deflen_pos += 1;
+				r -= 1;
+			}
+			prevchnk = args[thr].snd_deflen_pos;
+
+			args[thr].n = this->certFHEcontext->getN();
+			args[thr].default_len = default_len;
+
+			threadpool->add_task(&chunk_permute, args + thr);
+		}
+
+		for (int thr = 0; thr < worker_cnt; thr++) {
+
+			std::unique_lock <std::mutex> lock(args[thr].done_mutex);
+
+			args[thr].done.wait(lock, [thr, args] {
+				return args[thr].task_is_done;
+			});
+		}
+
+		delete[] args;
 	}
-
-	for (int thr = 0; thr < worker_cnt; thr++) {
-
-		std::unique_lock <std::mutex> lock(args[thr].done_mutex);
-
-		args[thr].done.wait(lock, [thr, args] {
-			return args[thr].task_is_done;
-		});
-	}
-
-	delete[] args;
 
 	delete[] this->v;
 	this->v = result_v;
@@ -172,17 +196,13 @@ uint64_t* Ciphertext::add(uint64_t* c1, uint64_t* c2, uint64_t len1, uint64_t le
 	uint64_t* res = new uint64_t[len1 + len2];
 	newlen = len1 + len2;
 
-	if (newlen < 10000) {
+	if (newlen < MTValues::add_m_threshold) {
 
 		for (int i = 0; i < len1; i++)
-		{
 			res[i] = c1[i];
-		}
 
 		for (int i = 0; i < len2; i++)
-		{
 			res[i + len1] = c2[i];
-		}
 	}
 	else {
 
@@ -286,70 +306,84 @@ uint64_t* Ciphertext::multiply(const Context& ctx, uint64_t *c1, uint64_t*c2, ui
 	uint64_t times1 = len1 / _defaultLen;
 	uint64_t times2 = len2 / _defaultLen;
 
-	Threadpool <Args *> * threadpool = Library::getThreadpool();
+	if (newlen < MTValues::mul_m_threshold) {
 
-	int thread_count = threadpool->THR_CNT;
-	uint64_t res_defChunks_len = times1 * times2;
+		for (uint64_t i = 0; i < newlen; i++) {
 
-	uint64_t q;
-	uint64_t r;
+			uint64_t fst_ch_i = (i / times2) * _defaultLen;
+			uint64_t snd_ch_j = (i % times2) * _defaultLen;
 
-	int worker_cnt;
-
-	if (thread_count >= res_defChunks_len) {
-
-		q = 1;
-		r = 0;
-
-		worker_cnt = res_defChunks_len;
+			for (int k = 0; k < _defaultLen; k++)
+				res[i * _defaultLen + k] = c1[fst_ch_i + k] & c2[snd_ch_j + k];
+		}
 	}
 	else {
 
-		q = res_defChunks_len / thread_count;
-		r = res_defChunks_len % thread_count;
+		Threadpool <Args *> * threadpool = Library::getThreadpool();
 
-		worker_cnt = thread_count;
-	}
+		int thread_count = threadpool->THR_CNT;
+		uint64_t res_defChunks_len = times1 * times2;
 
-	MulArgs * args = new MulArgs[worker_cnt];
+		uint64_t q;
+		uint64_t r;
 
-	int prevchnk = 0;
+		int worker_cnt;
 
-	for (int thr = 0; thr < worker_cnt; thr++) {
+		if (thread_count >= res_defChunks_len) {
 
-		args[thr].fst_chunk = c1;
-		args[thr].snd_chunk = c2;
+			q = 1;
+			r = 0;
 
-		args[thr].result = res;
-
-		args[thr].res_fst_deflen_pos = prevchnk;
-		args[thr].res_snd_deflen_pos = prevchnk + q;
-
-		if (r > 0) {
-
-			args[thr].res_snd_deflen_pos += 1;
-			r -= 1;
+			worker_cnt = res_defChunks_len;
 		}
-		prevchnk = args[thr].res_snd_deflen_pos;
+		else {
 
-		args[thr].fst_chlen = times1;
-		args[thr].snd_chlen = times2;
+			q = res_defChunks_len / thread_count;
+			r = res_defChunks_len % thread_count;
 
-		args[thr].default_len = _defaultLen;
+			worker_cnt = thread_count;
+		}
 
-		threadpool->add_task(&chunk_multiply, args + thr);
+		MulArgs * args = new MulArgs[worker_cnt];
+
+		int prevchnk = 0;
+
+		for (int thr = 0; thr < worker_cnt; thr++) {
+
+			args[thr].fst_chunk = c1;
+			args[thr].snd_chunk = c2;
+
+			args[thr].result = res;
+
+			args[thr].res_fst_deflen_pos = prevchnk;
+			args[thr].res_snd_deflen_pos = prevchnk + q;
+
+			if (r > 0) {
+
+				args[thr].res_snd_deflen_pos += 1;
+				r -= 1;
+			}
+			prevchnk = args[thr].res_snd_deflen_pos;
+
+			args[thr].fst_chlen = times1;
+			args[thr].snd_chlen = times2;
+
+			args[thr].default_len = _defaultLen;
+
+			threadpool->add_task(&chunk_multiply, args + thr);
+		}
+
+		for (int thr = 0; thr < worker_cnt; thr++) {
+
+			std::unique_lock <std::mutex> lock(args[thr].done_mutex);
+
+			args[thr].done.wait(lock, [thr, args] {
+				return args[thr].task_is_done;
+			});
+		}
+
+		delete[] args;
 	}
-
-	for (int thr = 0; thr < worker_cnt; thr++) {
-
-		std::unique_lock <std::mutex> lock(args[thr].done_mutex);
-
-		args[thr].done.wait(lock, [thr, args] {
-			return args[thr].task_is_done;
-		});
-	}
-
-	delete[] args;
 
 	return res;
 }

@@ -43,7 +43,9 @@ void test_res_correct() {
 	certFHE::Context context(1247, 16);
 	certFHE::SecretKey sk(context);
 
-	const int TEST_COUNT = 0; // sansa fals pozition: 2^(-TEST_COUNT)
+	MTValues::dec_m_threshold_autoselect(context);
+
+	const int TEST_COUNT = 10; // sansa fals pozition: 2^(-TEST_COUNT)
 
 	for (int tst = 0; tst < TEST_COUNT; tst++) {  // decriptare deflen
 
@@ -56,13 +58,13 @@ void test_res_correct() {
 			std::cout << "DEFLEN DECRYPTION FAIL " << r << " " << (sk.decrypt(c).getValue() & 0x01) << '\n';
 	}
 
-	for (int tst = 0; tst < 100; tst++) {  // copiere lungime > deflen, adunare, decriptare
+	for (int tst = 0; tst < TEST_COUNT; tst++) {  // copiere lungime > deflen, adunare, decriptare
 
 		Plaintext paux(1);
 		int pauxn = 1;
 		Ciphertext caux = sk.encrypt(paux);
 
-		for (int i = 0; i < 1000; i++) {
+		for (int i = 0; i < 100; i++) {
 
 			int r = rand() % 2;
 			Plaintext p(r);
@@ -435,14 +437,13 @@ void conditional_multithreading_cpy_test_time(const int test_count, const int MA
 void only_cpy_autoselect_test_time(const int test_count, const int C_MAX_LEN) {
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\conditional_multithreading\\for_cpy\\no_autoselect_sequential_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\conditional_multithreading\\for_cpy\\autoselect_sequential_stats.txt", std::fstream::out | std::fstream::app);
 
 	certFHE::Library::initializeLibrary();
 	certFHE::Context context(1247, 16);
 	certFHE::SecretKey sk(context);
 
-	//MTValues::cpy_m_threshold_autoselect(context);
-	MTValues::cpy_m_threshold = (1 << 64) - 1;
+	MTValues::cpy_m_threshold_autoselect(context);
 
 	for (int ts = 0; ts < test_count; ts++) {
 
@@ -476,6 +477,46 @@ void only_cpy_autoselect_test_time(const int test_count, const int C_MAX_LEN) {
 	}
 }
 
+void only_dec_autoselect_test_time(const int test_count, const int C_MAX_LEN) {
+
+	Timervar t;
+
+	std::fstream f;
+	f.open(STATS_PATH + "\\conditional_multithreading\\for_dec\\no_autoselect_multithreading_stats.txt", std::fstream::out | std::fstream::app);
+
+	certFHE::Library::initializeLibrary(true);
+	certFHE::Context context(1247, 16);
+	certFHE::SecretKey sk(context);
+
+	//MTValues::dec_m_threshold_autoselect(context);
+	MTValues::dec_m_threshold = 0;
+
+	for (int ts = 0; ts < test_count; ts++) {
+
+		f << "TEST\n";
+
+		Plaintext p(rand() % 2);
+		Ciphertext ctxt = sk.encrypt(p);
+
+		Timervar t;
+		t.start_timer();
+
+		for (int i = 2; i <= C_MAX_LEN; i *= 2) {
+
+			ctxt += ctxt;
+
+			t.stop_timer();
+
+			for(int rnd = 0; rnd < 200; rnd++)
+				sk.decrypt(ctxt);
+
+			uint64_t ti = t.stop_timer();
+
+			f << "decrypting len=" << i << " in time_cost=" << ti << " miliseconds\n";
+		}
+	}
+}
+
 int main(){
 
 	//only_mul_test_time(25, 3, 2, 22);
@@ -494,7 +535,9 @@ int main(){
 
 	//conditional_multithreading_cpy_test_time(5, 100000);
 
-	only_cpy_autoselect_test_time(10, 100000);
+	//only_cpy_autoselect_test_time(10, 100000);
+
+	only_dec_autoselect_test_time(10, 100000);
 	
     return 0;
 }
