@@ -7,8 +7,8 @@ namespace certFHE {
 	uint64_t MTValues::mul_m_threshold = 0;
 	uint64_t MTValues::add_m_threshold = 0;
 	uint64_t MTValues::perm_m_threshold = 0;
-	
-	void MTValues::cpy_m_threshold_autoselect(const Context & context) {
+
+	void MTValues::__cpy_m_threshold_autoselect(const Context & context) {
 
 		const int MAX_L_LOG = 15;
 		const int MAX_L = 1 << MAX_L_LOG;
@@ -27,16 +27,16 @@ namespace certFHE {
 		for (int ts = 0; ts < AUTOSELECT_TEST_CNT; ts++) {
 
 			for (int i = 0; i < MAX_L * deflen; i++)
-				src[i] = (rand() << 48) | (rand() << 16); 
+				src[i] = (rand() << 48) | (rand() << 16);
 
 			for (int pow = 4; pow < MAX_L_LOG; pow++) {
 
 				Timer timer("copy_m_threshold_autoselect_timer");
 				timer.start();
 
-				for (int rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++) 
+				for (int rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++)
 					Helper::u64_multithread_cpy(src, dest, (1 << pow) * deflen);
-					
+
 				observed_multithreading[pow] += timer.stop();
 			}
 
@@ -68,8 +68,8 @@ namespace certFHE {
 
 		MTValues::cpy_m_threshold = 1 << threshold_log;
 	}
-
-	void MTValues::dec_m_threshold_autoselect(const Context & context) {
+	
+	void MTValues::__dec_m_threshold_autoselect(const Context & context) {
 
 		const int MAX_L_LOG = 14;
 		const int MAX_L = 1 << MAX_L_LOG;
@@ -135,10 +135,9 @@ namespace certFHE {
 				break;
 
 		MTValues::dec_m_threshold = 1 << threshold_log;
-
 	}
 
-	void MTValues::mul_m_threshold_autoselect(const Context & context) {
+	void MTValues::__mul_m_threshold_autoselect(const Context & context) {
 
 		const int MAX_L_LOG = 14;
 		const int MAX_L = 1 << MAX_L_LOG;
@@ -242,7 +241,7 @@ namespace certFHE {
 		MTValues::mul_m_threshold = 1 << threshold_log;
 	}
 
-	void MTValues::add_m_threshold_autoselect(const Context & context) {
+	void MTValues::__add_m_threshold_autoselect(const Context & context) {
 
 		const int MAX_L_LOG = 16;
 		const int MAX_L = 1 << MAX_L_LOG;
@@ -268,10 +267,10 @@ namespace certFHE {
 				Plaintext p(rand() % 2);
 				Ciphertext c = sk.encrypt(p);
 
-				if (i == 0) 
+				if (i == 0)
 					ctxt = c;
-		
-				else 
+
+				else
 					ctxt += c;
 			}
 
@@ -338,7 +337,7 @@ namespace certFHE {
 		MTValues::add_m_threshold = 1 << threshold_log;
 	}
 
-	void MTValues::perm_m_threshold_autoselect(const Context & context) {
+	void MTValues::__perm_m_threshold_autoselect(const Context & context) {
 
 		const int MAX_L_LOG = 6;
 		const int MAX_L = 1 << MAX_L_LOG;
@@ -411,6 +410,295 @@ namespace certFHE {
 				break;
 
 		MTValues::perm_m_threshold = 1 << threshold_log;
+	}
+
+	void MTValues::cpy_m_threshold_autoselect(const Context & context, bool cache_in_file, string cache_file_name) {
+
+		if (cache_in_file) {
+
+			std::fstream cache(cache_file_name, std::ios::binary | std::ios::out | std::ios::in);
+
+			if (cache.is_open()) {
+
+				uint64_t cpy_m_thrsh_cached;
+				cache.read((char *)&cpy_m_thrsh_cached, sizeof(uint64_t));
+
+				if (cache) {
+
+					MTValues::cpy_m_threshold = cpy_m_thrsh_cached;
+					return;
+				}
+				else {
+
+					std::fstream new_cache(cache_file_name, std::ios::out | std::ios::binary);
+
+					__cpy_m_threshold_autoselect(context);
+					new_cache.write((char *)&MTValues::cpy_m_threshold, sizeof(uint64_t));
+
+					new_cache.close();
+				}
+
+				cache.close();
+			}
+			else {
+
+				std::fstream new_cache(cache_file_name, std::ios::out | std::ios::binary);
+
+				__cpy_m_threshold_autoselect(context);
+				new_cache.write((char *)&MTValues::cpy_m_threshold, sizeof(uint64_t));
+
+				new_cache.close();
+			}
+		}
+		else
+			__cpy_m_threshold_autoselect(context);
+
+	}
+
+	void MTValues::dec_m_threshold_autoselect(const Context & context, bool cache_in_file, string cache_file_name) {
+
+		if (cache_in_file) {
+
+			std::fstream cache(cache_file_name, std::ios::binary | std::ios::out | std::ios::in);
+
+			if (cache.is_open()) {
+
+				uint64_t dec_m_thrsh_cached;
+				cache.read((char *)&dec_m_thrsh_cached, sizeof(uint64_t));
+
+				if (cache) {
+
+					MTValues::dec_m_threshold = dec_m_thrsh_cached;
+					return;
+				}
+				else {
+
+					std::fstream new_cache(cache_file_name, std::ios::out | std::ios::binary);
+
+					__cpy_m_threshold_autoselect(context);
+					new_cache.write((char *)&MTValues::cpy_m_threshold, sizeof(uint64_t));
+
+					new_cache.close();
+				}
+
+				cache.close();
+			}
+			else {
+
+				std::fstream new_cache(cache_file_name, std::ios::out | std::ios::binary);
+
+				__dec_m_threshold_autoselect(context);
+				new_cache.write((char *)&MTValues::dec_m_threshold, sizeof(uint64_t));
+
+				new_cache.close();
+			}
+		}
+		else
+			__dec_m_threshold_autoselect(context);
+	}
+
+	void MTValues::mul_m_threshold_autoselect(const Context & context, bool cache_in_file, string cache_file_name) {
+
+		if (cache_in_file) {
+
+			std::fstream cache(cache_file_name, std::ios::binary | std::ios::out | std::ios::in);
+
+			if (cache.is_open()) {
+
+				uint64_t mul_m_thrsh_cached;
+				cache.read((char *)&mul_m_thrsh_cached, sizeof(uint64_t));
+
+				if (cache) {
+
+					MTValues::mul_m_threshold = mul_m_thrsh_cached;
+					return;
+				}
+				else {
+
+					std::fstream new_cache(cache_file_name, std::ios::out | std::ios::binary);
+
+					__cpy_m_threshold_autoselect(context);
+					new_cache.write((char *)&MTValues::cpy_m_threshold, sizeof(uint64_t));
+
+					new_cache.close();
+				}
+
+				cache.close();
+			}
+			else {
+
+				std::fstream new_cache(cache_file_name, std::ios::out | std::ios::binary);
+
+				__mul_m_threshold_autoselect(context);
+				new_cache.write((char *)&MTValues::mul_m_threshold, sizeof(uint64_t));
+
+				new_cache.close();
+			}
+		}
+		else
+			__mul_m_threshold_autoselect(context);
+	}
+
+	void MTValues::add_m_threshold_autoselect(const Context & context, bool cache_in_file, string cache_file_name) {
+
+		if (cache_in_file) {
+
+			std::fstream cache(cache_file_name, std::ios::binary | std::ios::out | std::ios::in);
+
+			if (cache.is_open()) {
+
+				uint64_t add_m_thrsh_cached;
+				cache.read((char *)&add_m_thrsh_cached, sizeof(uint64_t));
+
+				if (cache) {
+
+					MTValues::add_m_threshold = add_m_thrsh_cached;
+					return;
+				}
+				else {
+
+					std::fstream new_cache(cache_file_name, std::ios::out | std::ios::binary);
+
+					__cpy_m_threshold_autoselect(context);
+					new_cache.write((char *)&MTValues::cpy_m_threshold, sizeof(uint64_t));
+
+					new_cache.close();
+				}
+
+				cache.close();
+			}
+			else {
+
+				std::fstream new_cache(cache_file_name, std::ios::out | std::ios::binary);
+
+				__add_m_threshold_autoselect(context);
+				new_cache.write((char *)&MTValues::add_m_threshold, sizeof(uint64_t));
+
+				new_cache.close();
+			}
+		}
+		else
+			__add_m_threshold_autoselect(context);
+	}
+
+	void MTValues::perm_m_threshold_autoselect(const Context & context, bool cache_in_file, string cache_file_name) {
+
+		if (cache_in_file) {
+
+			std::fstream cache(cache_file_name, std::ios::binary | std::ios::out | std::ios::in);
+
+			if (cache.is_open()) {
+
+				uint64_t perm_m_thrsh_cached;
+				cache.read((char *)&perm_m_thrsh_cached, sizeof(uint64_t));
+
+				if (cache) {
+
+					MTValues::perm_m_threshold = perm_m_thrsh_cached;
+					return;
+				}
+				else {
+
+					std::fstream new_cache(cache_file_name, std::ios::out | std::ios::binary);
+
+					__cpy_m_threshold_autoselect(context);
+					new_cache.write((char *)&MTValues::cpy_m_threshold, sizeof(uint64_t));
+
+					new_cache.close();
+				}
+
+				cache.close();
+			}
+			else {
+
+				std::fstream new_cache(cache_file_name, std::ios::out | std::ios::binary);
+
+				__perm_m_threshold_autoselect(context);
+				new_cache.write((char *)&MTValues::perm_m_threshold, sizeof(uint64_t));
+
+				new_cache.close();
+			}
+		}
+		else
+			__perm_m_threshold_autoselect(context);
+	}
+
+	void MTValues::m_threshold_autoselect(const Context & context, bool cache_in_file, string cache_file_name) {
+
+		if (cache_in_file) {
+
+			std::fstream cache(cache_file_name, std::ios::binary | std::ios::out | std::ios::in);
+
+			if (cache.is_open()) {
+
+				uint64_t cpy_m_thrsh_cached;
+				uint64_t dec_m_thrsh_cached;
+				uint64_t mul_m_thrsh_cached;
+				uint64_t add_m_thrsh_cached;
+				uint64_t perm_m_thrsh_cached;
+
+				cache.read((char *)&cpy_m_thrsh_cached, sizeof(uint64_t));
+				cache.read((char *)&dec_m_thrsh_cached, sizeof(uint64_t));
+				cache.read((char *)&mul_m_thrsh_cached, sizeof(uint64_t));
+				cache.read((char *)&add_m_thrsh_cached, sizeof(uint64_t));
+				cache.read((char *)&perm_m_thrsh_cached, sizeof(uint64_t));
+
+				if (cache) {
+
+					MTValues::cpy_m_threshold = cpy_m_thrsh_cached;
+					MTValues::dec_m_threshold = dec_m_thrsh_cached;
+					MTValues::mul_m_threshold = mul_m_thrsh_cached;
+					MTValues::add_m_threshold = add_m_thrsh_cached;
+					MTValues::perm_m_threshold = perm_m_thrsh_cached;
+				}
+				else {
+
+					std::fstream new_cache(cache_file_name, std::ios::out | std::ios::binary);
+
+					__cpy_m_threshold_autoselect(context);
+					__dec_m_threshold_autoselect(context);
+					__mul_m_threshold_autoselect(context);
+					__add_m_threshold_autoselect(context);
+					__perm_m_threshold_autoselect(context);
+
+					new_cache.write((char *)&MTValues::cpy_m_threshold, sizeof(uint64_t));
+					new_cache.write((char *)&MTValues::dec_m_threshold, sizeof(uint64_t));
+					new_cache.write((char *)&MTValues::mul_m_threshold, sizeof(uint64_t));
+					new_cache.write((char *)&MTValues::add_m_threshold, sizeof(uint64_t));
+					new_cache.write((char *)&MTValues::perm_m_threshold, sizeof(uint64_t));
+
+					new_cache.close();
+				}
+
+				cache.close();
+			}
+			else {
+
+				std::fstream new_cache(cache_file_name, std::ios::out | std::ios::binary);
+
+				__cpy_m_threshold_autoselect(context);
+				__dec_m_threshold_autoselect(context);
+				__mul_m_threshold_autoselect(context);
+				__add_m_threshold_autoselect(context);
+				__perm_m_threshold_autoselect(context);
+
+				new_cache.write((char *)&MTValues::cpy_m_threshold, sizeof(uint64_t));
+				new_cache.write((char *)&MTValues::dec_m_threshold, sizeof(uint64_t));
+				new_cache.write((char *)&MTValues::mul_m_threshold, sizeof(uint64_t));
+				new_cache.write((char *)&MTValues::add_m_threshold, sizeof(uint64_t));
+				new_cache.write((char *)&MTValues::perm_m_threshold, sizeof(uint64_t));
+
+				new_cache.close();
+			}
+		}
+		else {
+
+			__cpy_m_threshold_autoselect(context);
+			__dec_m_threshold_autoselect(context);
+			__mul_m_threshold_autoselect(context);
+			__add_m_threshold_autoselect(context);
+			__perm_m_threshold_autoselect(context);
+		}
 	}
 
 }

@@ -673,6 +673,7 @@ void only_perm_autoselect_test_time(const int test_count, const int C_MAX_LEN) {
 	certFHE::Context context(1247, 16);
 	certFHE::SecretKey sk(context);
 
+
 	//MTValues::perm_m_threshold_autoselect(context);
 	MTValues::perm_m_threshold = -1;
 
@@ -712,6 +713,21 @@ void only_perm_autoselect_test_time(const int test_count, const int C_MAX_LEN) {
 	}
 }
 
+void all_autoselect_test_time() {
+
+	certFHE::Library::initializeLibrary(true);
+	certFHE::Context context(1247, 16);
+	certFHE::SecretKey sk(context);
+
+	MTValues::m_threshold_autoselect(context);
+
+	std::cout << MTValues::cpy_m_threshold << " "
+		<< MTValues::dec_m_threshold << " "
+		<< MTValues::mul_m_threshold << " "
+		<< MTValues::add_m_threshold << " "
+		<< MTValues::perm_m_threshold << " ";
+}
+
 int main(){
 
 	//only_mul_test_time(25, 3, 2, 22);
@@ -738,7 +754,9 @@ int main(){
 
 	//only_add_autoselect_test_time(10, 3, 18);
 
-	only_perm_autoselect_test_time(10, 1000);
+	//only_perm_autoselect_test_time(10, 1000);
+
+	all_autoselect_test_time();
 	
     return 0;
 }
