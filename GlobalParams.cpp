@@ -7,7 +7,7 @@ namespace certFHE {
 	uint64_t MTValues::mul_m_threshold = 0;
 	uint64_t MTValues::add_m_threshold = 0;
 	uint64_t MTValues::perm_m_threshold = 0;
-
+	
 	void MTValues::cpy_m_threshold_autoselect(const Context & context) {
 
 		const int MAX_L_LOG = 15;
@@ -71,7 +71,7 @@ namespace certFHE {
 
 	void MTValues::dec_m_threshold_autoselect(const Context & context) {
 
-		const int MAX_L_LOG = 15;
+		const int MAX_L_LOG = 14;
 		const int MAX_L = 1 << MAX_L_LOG;
 
 		double observed_multithreading[MAX_L_LOG];
@@ -89,7 +89,7 @@ namespace certFHE {
 			Plaintext p(rand() % 2);
 			Ciphertext ctxt = sk.encrypt(p);
 
-			for (int pow = 2; pow <= MAX_L_LOG; pow += 1) {
+			for (int pow = 1; pow <= MAX_L_LOG; pow += 1) {
 
 				ctxt += ctxt;
 
@@ -109,7 +109,7 @@ namespace certFHE {
 			p = Plaintext(rand() % 2);
 			ctxt = sk.encrypt(p);
 
-			for (int pow = 2; pow <= MAX_L_LOG; pow += 1) {
+			for (int pow = 1; pow <= MAX_L_LOG; pow += 1) {
 
 				ctxt += ctxt;
 
@@ -125,21 +125,22 @@ namespace certFHE {
 			}
 		}
 
-		//for (int threshold_log = 2; threshold_log < MAX_L_LOG; threshold_log++)
+		//for (int threshold_log = 1; threshold_log < MAX_L_LOG; threshold_log++)
 			//std::cout << observed_multithreading[threshold_log] << " " << observed_sequential[threshold_log] << '\n';
 
 		int threshold_log;
-		for (threshold_log = 2; threshold_log < MAX_L_LOG; threshold_log++)
+		for (threshold_log = 1; threshold_log < MAX_L_LOG; threshold_log++)
 
 			if (observed_multithreading[threshold_log] <= observed_sequential[threshold_log])
 				break;
 
 		MTValues::dec_m_threshold = 1 << threshold_log;
+
 	}
 
 	void MTValues::mul_m_threshold_autoselect(const Context & context) {
 
-		const int MAX_L_LOG = 15;
+		const int MAX_L_LOG = 14;
 		const int MAX_L = 1 << MAX_L_LOG;
 
 		double observed_multithreading[MAX_L_LOG];
@@ -175,14 +176,21 @@ namespace certFHE {
 				}
 			}
 
-			for (int pow = 4; pow < MAX_L_LOG; pow++) {
+			for (int pow = 2; pow < MAX_L_LOG; pow++) {
 
-				Timer timer;
-				timer.start();
+				for (int rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++) {
+
+					Ciphertext aux_c(ctxt1);
+
+					Timer timer;
+					timer.start();
+
+					aux_c *= ctxt2;
+
+					observed_multithreading[pow] += timer.stop();
+				}
 
 				ctxt1 *= ctxt2;
-
-				observed_sequential[pow] += timer.stop();
 			}
 
 			MTValues::mul_m_threshold = -1; // 0xFF FF FF FF FF FF FF FF
@@ -204,19 +212,26 @@ namespace certFHE {
 				}
 			}
 
-			for (int pow = 4; pow < MAX_L_LOG; pow++) {
+			for (int pow = 2; pow < MAX_L_LOG; pow++) {
 
-				Timer timer;
-				timer.start();
+				for (int rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++) {
+
+					Ciphertext aux_c(ctxt1);
+
+					Timer timer;
+					timer.start();
+
+					aux_c *= ctxt2;
+
+					observed_sequential[pow] += timer.stop();
+				}
 
 				ctxt1 *= ctxt2;
-
-				observed_sequential[pow] += timer.stop();
 			}
 		}
 
-		for (int threshold_log = 2; threshold_log < MAX_L_LOG; threshold_log++)
-			std::cout << observed_multithreading[threshold_log] << " " << observed_sequential[threshold_log] << '\n';
+		//for (int threshold_log = 2; threshold_log < MAX_L_LOG; threshold_log++)
+			//std::cout << observed_multithreading[threshold_log] << " " << observed_sequential[threshold_log] << '\n';
 
 		int threshold_log;
 		for (threshold_log = 2; threshold_log < MAX_L_LOG; threshold_log++)
@@ -229,7 +244,7 @@ namespace certFHE {
 
 	void MTValues::add_m_threshold_autoselect(const Context & context) {
 
-		const int MAX_L_LOG = 15;
+		const int MAX_L_LOG = 16;
 		const int MAX_L = 1 << MAX_L_LOG;
 
 		double observed_multithreading[MAX_L_LOG];
@@ -242,13 +257,80 @@ namespace certFHE {
 
 		for (int ts = 0; ts < AUTOSELECT_TEST_CNT; ts++) {
 
+			int first_len = 64;
+
+			Ciphertext ctxt;
+
+			MTValues::add_m_threshold = 0;
+
+			for (int i = 0; i < first_len; i++) {
+
+				Plaintext p(rand() % 2);
+				Ciphertext c = sk.encrypt(p);
+
+				if (i == 0) 
+					ctxt = c;
+		
+				else 
+					ctxt += c;
+			}
+
+			for (int pow = 6; pow < MAX_L_LOG; pow += 2) {
+
+				for (int rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++) {
+
+					Ciphertext aux_c(ctxt);
+
+					Timer timer;
+					timer.start();
+
+					aux_c += ctxt;
+
+					observed_multithreading[pow] += timer.stop();
+				}
+
+				ctxt += ctxt;
+				ctxt += ctxt;
+			}
+
+			MTValues::add_m_threshold = -1; // 0xFF FF FF FF FF FF FF FF
+
+			for (int i = 0; i < first_len; i++) {
+
+				Plaintext p(rand() % 2);
+				Ciphertext c = sk.encrypt(p);
+
+				if (i == 0)
+					ctxt = c;
+
+				else
+					ctxt += c;
+			}
+
+			for (int pow = 6; pow < MAX_L_LOG; pow += 2) {
+
+				for (int rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++) {
+
+					Ciphertext aux_c(ctxt);
+
+					Timer timer;
+					timer.start();
+
+					aux_c += ctxt;
+
+					observed_sequential[pow] += timer.stop();
+				}
+
+				ctxt += ctxt;
+				ctxt += ctxt;
+			}
 		}
 
-		//for (int threshold_log = 2; threshold_log < MAX_L_LOG; threshold_log++)
+		//for (int threshold_log = 6; threshold_log < MAX_L_LOG; threshold_log += 2)
 			//std::cout << observed_multithreading[threshold_log] << " " << observed_sequential[threshold_log] << '\n';
 
 		int threshold_log;
-		for (threshold_log = 2; threshold_log < MAX_L_LOG; threshold_log++)
+		for (threshold_log = 6; threshold_log < MAX_L_LOG; threshold_log += 2)
 
 			if (observed_multithreading[threshold_log] <= observed_sequential[threshold_log])
 				break;
@@ -258,7 +340,7 @@ namespace certFHE {
 
 	void MTValues::perm_m_threshold_autoselect(const Context & context) {
 
-		const int MAX_L_LOG = 15;
+		const int MAX_L_LOG = 6;
 		const int MAX_L = 1 << MAX_L_LOG;
 
 		double observed_multithreading[MAX_L_LOG];
@@ -271,13 +353,59 @@ namespace certFHE {
 
 		for (int ts = 0; ts < AUTOSELECT_TEST_CNT; ts++) {
 
+			MTValues::perm_m_threshold = 0;
+
+			Plaintext p(rand() % 2);
+			Ciphertext ctxt = sk.encrypt(p);
+
+			Permutation perm(context);
+
+			for (int pow = 1; pow <= MAX_L_LOG; pow += 1) {
+
+				ctxt += ctxt;
+
+				for (int rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++) {
+
+					Ciphertext aux_c(ctxt);
+
+					Timer timer;
+					timer.start();
+
+					aux_c.applyPermutation_inplace(perm);
+
+					observed_multithreading[pow] += timer.stop();
+				}
+			}
+
+			MTValues::perm_m_threshold = -1;
+
+			p = Plaintext(rand() % 2);
+			ctxt = sk.encrypt(p);
+
+			for (int pow = 1; pow <= MAX_L_LOG; pow += 1) {
+
+				ctxt += ctxt;
+
+				for (int rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++) {
+
+					Ciphertext aux_c(ctxt);
+
+					Timer timer;
+					timer.start();
+
+					aux_c.applyPermutation_inplace(perm);
+
+					observed_sequential[pow] += timer.stop();
+				}
+			}
+
 		}
 
-		//for (int threshold_log = 2; threshold_log < MAX_L_LOG; threshold_log++)
+		//for (int threshold_log = 1; threshold_log < MAX_L_LOG; threshold_log++)
 			//std::cout << observed_multithreading[threshold_log] << " " << observed_sequential[threshold_log] << '\n';
 
 		int threshold_log;
-		for (threshold_log = 2; threshold_log < MAX_L_LOG; threshold_log++)
+		for (threshold_log = 1; threshold_log < MAX_L_LOG; threshold_log++)
 
 			if (observed_multithreading[threshold_log] <= observed_sequential[threshold_log])
 				break;

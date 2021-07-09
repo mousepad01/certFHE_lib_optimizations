@@ -306,9 +306,11 @@ uint64_t* Ciphertext::multiply(const Context& ctx, uint64_t *c1, uint64_t*c2, ui
 	uint64_t times1 = len1 / _defaultLen;
 	uint64_t times2 = len2 / _defaultLen;
 
+	uint64_t res_defChunks_len = times1 * times2;
+
 	if (newlen < MTValues::mul_m_threshold) {
 
-		for (uint64_t i = 0; i < newlen; i++) {
+		for (uint64_t i = 0; i < res_defChunks_len; i++) {
 
 			uint64_t fst_ch_i = (i / times2) * _defaultLen;
 			uint64_t snd_ch_j = (i % times2) * _defaultLen;
@@ -320,9 +322,7 @@ uint64_t* Ciphertext::multiply(const Context& ctx, uint64_t *c1, uint64_t*c2, ui
 	else {
 
 		Threadpool <Args *> * threadpool = Library::getThreadpool();
-
 		int thread_count = threadpool->THR_CNT;
-		uint64_t res_defChunks_len = times1 * times2;
 
 		uint64_t q;
 		uint64_t r;

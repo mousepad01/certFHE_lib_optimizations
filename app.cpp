@@ -517,6 +517,201 @@ void only_dec_autoselect_test_time(const int test_count, const int C_MAX_LEN) {
 	}
 }
 
+void only_mul_autoselect_test_time(const int test_count, const int FIRST_LEN = 3, const int SECOND_LEN = 5, const int MUL_CNT = 10) {
+
+	Timervar t;
+
+	std::fstream f;
+	f.open(STATS_PATH + "\\conditional_multithreading\\for_mul\\no_autoselect_sequential_stats.txt", std::fstream::out | std::fstream::app);
+
+	certFHE::Library::initializeLibrary(true);
+	certFHE::Context context(1247, 16);
+	certFHE::SecretKey seckey(context);
+
+	//MTValues::mul_m_threshold_autoselect(context);
+	MTValues::mul_m_threshold = -1;
+
+	for (int ts = 0; ts < test_count; ts++) {
+
+		f << "TEST\n";
+
+		int first_len_cpy = FIRST_LEN;
+		int snd_len_cpy = SECOND_LEN;
+
+		Timervar t;
+
+		t.start_timer();
+
+		Ciphertext ctxt1;
+
+		for (int i = 0; i < first_len_cpy; i++) {
+
+			Plaintext p(rand() % 2);
+			Ciphertext c = seckey.encrypt(p);
+
+			if (i == 0)
+				ctxt1 = c;
+			else
+				ctxt1 += c;
+		}
+
+		Ciphertext ctxt2;
+
+		for (int i = 0; i < snd_len_cpy; i++) {
+
+			Plaintext p(rand() % 2);
+			Ciphertext c = seckey.encrypt(p);
+
+			if (i == 0)
+				ctxt2 = c;
+			else
+				ctxt2 += c;
+		}
+
+		for (int i = 0; i < MUL_CNT; i++) {
+
+			uint64_t acc = 0;
+
+			for (int rnd = 0; rnd < 100; rnd++) {
+
+				Ciphertext aux_c(ctxt1);
+
+				t.stop_timer();
+
+				aux_c *= ctxt2;
+
+				acc += t.stop_timer();
+			}
+
+			ctxt1 *= ctxt2;
+
+			f << "mul between len1=" << first_len_cpy << " and len2=" << snd_len_cpy << " time_cost="
+				<< acc << " miliseconds\n";
+
+			first_len_cpy *= snd_len_cpy;
+		}
+
+		f.flush();
+	}
+
+}
+
+void only_add_autoselect_test_time(const int test_count, const int FIRST_LEN = 3, const int MUL_CNT = 10) {
+
+	Timervar t;
+
+	std::fstream f;
+	f.open(STATS_PATH + "\\conditional_multithreading\\for_add\\autoselect_pow4_stats.txt", std::fstream::out | std::fstream::app);
+
+	certFHE::Library::initializeLibrary(true);
+	certFHE::Context context(1247, 16);
+	certFHE::SecretKey seckey(context);
+
+	MTValues::add_m_threshold_autoselect(context);
+	std::cout << MTValues::add_m_threshold << '\n';
+	//MTValues::add_m_threshold = -1;
+
+	for (int ts = 0; ts < test_count; ts++) {
+
+		f << "TEST\n";
+
+		int first_len_cpy = FIRST_LEN;
+
+		Timervar t;
+
+		t.start_timer();
+
+		Ciphertext ctxt1;
+
+		for (int i = 0; i < first_len_cpy; i++) {
+
+			Plaintext p(rand() % 2);
+			Ciphertext c = seckey.encrypt(p);
+
+			if (i == 0)
+				ctxt1 = c;
+			else
+				ctxt1 += c;
+		}
+
+		for (int i = 0; i < MUL_CNT; i++) {
+
+			uint64_t acc = 0;
+
+			for (int rnd = 0; rnd < 100; rnd++) {
+
+				Ciphertext aux_c(ctxt1);
+
+				t.stop_timer();
+
+				aux_c += ctxt1;
+
+				acc += t.stop_timer();
+			}
+
+			ctxt1 += ctxt1;
+
+			f << "add between len1=" << first_len_cpy << " and len2=" << first_len_cpy << " time_cost="
+				<< acc << " miliseconds\n";
+
+			first_len_cpy *= 2;
+		}
+
+		f.flush();
+	}
+
+}
+
+void only_perm_autoselect_test_time(const int test_count, const int C_MAX_LEN) {
+
+	Timervar t;
+
+	std::fstream f;
+	f.open(STATS_PATH + "\\conditional_multithreading\\for_perm\\no_autoselect_sequential_stats.txt", std::fstream::out | std::fstream::app);
+
+	certFHE::Library::initializeLibrary(true);
+	certFHE::Context context(1247, 16);
+	certFHE::SecretKey sk(context);
+
+	//MTValues::perm_m_threshold_autoselect(context);
+	MTValues::perm_m_threshold = -1;
+
+	for (int ts = 0; ts < test_count; ts++) {
+
+		f << "TEST\n";
+
+		Plaintext p(rand() % 2);
+		Ciphertext ctxt = sk.encrypt(p);
+
+		Permutation perm(context);
+
+		Timervar t;
+		t.start_timer();
+
+		for (int i = 2; i <= C_MAX_LEN; i *= 2) {
+
+			ctxt += ctxt;
+
+			t.stop_timer();
+
+			uint64_t acc = 0;
+
+			for (int rnd = 0; rnd < 200; rnd++) {
+
+				Ciphertext aux_c(ctxt);
+
+				t.stop_timer();
+
+				aux_c.applyPermutation_inplace(perm);
+
+				acc += t.stop_timer();
+			}
+
+			f << "decrypting len=" << i << " in time_cost=" << acc << " miliseconds\n";
+		}
+	}
+}
+
 int main(){
 
 	//only_mul_test_time(25, 3, 2, 22);
@@ -537,7 +732,13 @@ int main(){
 
 	//only_cpy_autoselect_test_time(10, 100000);
 
-	only_dec_autoselect_test_time(10, 100000);
+	//only_dec_autoselect_test_time(10, 100000);
+
+	//only_mul_autoselect_test_time(10, 3, 2, 18);
+
+	//only_add_autoselect_test_time(10, 3, 18);
+
+	only_perm_autoselect_test_time(10, 1000);
 	
     return 0;
 }
