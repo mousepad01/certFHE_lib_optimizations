@@ -193,7 +193,7 @@ Permutation::Permutation(const uint64_t size) {
 
 #else // for now, the default (insecure) rand
 
-		for (int i = 0; i < inv_cnt; i++) {
+		for (int i = 0; i < PMValues::perm_gen_threshold * size; i++) {
 
 			int r = rand();
 			std::swap(permutation[r % size], permutation[(r >> 16) % size]);

@@ -761,6 +761,33 @@ void perm_generator_autoselect_test_time(const int test_count, const int MAX_PER
 	}
 }
 
+void unrelated_test(const int test_count) {
+
+	Library::initializeLibrary(true);
+	Context context(1247, 16);
+
+	MTValues::m_threshold_autoselect(context);
+	PMValues::perm_gen_threshold_autoselect();
+
+	SecretKey sk(context);
+
+	Plaintext ptxt(1);
+	Ciphertext ctxt = sk.encrypt(ptxt);
+
+	std::cout << "ciphertext la inceput:\n" << ctxt << '\n';
+	return;
+	for (int tst = 0; tst < test_count; tst++) {
+
+		Plaintext p(1);
+		Ciphertext c = sk.encrypt(p);
+
+		ctxt *= c;
+	}
+
+	std::cout << "ciphertext la final:\n" << ctxt << '\n';
+
+}
+
 int main(){
 
 	{
@@ -793,7 +820,9 @@ int main(){
 		//all_autoselect_calc_test_time();
 	}
 
-	perm_generator_autoselect_test_time(5, 256);
+	//perm_generator_autoselect_test_time(5, 256);
+
+	unrelated_test(100);
 	
     return 0;
 }

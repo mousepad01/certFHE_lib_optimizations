@@ -405,15 +405,18 @@ ostream& certFHE::operator<<(ostream &out, const Ciphertext &c)
 	else
 		current_bitlen = n;
 
+	int cnt = 0;
+
 	for (int step = 0; step < u64_length; step++) {
 
-		for (int b = 0; b < current_bitlen; b++)
+		for (int b = 0; b < current_bitlen; b++) 
 			out << (char)(0x30 | ((_v[step] >> (63 - b)) & 0x01));
 
 		if (current_bitlen < 64)
-			current_bitlen = 0;
-		else
-			current_bitlen = (64 > n - current_bitlen) ? 64 : (n - current_bitlen);
+			break;
+		
+		current_bitlen = (64 < n - current_bitlen) ? 64 : (n - current_bitlen);
+		n -= current_bitlen;
 
 	}
 	out << '\n';
