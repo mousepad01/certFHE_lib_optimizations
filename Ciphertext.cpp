@@ -16,7 +16,9 @@ void certFHE::chunk_permute(Args * raw_args) {
 	uint64_t default_len = args->default_len;
 	uint64_t n = args->n;
 
-	for (uint64_t i = args->fst_deflen_pos; i < args->snd_deflen_pos; i++) {
+	uint64_t snd_deflen_pos = args->snd_deflen_pos;
+
+	for (uint64_t i = args->fst_deflen_pos; i < snd_deflen_pos; i++) {
 
 		uint64_t * current_chunk_original = original_c + i * default_len;
 		uint64_t * current_chunk_result = result_c + i * default_len;
@@ -176,12 +178,41 @@ void certFHE::chunk_add(Args * raw_args) {
 	uint64_t fst_len = args->fst_len;
 	uint64_t snd_len = args->snd_len;
 
-	for (uint64_t i = args->res_fst_deflen_pos; i < args->res_snd_deflen_pos; i++)
+#ifdef __AVX2__  // no visible performance improvement
+
+	int i = args->res_fst_deflen_pos;
+	uint64_t res_fst_deflen_pos = args->res_fst_deflen_pos;
+
+	for (i; i < fst_len; i += 4) {
+
+		__m256i avx_fst_chunk = _mm256_loadu_si256((const __m256i *)(fst_chunk + i));
+		_mm256_store_si256((__m256i *)(result + i), avx_fst_chunk);
+	}
+
+	for (i; i < fst_len; i++)
+		result[i] = fst_chunk[i];
+
+	for (i; i < res_fst_deflen_pos; i += 4) {
+
+		__m256i avx_snd_chunk = _mm256_loadu_si256((const __m256i *)(snd_chunk + i - fst_len));
+		_mm256_store_si256((__m256i *)(result + i), avx_snd_chunk);
+	}
+
+	for (i; i < res_fst_deflen_pos; i++)
+		result[i] = snd_chunk[i - fst_len];
+
+#else
+
+	uint64_t res_fst_deflen_pos = args->res_fst_deflen_pos;
+
+	for (uint64_t i = args->res_fst_deflen_pos; i < res_fst_deflen_pos; i++)
 
 		if (i < fst_len)
 			result[i] = fst_chunk[i];
 		else
 			result[i] = snd_chunk[i - fst_len];
+
+#endif
 
 	{
 		std::lock_guard <std::mutex> lock(args->done_mutex);
@@ -198,11 +229,37 @@ uint64_t* Ciphertext::add(uint64_t* c1, uint64_t* c2, uint64_t len1, uint64_t le
 
 	if (newlen < MTValues::add_m_threshold) {
 
+#ifdef __AVX2__ // no visible performance improvement
+
+		int i = 0;
+
+		for (i; i < len1; i += 4) {
+
+			__m256i avx_c1 = _mm256_loadu_si256((const __m256i *)(c1 + i));
+			_mm256_store_si256((__m256i *)(res + i), avx_c1);
+		}
+
+		for (i; i < len1; i++)
+			res[i] = c1[i];
+
+		for (i; i < len2; i += 4) {
+
+			__m256i avx_c2 = _mm256_loadu_si256((const __m256i *)(c2 + i - len1));
+			_mm256_store_si256((__m256i *)(res + i), avx_c2);
+		}
+
+		for (i; i < len2; i++)
+			res[i] = c2[i - len1];
+
+#else
+
 		for (int i = 0; i < len1; i++)
 			res[i] = c1[i];
 
 		for (int i = 0; i < len2; i++)
 			res[i + len1] = c2[i];
+
+#endif
 	}
 	else {
 
@@ -274,7 +331,9 @@ void certFHE::chunk_multiply(Args * raw_args) {
 	uint64_t snd_chlen = args->snd_chlen;
 	uint64_t default_len = args->default_len;
 
-	for (uint64_t i = args->res_fst_deflen_pos; i < args->res_snd_deflen_pos; i++) {
+	uint64_t res_snd_deflen_pos = args->res_snd_deflen_pos;
+
+	for (uint64_t i = args->res_fst_deflen_pos; i < res_snd_deflen_pos; i++) {
 
 		uint64_t fst_ch_i = (i / snd_chlen) * default_len;
 		uint64_t snd_ch_j = (i % snd_chlen) * default_len;

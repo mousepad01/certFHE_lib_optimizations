@@ -597,7 +597,7 @@ void only_mul_autoselect_test_time(const int test_count, const int FIRST_LEN = 3
 
 }
 
-void only_add_autoselect_test_time(const int test_count, const int FIRST_LEN = 3, const int MUL_CNT = 10) {
+void only_add_autoselect_test_time(const int test_count, const int FIRST_LEN = 3, const int ADD_CNT = 10) {
 
 	Timervar t;
 
@@ -635,7 +635,7 @@ void only_add_autoselect_test_time(const int test_count, const int FIRST_LEN = 3
 				ctxt1 += c;
 		}
 
-		for (int i = 0; i < MUL_CNT; i++) {
+		for (int i = 0; i < ADD_CNT; i++) {
 
 			uint64_t acc = 0;
 
@@ -735,13 +735,13 @@ void only_mul_test_time(const int test_count, const int FIRST_LEN = 3,
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\only_mul_intrinsics_mul_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\for_mul\\only_mul_intrinsics_mul_stats.txt", std::fstream::out | std::fstream::app);
 
 	certFHE::Library::initializeLibrary(true);
 	certFHE::Context context(1247, 16);
 	certFHE::SecretKey seckey(context);
 
-	MTValues::mul_m_threshold_autoselect(context);
+	MTValues::m_threshold_autoselect(context);
 
 	for (int ts = 0; ts < test_count; ts++) {
 
@@ -784,23 +784,73 @@ void only_mul_test_time(const int test_count, const int FIRST_LEN = 3,
 
 			uint64_t acc = 0;
 
-			for (int rnd = 0; rnd < 100; rnd++) {
-
-				Ciphertext aux_c(ctxt1);
-
-				t.stop_timer();
-
-				aux_c *= ctxt2;
-
-				acc += t.stop_timer();
-			}
+			t.stop_timer();
 
 			ctxt1 *= ctxt2;
+
+			acc += t.stop_timer();
 
 			f << "mul between len1=" << first_len_cpy << " and len2=" << snd_len_cpy << " time_cost="
 				<< acc << " miliseconds\n";
 
 			first_len_cpy *= snd_len_cpy;
+		}
+
+		f.flush();
+	}
+
+}
+
+void only_add_test_time(const int test_count, const int FIRST_LEN = 3, const int ADD_CNT = 10) {
+
+	Timervar t;
+
+	std::fstream f;
+	f.open(STATS_PATH + "\\for_add\\only_add_intrinsics_add_stats.txt", std::fstream::out | std::fstream::app);
+
+	certFHE::Library::initializeLibrary(true);
+	certFHE::Context context(1247, 16);
+	certFHE::SecretKey seckey(context);
+
+	MTValues::m_threshold_autoselect(context);
+
+	for (int ts = 0; ts < test_count; ts++) {
+
+		f << "TEST\n";
+
+		int first_len_cpy = FIRST_LEN;
+
+		Timervar t;
+
+		t.start_timer();
+
+		Ciphertext ctxt1;
+
+		for (int i = 0; i < first_len_cpy; i++) {
+
+			Plaintext p(rand() % 2);
+			Ciphertext c = seckey.encrypt(p);
+
+			if (i == 0)
+				ctxt1 = c;
+			else
+				ctxt1 += c;
+		}
+
+		for (int i = 0; i < ADD_CNT; i++) {
+
+			uint64_t acc = 0;
+
+			t.stop_timer();
+
+			ctxt1 += ctxt1;
+
+			acc += t.stop_timer();
+
+			f << "add between len1=" << first_len_cpy << " and len2=" << first_len_cpy << " time_cost="
+				<< acc << " miliseconds\n";
+
+			first_len_cpy *= 2;
 		}
 
 		f.flush();
@@ -815,7 +865,7 @@ int main(){
 
 		//mul_add_test_time(20, 15, 25, 2, 15);
 
-		//test_res_correct();
+		test_res_correct();
 
 		//only_dec_test_time(20, 1000000);
 
@@ -840,7 +890,7 @@ int main(){
 		//all_autoselect_calc_test_time();
 	}
 
-	only_mul_test_time(10, 3, 2, 18);
+	//only_add_test_time(10, 5, 23);
 
     return 0;
 }

@@ -58,8 +58,9 @@ bool Helper::exists(const uint64_t*v,const uint64_t len,const uint64_t value)
 
 	const uint64_t * src = args->src;
 	uint64_t * dest = args->dest;
+	uint64_t snd_u64_pos = args->snd_u64_pos;
 
-	for (uint64_t i = args->fst_u64_pos; i < args->snd_u64_pos; i++)
+	for (uint64_t i = args->fst_u64_pos; i < snd_u64_pos; i++)
 		dest[i] = src[i];
 		
 	{

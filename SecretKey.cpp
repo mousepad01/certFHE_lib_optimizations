@@ -101,6 +101,7 @@ void certFHE::chunk_decrypt(Args * raw_args) {
 
 	uint64_t * to_decrypt = args->to_decrypt;
 	uint64_t * sk = args->sk;
+	uint64_t snd_deflen_pos = args->snd_deflen_pos;
 
 	uint64_t default_len = args->default_len;
 
@@ -108,7 +109,7 @@ void certFHE::chunk_decrypt(Args * raw_args) {
 
 	*decrypted = 0;
 
-	for (uint64_t i = args->fst_deflen_pos; i < args->snd_deflen_pos; i++) {
+	for (uint64_t i = args->fst_deflen_pos; i < snd_deflen_pos; i++) {
 
 		uint64_t * current_chunk = to_decrypt + i * default_len;
 		uint64_t current_decrypted = 0x01;
