@@ -185,18 +185,18 @@ Permutation::Permutation(const uint64_t size) {
 
 		std::random_device csprng;
 
-		for (int i = 0; i < PMValues::perm_gen_threshold * size; i++) {
+		for (int i = 0; i < PMValues::inv_factor * size; i++) {
 
 			int r = csprng();
 			std::swap(permutation[r % size], permutation[(r >> 16) % size]);
 		}
-
+		
 #else // for now, the default (insecure) rand
 
-		for (int i = 0; i < PMValues::perm_gen_threshold * size; i++) {
+		for (int i = 0; i < PMValues::inv_factor * size; i++) {
 
 			int r = rand();
-			std::swap(permutation[r % size], permutation[(r >> 16) % size]);
+			std::swap(permutation[r % size], permutation[(r >> 8) % size]);
 		}
 
 #endif

@@ -704,10 +704,65 @@ void MTValues::m_threshold_autoselect(const Context & context, bool cache_in_fil
 #pragma region PMValues definitions
 
 int PMValues::perm_gen_threshold = 0;
+int PMValues::inv_factor = 5;
+
+double ** PMValues::inv_factor_stats(const double ROUND_CNT, const double MAX_PERM_SIZE, 
+										const double MAX_INV_FACTOR_SIZE) {
+
+	double ** perm_s__inv_factor__chi_sq = new double * [MAX_PERM_SIZE];
+	for (int i = 0; i < MAX_PERM_SIZE; i++)
+		perm_s__inv_factor__chi_sq[i] = new double[MAX_INV_FACTOR_SIZE];
+
+	PMValues::perm_gen_threshold = 0;
+
+	for (int perm_size = 100; perm_size < MAX_PERM_SIZE; perm_size *= 1.5) {
+		
+		for (int inv_f = 50; inv_f < MAX_INV_FACTOR_SIZE; inv_f += 1) {
+
+			PMValues::inv_factor = inv_f;
+
+			double ** stats = new double * [perm_size];
+			for (int i = 0; i < perm_size; i++) {
+
+				stats[i] = new double[perm_size];
+				memset(stats[i], 0, sizeof(double) * perm_size);
+			}
+
+			for (int rnd = 0; rnd < ROUND_CNT; rnd++) {
+
+				Permutation perm(perm_size);
+
+				uint64_t * permutation = perm.getPermutation();
+				for (int i = 0; i < perm_size; i++)
+					stats[i][permutation[i]] += 1;
+			}
+
+			double chi_sq = 0;
+			const double E = ROUND_CNT / perm_size;
+
+			for (int pos = 0; pos < perm_size; pos++) {
+
+				double aux_chi_sq = 0;
+
+				for (int fr = 0; fr < perm_size; fr++)
+					aux_chi_sq += (stats[pos][fr] - E) * (stats[pos][fr] - E) / E;
+
+				chi_sq += aux_chi_sq;
+			}
+			chi_sq /= perm_size; // for each pozition, calculate chi square value and average it for all positions
+
+			perm_s__inv_factor__chi_sq[perm_size][inv_f] = chi_sq;
+
+			std::cout << "perm_size=" << perm_size  << " chi_square=" << chi_sq << " inv_factor=" << inv_f << "\n";
+		}
+	}
+
+	return perm_s__inv_factor__chi_sq;
+}
 
 void PMValues::__perm_gen_threshold_autoselect() {
 
-	const int MAX_L_LOG = 16;
+	const int MAX_L_LOG = 14;
 
 	double observed_finite_alg[MAX_L_LOG];
 	double observer_randsteps_alg[MAX_L_LOG];
@@ -723,7 +778,7 @@ void PMValues::__perm_gen_threshold_autoselect() {
 
 		for (int pow = 1; pow < MAX_L_LOG; pow++) {
 
-			perm_len *= 3 / 2;
+			perm_len *= 1.5;
 
 			Timer timer;
 			timer.start();
@@ -740,7 +795,7 @@ void PMValues::__perm_gen_threshold_autoselect() {
 
 		for (int pow = 1; pow < MAX_L_LOG; pow++) {
 
-			perm_len *= 3 / 2;
+			perm_len *= 1.5;
 
 			Timer timer;
 			timer.start();
@@ -761,9 +816,9 @@ void PMValues::__perm_gen_threshold_autoselect() {
 		if (observed_finite_alg[threshold_log] <= observer_randsteps_alg[threshold_log])
 			break;
 
-	PMValues::perm_gen_threshold = 1;
+	PMValues::perm_gen_threshold = 2;
 	for (int p = 0; p < threshold_log; p++)
-		PMValues::perm_gen_threshold *= 3 / 2;
+		PMValues::perm_gen_threshold *= 1.5;
 }
 
 void PMValues::perm_gen_threshold_autoselect(bool cache_in_file, string cache_file_name) {

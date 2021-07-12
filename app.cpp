@@ -731,9 +731,9 @@ void all_autoselect_calc_test_time() {
 void perm_generator_autoselect_test_time(const int test_count, const int MAX_PERM_SIZE) {
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\perm_gen_stats\\autoselect_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\perm_gen_stats\\steps_stats.txt", std::fstream::out | std::fstream::app);
 
-	PMValues::perm_gen_threshold_autoselect(false);
+	PMValues::perm_gen_threshold_autoselect();
 	//std::cout << PMValues::perm_gen_threshold << '\n';
 	//PMValues::perm_gen_threshold = 0;
 	//PMValues::perm_gen_threshold = -1;
@@ -759,33 +759,6 @@ void perm_generator_autoselect_test_time(const int test_count, const int MAX_PER
 
 		f.flush();
 	}
-}
-
-void unrelated_test(const int test_count) {
-
-	Library::initializeLibrary(true);
-	Context context(1247, 16);
-
-	MTValues::m_threshold_autoselect(context);
-	PMValues::perm_gen_threshold_autoselect();
-
-	SecretKey sk(context);
-
-	Plaintext ptxt(1);
-	Ciphertext ctxt = sk.encrypt(ptxt);
-
-	std::cout << "ciphertext la inceput:\n" << ctxt << '\n';
-	return;
-	for (int tst = 0; tst < test_count; tst++) {
-
-		Plaintext p(1);
-		Ciphertext c = sk.encrypt(p);
-
-		ctxt *= c;
-	}
-
-	std::cout << "ciphertext la final:\n" << ctxt << '\n';
-
 }
 
 int main(){
@@ -820,9 +793,9 @@ int main(){
 		//all_autoselect_calc_test_time();
 	}
 
-	//perm_generator_autoselect_test_time(5, 256);
+	//perm_generator_autoselect_test_time(2, 256);
 
-	unrelated_test(100);
-	
+	PMValues::inv_factor_stats(50000, 101, 51);
+
     return 0;
 }
