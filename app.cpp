@@ -11,7 +11,7 @@
 #include "certFHE.h"
 #include "Threadpool.hpp"
 
-static string STATS_PATH = "C:\\Users\\intern.andreis\\Desktop\\certfhe_stats\\certfhe_nobitlen_stats";
+static string STATS_PATH = "C:\\Users\\intern.andreis\\Desktop\\certfhe_stats\\intrinsics_stats";
 
 using namespace certFHE;
 
@@ -517,7 +517,8 @@ void only_dec_autoselect_test_time(const int test_count, const int C_MAX_LEN) {
 	}
 }
 
-void only_mul_autoselect_test_time(const int test_count, const int FIRST_LEN = 3, const int SECOND_LEN = 5, const int MUL_CNT = 10) {
+void only_mul_autoselect_test_time(const int test_count, const int FIRST_LEN = 3, 
+									const int SECOND_LEN = 5, const int MUL_CNT = 10) {
 
 	Timervar t;
 
@@ -728,6 +729,85 @@ void all_autoselect_calc_test_time() {
 		<< MTValues::perm_m_threshold << " ";
 }
 
+void only_mul_test_time(const int test_count, const int FIRST_LEN = 3,
+							const int SECOND_LEN = 5, const int MUL_CNT = 10) {
+
+	Timervar t;
+
+	std::fstream f;
+	f.open(STATS_PATH + "\\only_mul_intrinsics_mul_stats.txt", std::fstream::out | std::fstream::app);
+
+	certFHE::Library::initializeLibrary(true);
+	certFHE::Context context(1247, 16);
+	certFHE::SecretKey seckey(context);
+
+	MTValues::mul_m_threshold_autoselect(context);
+
+	for (int ts = 0; ts < test_count; ts++) {
+
+		f << "TEST\n";
+
+		int first_len_cpy = FIRST_LEN;
+		int snd_len_cpy = SECOND_LEN;
+
+		Timervar t;
+
+		t.start_timer();
+
+		Ciphertext ctxt1;
+
+		for (int i = 0; i < first_len_cpy; i++) {
+
+			Plaintext p(rand() % 2);
+			Ciphertext c = seckey.encrypt(p);
+
+			if (i == 0)
+				ctxt1 = c;
+			else
+				ctxt1 += c;
+		}
+
+		Ciphertext ctxt2;
+
+		for (int i = 0; i < snd_len_cpy; i++) {
+
+			Plaintext p(rand() % 2);
+			Ciphertext c = seckey.encrypt(p);
+
+			if (i == 0)
+				ctxt2 = c;
+			else
+				ctxt2 += c;
+		}
+
+		for (int i = 0; i < MUL_CNT; i++) {
+
+			uint64_t acc = 0;
+
+			for (int rnd = 0; rnd < 100; rnd++) {
+
+				Ciphertext aux_c(ctxt1);
+
+				t.stop_timer();
+
+				aux_c *= ctxt2;
+
+				acc += t.stop_timer();
+			}
+
+			ctxt1 *= ctxt2;
+
+			f << "mul between len1=" << first_len_cpy << " and len2=" << snd_len_cpy << " time_cost="
+				<< acc << " miliseconds\n";
+
+			first_len_cpy *= snd_len_cpy;
+		}
+
+		f.flush();
+	}
+
+}
+
 int main(){
 
 	{
@@ -759,6 +839,8 @@ int main(){
 
 		//all_autoselect_calc_test_time();
 	}
+
+	only_mul_test_time(10, 3, 2, 18);
 
     return 0;
 }

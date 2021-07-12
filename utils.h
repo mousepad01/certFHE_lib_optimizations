@@ -4,6 +4,8 @@
 #include <iostream>
 #include <fstream>
 
+#include <immintrin.h>
+
 #include <random>
 
 #include <stdlib.h>

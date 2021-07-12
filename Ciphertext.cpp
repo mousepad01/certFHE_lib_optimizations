@@ -279,8 +279,29 @@ void certFHE::chunk_multiply(Args * raw_args) {
 		uint64_t fst_ch_i = (i / snd_chlen) * default_len;
 		uint64_t snd_ch_j = (i % snd_chlen) * default_len;
 
+#ifdef __AVX2__
+
+		int k = 0;
+		for (k; k < default_len; k += 4) {
+
+			__m256i avx_fst_chunk = _mm256_loadu_si256((const __m256i *)(fst_chunk + k));
+			__m256i avx_snd_chunk = _mm256_loadu_si256((const __m256i *)(snd_chunk + k));
+			__m256i avx_result = _mm256_setzero_si256();
+
+			avx_result = _mm256_and_si256(avx_fst_chunk, avx_snd_chunk);
+
+			_mm256_store_si256((__m256i *)(result + i * default_len + k), avx_result);
+		}
+
+		for(k; k < default_len; k++)
+			result[i * default_len + k] = fst_chunk[fst_ch_i + k] & snd_chunk[snd_ch_j + k];
+
+#else
+
 		for (int k = 0; k < default_len; k++)
 			result[i * default_len + k] = fst_chunk[fst_ch_i + k] & snd_chunk[snd_ch_j + k];
+
+#endif
 	}
 
 	{
