@@ -728,39 +728,6 @@ void all_autoselect_calc_test_time() {
 		<< MTValues::perm_m_threshold << " ";
 }
 
-void perm_generator_autoselect_test_time(const int test_count, const int MAX_PERM_SIZE) {
-
-	std::fstream f;
-	f.open(STATS_PATH + "\\perm_gen_stats\\steps_stats.txt", std::fstream::out | std::fstream::app);
-
-	PMValues::perm_gen_threshold_autoselect();
-	//std::cout << PMValues::perm_gen_threshold << '\n';
-	//PMValues::perm_gen_threshold = 0;
-	//PMValues::perm_gen_threshold = -1;
-
-	for (int ts = 0; ts < test_count; ts++) {
-
-		f << "TEST\n";
-
-		for (int perm_size = 2; perm_size < MAX_PERM_SIZE; perm_size *= 1.5) {
-
-			uint64_t acc;
-
-			Timervar t;
-			t.start_timer();
-
-			for (int rnd = 0; rnd < 10000; rnd++) 
-				Permutation p(perm_size);
-
-			acc = t.stop_timer();
-
-			f << "perm gen len=" << perm_size << " time_cost=" << acc << '\n';
-		}
-
-		f.flush();
-	}
-}
-
 int main(){
 
 	{
@@ -792,10 +759,6 @@ int main(){
 
 		//all_autoselect_calc_test_time();
 	}
-
-	//perm_generator_autoselect_test_time(2, 256);
-
-	PMValues::inv_factor_stats(50000, 101, 51);
 
     return 0;
 }

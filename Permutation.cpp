@@ -142,65 +142,23 @@ Permutation::Permutation(const uint64_t size) {
 	this->permutation = new uint64_t[size];
 	this->length = size;
 
-	if (size < PMValues::perm_gen_threshold) {
-
-		uint64_t sRandom = 0;
-		for (int i = 0; i < size; i++)
-			permutation[i] = -1;
-
-#if _MSC_VER && !__INTEL_COMPILER
-
-		std::random_device csprng;
-
-		for (int i = 0; i < size; i++)
-		{
-			sRandom = csprng() % size;
-			while (Helper::exists(permutation, size, sRandom))
-			{
-				sRandom = csprng() % size;
-			}
-			permutation[i] = sRandom;
-		}
-
-#else
-
-		for (int i = 0; i < size; i++)
-		{
-			sRandom = rand() % size;
-			while (Helper::exists(permutation, size, sRandom))
-			{
-				sRandom = rand() % size;
-			}
-			permutation[i] = sRandom;
-		}
-#endif
-	}
-	else {
-
-		uint64_t sRandom = 0;
-		for (int i = 0; i < size; i++)
-			permutation[i] = i;
+	uint64_t sRandom = 0;
+	for (int i = 0; i < size; i++)
+		permutation[i] = i;
 
 #if _MSC_VER && !__INTEL_COMPILER // std::random_devide guaranteed by MSVC to be criptographically secure
 
-		std::random_device csprng;
+	std::random_device csprng;
 
-		for (int i = 0; i < PMValues::inv_factor * size; i++) {
+	for (int pos = 0; pos < length - 2; pos++)
+		swap(permutation[pos], permutation[pos + csprng() % (length - pos)]);
 
-			int r = csprng();
-			std::swap(permutation[r % size], permutation[(r >> 16) % size]);
-		}
-		
 #else // for now, the default (insecure) rand
 
-		for (int i = 0; i < PMValues::inv_factor * size; i++) {
-
-			int r = rand();
-			std::swap(permutation[r % size], permutation[(r >> 8) % size]);
-		}
+	for (int pos = 0; pos < length - 2; pos++)
+		swap(permutation[pos], permutation[pos + rand() % (length - pos)]);
 
 #endif
-	}
 }
 
 Permutation::Permutation(const Context& context) : Permutation(context.getN())
