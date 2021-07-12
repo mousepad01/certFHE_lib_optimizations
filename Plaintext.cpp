@@ -13,7 +13,7 @@ ostream& operator<<(ostream &out, const Plaintext &c)
     char val = c.getValue();
     val = val | 0x30;
     out<<val;
-    out<<endl;
+    out<<'\n';
     return out;
 
 }

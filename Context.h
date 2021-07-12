@@ -68,9 +68,6 @@ namespace certFHE{
         void setN(uint64_t n);
         void setD(uint64_t d);        
 
-
-
-
     };
 
 }

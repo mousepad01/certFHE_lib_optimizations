@@ -1,4 +1,5 @@
 #include "Permutation.h"
+#include "GlobalParams.h"
 
 using namespace certFHE;
 using namespace std;
@@ -37,11 +38,11 @@ ostream& certFHE::operator<<(ostream &out, const Permutation &p)
     out <<"(";
     for(uint64_t i = 0; i<l;i++)
         out<<i<<" ";
-    out<<")"<<endl;
+    out<<")"<<'\n';
      out <<"(";
     for(uint64_t i = 0; i<l;i++)
         out<<_p[i]<<" ";
-    out<<")"<<endl;
+    out<<")"<<'\n';
     return out;
 }
 
@@ -136,31 +137,34 @@ Permutation::Permutation()
 
 }
 
-Permutation::Permutation(const uint64_t size) : Permutation()
-{
-     this->permutation = new uint64_t[size];
-     this->length = size;
+Permutation::Permutation(const uint64_t size) {
+
+	this->permutation = new uint64_t[size];
+	this->length = size;
 
 	uint64_t sRandom = 0;
 	for (int i = 0; i < size; i++)
-		permutation[i] = -1;
+		permutation[i] = i;
 
-	for (int i = 0; i < size; i++)
-	{
-		sRandom = rand() % size;
-		while (Helper::exists(permutation, size, sRandom))
-		{
-			sRandom = rand() % size;
-		}
-		permutation[i] = sRandom;
-	}
+#if _MSC_VER && !__INTEL_COMPILER // std::random_devide guaranteed by MSVC to be criptographically secure
+
+	std::random_device csprng;
+
+	for (int pos = 0; pos < length - 2; pos++)
+		swap(permutation[pos], permutation[pos + csprng() % (length - pos)]);
+
+#else // for now, the default (insecure) rand
+
+	for (int pos = 0; pos < length - 2; pos++)
+		swap(permutation[pos], permutation[pos + rand() % (length - pos)]);
+
+#endif
 }
 
 Permutation::Permutation(const Context& context) : Permutation(context.getN())
 {
 
 }        
-
 
 Permutation::Permutation(const uint64_t *perm, const uint64_t len) : Permutation()
 {
