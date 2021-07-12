@@ -181,24 +181,26 @@ void certFHE::chunk_add(Args * raw_args) {
 #ifdef __AVX2__  // no visible performance improvement
 
 	int i = args->res_fst_deflen_pos;
-	uint64_t res_fst_deflen_pos = args->res_fst_deflen_pos;
+	uint64_t res_snd_deflen_pos = args->res_snd_deflen_pos;
 
-	for (i; i < fst_len; i += 4) {
+	uint64_t fst_for_limit = fst_len < res_snd_deflen_pos ? fst_len : res_snd_deflen_pos;
+
+	for (i; i + 4 <= fst_for_limit; i += 4) {
 
 		__m256i avx_fst_chunk = _mm256_loadu_si256((const __m256i *)(fst_chunk + i));
 		_mm256_store_si256((__m256i *)(result + i), avx_fst_chunk);
 	}
 
-	for (i; i < fst_len; i++)
+	for (i; i < fst_for_limit; i++)
 		result[i] = fst_chunk[i];
 
-	for (i; i < res_fst_deflen_pos; i += 4) {
+	for (i; i + 4 <= res_snd_deflen_pos; i += 4) {
 
 		__m256i avx_snd_chunk = _mm256_loadu_si256((const __m256i *)(snd_chunk + i - fst_len));
 		_mm256_store_si256((__m256i *)(result + i), avx_snd_chunk);
 	}
 
-	for (i; i < res_fst_deflen_pos; i++)
+	for (i; i < res_snd_deflen_pos; i++)
 		result[i] = snd_chunk[i - fst_len];
 
 #else
@@ -233,7 +235,7 @@ uint64_t* Ciphertext::add(uint64_t* c1, uint64_t* c2, uint64_t len1, uint64_t le
 
 		int i = 0;
 
-		for (i; i < len1; i += 4) {
+		for (i; i + 4 <= len1; i += 4) {
 
 			__m256i avx_c1 = _mm256_loadu_si256((const __m256i *)(c1 + i));
 			_mm256_store_si256((__m256i *)(res + i), avx_c1);
@@ -242,7 +244,7 @@ uint64_t* Ciphertext::add(uint64_t* c1, uint64_t* c2, uint64_t len1, uint64_t le
 		for (i; i < len1; i++)
 			res[i] = c1[i];
 
-		for (i; i < len2; i += 4) {
+		for (i; i + 4 <= len2; i += 4) {
 
 			__m256i avx_c2 = _mm256_loadu_si256((const __m256i *)(c2 + i - len1));
 			_mm256_store_si256((__m256i *)(res + i), avx_c2);
@@ -341,7 +343,7 @@ void certFHE::chunk_multiply(Args * raw_args) {
 #ifdef __AVX2__
 
 		int k = 0;
-		for (k; k < default_len; k += 4) {
+		for (k; k + 4 <= default_len; k += 4) {
 
 			__m256i avx_fst_chunk = _mm256_loadu_si256((const __m256i *)(fst_chunk + k));
 			__m256i avx_snd_chunk = _mm256_loadu_si256((const __m256i *)(snd_chunk + k));

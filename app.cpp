@@ -45,7 +45,7 @@ void test_res_correct() {
 
 	MTValues::dec_m_threshold_autoselect(context);
 
-	const int TEST_COUNT = 10; // sansa fals pozition: 2^(-TEST_COUNT)
+	const int TEST_COUNT = 100; // sansa fals pozition: 2^(-TEST_COUNT)
 
 	for (int tst = 0; tst < TEST_COUNT; tst++) {  // decriptare deflen
 
