@@ -178,7 +178,7 @@ void certFHE::chunk_add(Args * raw_args) {
 	uint64_t fst_len = args->fst_len;
 	uint64_t snd_len = args->snd_len;
 
-#ifdef __AVX2__  // no visible performance improvement
+#ifdef __AVX2__WORSE  // no visible performance improvement
 
 	int i = args->res_fst_deflen_pos;
 	uint64_t res_snd_deflen_pos = args->res_snd_deflen_pos;
@@ -205,9 +205,9 @@ void certFHE::chunk_add(Args * raw_args) {
 
 #else
 
-	uint64_t res_fst_deflen_pos = args->res_fst_deflen_pos;
+	uint64_t res_snd_deflen_pos = args->res_snd_deflen_pos;
 
-	for (uint64_t i = args->res_fst_deflen_pos; i < res_fst_deflen_pos; i++)
+	for (uint64_t i = args->res_fst_deflen_pos; i < res_snd_deflen_pos; i++)
 
 		if (i < fst_len)
 			result[i] = fst_chunk[i];
@@ -231,7 +231,7 @@ uint64_t* Ciphertext::add(uint64_t* c1, uint64_t* c2, uint64_t len1, uint64_t le
 
 	if (newlen < MTValues::add_m_threshold) {
 
-#ifdef __AVX2__ // no visible performance improvement
+#ifdef __AVX2__WORSE // no visible performance improvement
 
 		int i = 0;
 
@@ -398,7 +398,7 @@ uint64_t* Ciphertext::multiply(const Context& ctx, uint64_t *c1, uint64_t*c2, ui
 #ifdef __AVX2__
 
 			int k = 0;
-			for (k; k < _defaultLen; k += 4) {
+			for (k; k + 4 <= _defaultLen; k += 4) {
 
 				__m256i avx_c1 = _mm256_loadu_si256((const __m256i *)(c1 + fst_ch_i + k));
 				__m256i avx_c2 = _mm256_loadu_si256((const __m256i *)(c2 + snd_ch_j + k));

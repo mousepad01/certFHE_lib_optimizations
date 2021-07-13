@@ -20,7 +20,10 @@ namespace certFHE
     private:
 
         uint64_t *s;                    // secret positions from the vector [0,n-1]. 
+		uint64_t *s_mask;				// secret key as a bitmask
+
         long length;                    // length of the s vector, containing the secret posionts
+		long mask_length;				// length of secret key as bitmask IN UINT64 CHUNKS
 
         Context *certFHEContext;
 
@@ -33,6 +36,13 @@ namespace certFHE
          * @return value : encryption of input bit
         **/
         uint64_t* encrypt(unsigned char bit, uint64_t n, uint64_t d, uint64_t*s);
+
+		/**
+		 * Useful for decryption optimization
+		 * Sets key mask according to the already existing s
+		 * @return value : nothing
+		**/
+		void set_mask_key();
 
         /**
          * Decryption function when the size of ciphertext is equal to context.N
@@ -133,6 +143,12 @@ namespace certFHE
          * DO NOT DELETE THIS POINTER
         **/
         uint64_t* getKey() const;
+
+		/**
+		 * DO NOT DELETE THIS POINTER
+		**/
+		uint64_t* getMaskKey() const;
+
 		
 		/**
 		 * Setters

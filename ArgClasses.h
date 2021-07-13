@@ -73,7 +73,7 @@ namespace certFHE{
 	public:
 
 		uint64_t * to_decrypt;
-		uint64_t * sk;
+		uint64_t * sk_mask;
 
 		uint64_t default_len;
 		uint64_t d;

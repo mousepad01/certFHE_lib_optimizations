@@ -43,9 +43,9 @@ void test_res_correct() {
 	certFHE::Context context(1247, 16);
 	certFHE::SecretKey sk(context);
 
-	MTValues::dec_m_threshold_autoselect(context);
+	MTValues::m_threshold_autoselect(context);
 
-	const int TEST_COUNT = 100; // sansa fals pozition: 2^(-TEST_COUNT)
+	const int TEST_COUNT = 100; // sansa fals pozitiv: 2^(-TEST_COUNT)
 
 	for (int tst = 0; tst < TEST_COUNT; tst++) {  // decriptare deflen
 
@@ -735,7 +735,7 @@ void only_mul_test_time(const int test_count, const int FIRST_LEN = 3,
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\for_mul\\only_mul_intrinsics_mul_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\for_mul\\mul_intrinsics_100rounds_mul_stats.txt", std::fstream::out | std::fstream::app);
 
 	certFHE::Library::initializeLibrary(true);
 	certFHE::Context context(1247, 16);
@@ -784,11 +784,19 @@ void only_mul_test_time(const int test_count, const int FIRST_LEN = 3,
 
 			uint64_t acc = 0;
 
-			t.stop_timer();
+			for (int rnd = 0; rnd < 100; rnd++) {
+
+				Ciphertext aux_c(ctxt1);
+
+				t.stop_timer();
+
+				aux_c *= ctxt2;
+
+				uint64_t tt = t.stop_timer();
+				acc += tt;
+			}
 
 			ctxt1 *= ctxt2;
-
-			acc += t.stop_timer();
 
 			f << "mul between len1=" << first_len_cpy << " and len2=" << snd_len_cpy << " time_cost="
 				<< acc << " miliseconds\n";
@@ -858,6 +866,141 @@ void only_add_test_time(const int test_count, const int FIRST_LEN = 3, const int
 
 }
 
+void intrinsic_fullop_test_time(const int test_count, const int FIRST_LEN = 15, const int SECOND_LEN = 25,
+								const int THIRD_LEN = 2, const int ROUND_CNT = 5) {
+
+	Timervar t;
+
+	std::fstream f;
+	f.open(STATS_PATH + "\\full_op\\add_mul_intrinsics_stats.txt", std::fstream::out | std::fstream::app);
+
+	certFHE::Library::initializeLibrary();
+	certFHE::Context context(1247, 16);
+	certFHE::SecretKey seckey(context);
+
+	MTValues::m_threshold_autoselect(context);
+
+	for (int ts = 0; ts < test_count; ts++) {
+
+		int first_len_cpy = FIRST_LEN;
+		int snd_len_cpy = SECOND_LEN;
+		int trd_len_cpy = THIRD_LEN;
+
+		Timervar t;
+
+		t.start_timer();
+
+		uint64_t ti = t.stop_timer();
+		f << "TEST\n";
+		t.stop_timer();
+
+		Ciphertext ctxt1, ctxt2, ctxt3;
+
+		for (int i = 0; i < first_len_cpy; i++) {
+
+			Plaintext p(rand() % 2);
+			Ciphertext c = seckey.encrypt(p);
+
+			if (i == 0)
+				ctxt1 = c;
+			else
+				ctxt1 += c;
+		}
+
+		for (int i = 0; i < snd_len_cpy; i++) {
+
+			Plaintext p(rand() % 2);
+			Ciphertext c = seckey.encrypt(p);
+
+			if (i == 0)
+				ctxt2 = c;
+			else
+				ctxt2 += c;
+		}
+
+		for (int i = 0; i < trd_len_cpy; i++) {
+
+			Plaintext p(rand() % 2);
+			Ciphertext c = seckey.encrypt(p);
+
+			if (i == 0)
+				ctxt3 = c;
+			else
+				ctxt3 += c;
+		}
+
+		t.stop_timer();
+
+		for (int i = 0; i < ROUND_CNT; i++) {
+
+			ctxt1 *= ctxt3;
+			ctxt2 *= ctxt3;
+
+			ctxt1 += ctxt2;
+
+			uint64_t ti = t.stop_timer();
+			f << "round with len1=" << first_len_cpy << " len2=" << snd_len_cpy << " len3="
+				<< trd_len_cpy << " time_cost=" << ti << " miliseconds\n";
+			t.stop_timer();
+
+			first_len_cpy *= trd_len_cpy;
+			snd_len_cpy *= trd_len_cpy;
+
+			first_len_cpy += snd_len_cpy;
+
+			t.stop_timer();
+			seckey.decrypt(ctxt1);
+
+			ti = t.stop_timer();
+			f << "decrypting len=" << first_len_cpy << " in time_cost=" << ti << " miliseconds\n";
+		}
+
+		f.flush();
+	}
+}
+
+void only_dec_intrinsics_test_time(const int test_count, const int C_MAX_LEN) {
+
+	Timervar t;
+
+	std::fstream f;
+	f.open(STATS_PATH + "\\for_dec\\no_intrinsics_smask_optimization_stats.txt", std::fstream::out | std::fstream::app);
+
+	certFHE::Library::initializeLibrary(true);
+	certFHE::Context context(1247, 16);
+	certFHE::SecretKey sk(context);
+
+	MTValues::m_threshold_autoselect(context);
+	//MTValues::dec_m_threshold = 0;
+
+	for (int ts = 0; ts < test_count; ts++) {
+
+		f << "TEST\n";
+
+		Plaintext p(rand() % 2);
+		Ciphertext ctxt = sk.encrypt(p);
+
+		Timervar t;
+		t.start_timer();
+
+		for (int i = 2; i <= C_MAX_LEN; i *= 2) {
+
+			ctxt += ctxt;
+
+			t.stop_timer();
+
+			for (int rnd = 0; rnd < 200; rnd++)
+				sk.decrypt(ctxt);
+
+			uint64_t ti = t.stop_timer();
+
+			f << "decrypting len=" << i << " in time_cost=" << ti << " miliseconds\n";
+		}
+		f.flush();
+	}
+}
+
+
 int main(){
 
 	{
@@ -865,7 +1008,7 @@ int main(){
 
 		//mul_add_test_time(20, 15, 25, 2, 15);
 
-		test_res_correct();
+		//test_res_correct();
 
 		//only_dec_test_time(20, 1000000);
 
@@ -890,7 +1033,15 @@ int main(){
 		//all_autoselect_calc_test_time();
 	}
 
-	//only_add_test_time(10, 5, 23);
+	{	
+		//only_mul_test_time(10, 3, 2, 18);
+
+		//only_add_test_time(10, 5, 23);
+
+		//intrinsic_fullop_test_time(10, 15, 25, 2, 14);
+
+		//only_dec_intrinsics_test_time(20, 1000000);
+	}
 
     return 0;
 }

@@ -80,18 +80,47 @@ uint64_t* SecretKey::encrypt(unsigned char bit, uint64_t n, uint64_t d, uint64_t
 	return res;
 }
 
-uint64_t SecretKey::defaultN_decrypt(uint64_t* v,uint64_t len, uint64_t n, uint64_t d, uint64_t* s)
-{
-	uint64_t decrypted = 0x01;
+void SecretKey::set_mask_key() {
 
-	for (int j = 0; j < d; j++) {
+	long length = this->length;
+	long default_len = this->certFHEContext->getDefaultN();
+	
+	uint64_t * mask = new uint64_t[default_len];
+	memset(mask, 0, sizeof(uint64_t) * default_len);
+
+	for (int j = 0; j < length; j++) {
 
 		int u64_j = s[j] / 64;
 		int b = 63 - (s[j] % 64);
 
-		decrypted &= v[u64_j] >> b;
+		mask[u64_j] |= (uint64_t)1 << b;
 	}
 
+	this->s_mask = mask;
+
+	/*for (int u = 0; u < default_len; u++) {
+
+		for (int b = 63; b >= 0; b--)
+			std::cout << ((s_mask[u] >> b) & 0x01);
+
+		std::cout << " ";
+	}
+	std::cout << '\n';
+
+	for (int i = 0; i < length; i++)
+		std::cout << s[i] << " ";
+	std::cout << '\n';*/
+}
+
+uint64_t SecretKey::defaultN_decrypt(uint64_t* v,uint64_t len, uint64_t n, uint64_t d, uint64_t* s)
+{
+	uint64_t decrypted = 0x01;
+	uint64_t * sk_mask = this->s_mask;
+	uint64_t default_len = this->certFHEContext->getDefaultN();
+	
+	for (int u = 0; u < default_len; u++)
+		decrypted &= (((v[u] & sk_mask[u]) ^ sk_mask[u]) == (uint64_t)0);
+	
 	return decrypted;
 }
 
@@ -100,7 +129,7 @@ void certFHE::chunk_decrypt(Args * raw_args) {
 	DecArgs * args = (DecArgs *)raw_args;
 
 	uint64_t * to_decrypt = args->to_decrypt;
-	uint64_t * sk = args->sk;
+	uint64_t * sk_mask = args->sk_mask;
 	uint64_t snd_deflen_pos = args->snd_deflen_pos;
 
 	uint64_t default_len = args->default_len;
@@ -114,13 +143,8 @@ void certFHE::chunk_decrypt(Args * raw_args) {
 		uint64_t * current_chunk = to_decrypt + i * default_len;
 		uint64_t current_decrypted = 0x01;
 
-		for (int j = 0; j < args->d; j++) {
-
-			int u64_j = sk[j] / 64;
-			int b = 63 - (sk[j] % 64);
-
-			current_decrypted &= current_chunk[u64_j] >> b;
-		}
+		for (int u = 0; u < default_len; u++)
+			current_decrypted &= (((current_chunk[u] & sk_mask[u]) ^ sk_mask[u]) == (uint64_t)0);
 
 		*decrypted ^= current_decrypted;
 	}
@@ -135,28 +159,24 @@ void certFHE::chunk_decrypt(Args * raw_args) {
 
 uint64_t SecretKey::decrypt(uint64_t* v,uint64_t len,uint64_t defLen, uint64_t n, uint64_t d, uint64_t* s)
 {
-      
 	if (len == defLen)
         return defaultN_decrypt(v,len,n,d,s);
 
-	uint64_t dec;
+	uint64_t dec = 0;
 
 	uint64_t deflen_cnt = len / defLen;
 
-	if (deflen_cnt < MTValues::dec_m_threshold) {
+	uint64_t * sk_mask = this->s_mask;
 
+	if (deflen_cnt < MTValues::dec_m_threshold) {
+		
 		for (uint64_t i = 0; i < deflen_cnt; i++) {
 
 			uint64_t * current_chunk = v + i * defLen;
 			uint64_t current_decrypted = 0x01;
 
-			for (int j = 0; j < d; j++) {
-
-				int u64_j = s[j] / 64;
-				int b = 63 - (s[j] % 64);
-
-				current_decrypted &= current_chunk[u64_j] >> b;
-			}
+			for (int u = 0; u < defLen; u++)
+				current_decrypted &= (((current_chunk[u] & sk_mask[u]) ^ sk_mask[u]) == (uint64_t)0);
 
 			dec ^= current_decrypted;
 		}
@@ -193,7 +213,7 @@ uint64_t SecretKey::decrypt(uint64_t* v,uint64_t len,uint64_t defLen, uint64_t n
 		for (int thr = 0; thr < worker_cnt; thr++) {
 
 			args[thr].to_decrypt = v;
-			args[thr].sk = this->s;
+			args[thr].sk_mask = this->s_mask;
 
 			args[thr].default_len = defLen;
 			args[thr].d = d;
@@ -361,7 +381,12 @@ uint64_t  SecretKey::getLength() const
 	return this->length;
 }
 
-uint64_t* SecretKey::getKey() const
+uint64_t * SecretKey::getMaskKey() const{
+
+	return this->s_mask;
+}
+
+uint64_t * SecretKey::getKey() const
 {
 	return this->s;
 }
@@ -370,12 +395,17 @@ void SecretKey::setKey(uint64_t*s, uint64_t len)
 {
 	if (this->s != nullptr)
 		delete [] this->s;
+
+	if (this->s_mask != nullptr)
+		delete[] this->s_mask;
 	
 	this->s = new uint64_t[len];
 	for(uint64_t i=0;i<len;i++)
 		this->s[i] = s[i];
 
 	this->length = len;
+
+	this->set_mask_key();
 }
 
 #pragma endregion
@@ -411,21 +441,23 @@ SecretKey::SecretKey(const Context &context)
 			go = false;
 	}
     
+	this->set_mask_key();
 }
 
 SecretKey::SecretKey(const SecretKey& secKey) 
 {
     this->certFHEContext = new certFHE::Context(*secKey.certFHEContext);
 
-     if ( secKey.length < 0)
+     if (secKey.length < 0)
         return;
     
-    this->s = new uint64_t [ secKey.length];
-    this->length =  secKey.length;
-    for(long i = 0;i< secKey.length;i++)
-        this->s[i ] =secKey.s[i];
+    this->s = new uint64_t [secKey.length];
+    this->length = secKey.length;
 
-    
+    for(long i = 0; i < secKey.length; i++)
+        this->s[i] = secKey.s[i];
+	
+	this->set_mask_key();
 }
 
 SecretKey::~SecretKey()
@@ -446,6 +478,12 @@ SecretKey::~SecretKey()
         delete this->certFHEContext;
         this->certFHEContext = nullptr;
     }
+
+	if (this->s_mask != nullptr)
+	{
+		delete[] this->s_mask;
+		this->s_mask = nullptr;
+	}
 }
 
 #pragma endregion
