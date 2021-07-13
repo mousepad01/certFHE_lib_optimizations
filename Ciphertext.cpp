@@ -345,11 +345,9 @@ void certFHE::chunk_multiply(Args * raw_args) {
 		int k = 0;
 		for (k; k + 4 <= default_len; k += 4) {
 
-			__m256i avx_fst_chunk = _mm256_loadu_si256((const __m256i *)(fst_chunk + k));
-			__m256i avx_snd_chunk = _mm256_loadu_si256((const __m256i *)(snd_chunk + k));
-			__m256i avx_result = _mm256_setzero_si256();
-
-			avx_result = _mm256_and_si256(avx_fst_chunk, avx_snd_chunk);
+			__m256i avx_fst_chunk = _mm256_loadu_si256((const __m256i *)(fst_chunk + fst_ch_i + k));
+			__m256i avx_snd_chunk = _mm256_loadu_si256((const __m256i *)(snd_chunk + snd_ch_j + k));
+			__m256i avx_result = _mm256_and_si256(avx_fst_chunk, avx_snd_chunk);
 
 			_mm256_store_si256((__m256i *)(result + i * default_len + k), avx_result);
 		}
@@ -402,11 +400,9 @@ uint64_t* Ciphertext::multiply(const Context& ctx, uint64_t *c1, uint64_t*c2, ui
 			int k = 0;
 			for (k; k < _defaultLen; k += 4) {
 
-				__m256i avx_c1 = _mm256_loadu_si256((const __m256i *)(c1 + k));
-				__m256i avx_c2 = _mm256_loadu_si256((const __m256i *)(c2 + k));
-				__m256i avx_res = _mm256_setzero_si256();
-
-				avx_res = _mm256_and_si256(avx_c1, avx_c2);
+				__m256i avx_c1 = _mm256_loadu_si256((const __m256i *)(c1 + fst_ch_i + k));
+				__m256i avx_c2 = _mm256_loadu_si256((const __m256i *)(c2 + snd_ch_j + k));
+				__m256i avx_res = _mm256_and_si256(avx_c1, avx_c2);
 
 				_mm256_store_si256((__m256i *)(res + i * _defaultLen + k), avx_res);
 			}
