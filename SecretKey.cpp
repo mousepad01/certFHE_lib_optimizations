@@ -84,10 +84,10 @@ void SecretKey::set_mask_key() {
 
 	long length = this->length;
 	long default_len = this->certFHEContext->getDefaultN();
-	
+
 	uint64_t * mask = new uint64_t[default_len];
 	memset(mask, 0, sizeof(uint64_t) * default_len);
-
+	
 	for (int j = 0; j < length; j++) {
 
 		int u64_j = s[j] / 64;
@@ -138,6 +138,40 @@ void certFHE::chunk_decrypt(Args * raw_args) {
 
 	*decrypted = 0;
 
+#ifdef __AVX2__
+
+	// hopefully compiler will use as many avx registers as possible
+
+	__m256i * avx_mask = new __m256i[default_len / 4];
+	for (int u = 0; u + 4 <= default_len; u += 4)
+		avx_mask[u / 4] = _mm256_loadu_si256((const __m256i *)(sk_mask + u));
+
+	for (uint64_t i = args->fst_deflen_pos; i < snd_deflen_pos; i++) {
+
+		uint64_t * current_chunk = to_decrypt + i * default_len;
+		uint64_t current_decrypted = 0x01;
+
+		int u = 0;
+
+		for (u; u + 4 <= default_len; u += 4) {
+
+			uint64_t int256_u = u / 4;
+
+			__m256i avx_aux = _mm256_loadu_si256((const __m256i *)(current_chunk + u));
+			avx_aux = _mm256_and_si256(avx_aux, avx_mask[int256_u]);
+			avx_aux = _mm256_xor_si256(avx_aux, avx_mask[int256_u]);
+
+			current_decrypted &= _mm256_testz_si256(avx_aux, avx_aux);
+		}
+
+		for(u; u < default_len; u++)
+			current_decrypted &= (((current_chunk[u] & sk_mask[u]) ^ sk_mask[u]) == (uint64_t)0);
+
+		*decrypted ^= current_decrypted;
+	}
+
+#else
+
 	for (uint64_t i = args->fst_deflen_pos; i < snd_deflen_pos; i++) {
 
 		uint64_t * current_chunk = to_decrypt + i * default_len;
@@ -148,6 +182,8 @@ void certFHE::chunk_decrypt(Args * raw_args) {
 
 		*decrypted ^= current_decrypted;
 	}
+
+#endif
 
 	{
 		std::lock_guard <std::mutex> lock(args->done_mutex);
@@ -169,7 +205,39 @@ uint64_t SecretKey::decrypt(uint64_t* v,uint64_t len,uint64_t defLen, uint64_t n
 	uint64_t * sk_mask = this->s_mask;
 
 	if (deflen_cnt < MTValues::dec_m_threshold) {
-		
+
+#ifdef __AVX2__
+
+		__m256i * avx_mask = new __m256i[defLen / 4];
+		for (int u = 0; u + 4 <= defLen; u += 4)
+			avx_mask[u / 4] = _mm256_loadu_si256((const __m256i *)(sk_mask + u));
+
+		for (uint64_t i = 0; i < deflen_cnt; i++) {
+
+			uint64_t * current_chunk = v + i * defLen;
+			uint64_t current_decrypted = 0x01;
+
+			int u = 0;
+
+			for (u; u + 4 <= defLen; u += 4) {
+
+				uint64_t int256_u = u / 4;
+
+				__m256i avx_aux = _mm256_loadu_si256((const __m256i *)(current_chunk + u));
+				avx_aux = _mm256_and_si256(avx_aux, avx_mask[int256_u]);
+				avx_aux = _mm256_xor_si256(avx_aux, avx_mask[int256_u]);
+
+				current_decrypted &= _mm256_testz_si256(avx_aux, avx_aux);
+			}
+
+			for (u; u < defLen; u++)
+				current_decrypted &= (((current_chunk[u] & sk_mask[u]) ^ sk_mask[u]) == (uint64_t)0);
+
+			dec ^= current_decrypted;
+		}
+
+#else
+
 		for (uint64_t i = 0; i < deflen_cnt; i++) {
 
 			uint64_t * current_chunk = v + i * defLen;
@@ -180,6 +248,8 @@ uint64_t SecretKey::decrypt(uint64_t* v,uint64_t len,uint64_t defLen, uint64_t n
 
 			dec ^= current_decrypted;
 		}
+
+#endif
 	}
 	else {
 
@@ -264,20 +334,20 @@ Ciphertext SecretKey::encrypt(Plaintext &plaintext)
 	uint64_t div = n / (sizeof(uint64_t)*8);
 	uint64_t rem = n % (sizeof(uint64_t)*8);
     len = div;
-	if ( rem != 0)
+	if (rem != 0)
 		len++;	
 
     unsigned char value = BIT(plaintext.getValue());
     uint64_t * vect =  encrypt(value,n,d,s);
-    uint64_t * _encValues = new uint64_t [len];
+	uint64_t * _encValues = new uint64_t[len];
 
 	int uint64index = 0;
-	for (int step =0;step<div;step++)
+	for (int step = 0; step < div; step++)
 	{
-		    _encValues[uint64index]= 0x00;
-			for (int s = 0;s< 64;s++)
+		    _encValues[uint64index] = 0x00;
+			for (int s = 0; s < 64; s++)
 			{
-				uint64_t inter = ((vect[step*64+s]  ) & 0x01)<<sizeof(uint64_t)*8 - 1 -s;
+				uint64_t inter = (vect[step*64+s] & 0x01)<<sizeof(uint64_t)*8 - 1 -s;
 				_encValues[uint64index] = (_encValues[uint64index] ) | ( inter );
 			}
 			uint64index++;
@@ -349,10 +419,8 @@ void SecretKey::applyPermutation_inplace(const Permutation& permutation)
 	delete [] this->s;
 	this->s = newKey;
 
-
 	delete [] current_key;
 	delete [] temp;
-
 }
 
 SecretKey SecretKey::applyPermutation(const Permutation& permutation)
@@ -446,10 +514,10 @@ SecretKey::SecretKey(const Context &context)
 
 SecretKey::SecretKey(const SecretKey& secKey) 
 {
-    this->certFHEContext = new certFHE::Context(*secKey.certFHEContext);
+	this->certFHEContext = new certFHE::Context(*secKey.certFHEContext);
 
-     if (secKey.length < 0)
-        return;
+    if (secKey.length < 0)
+		return;
     
     this->s = new uint64_t [secKey.length];
     this->length = secKey.length;
@@ -464,6 +532,10 @@ SecretKey::~SecretKey()
 {
 	for (uint64_t i = 0; i < length; i++)
 		s[i] = 0;
+
+	uint64_t default_len = this->certFHEContext->getDefaultN();
+	for (uint64_t i = 0; i < default_len; i++)
+		s_mask[i] = 0;
 
     if (this->s != nullptr)
     {

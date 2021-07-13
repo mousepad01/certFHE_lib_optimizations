@@ -98,7 +98,7 @@ void test_res_correct() {
 		int c00 = 0;
 		int c11 = 1;
 
-		for (int i = 0; i < 100; i++) {
+		for (int i = 0; i < 1000; i++) {
 
 			int r = rand() % 2;
 			c00 += r;
@@ -964,7 +964,7 @@ void only_dec_intrinsics_test_time(const int test_count, const int C_MAX_LEN) {
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\for_dec\\no_intrinsics_smask_optimization_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\for_dec\\full_dec_intrinsics_stats.txt", std::fstream::out | std::fstream::app);
 
 	certFHE::Library::initializeLibrary(true);
 	certFHE::Context context(1247, 16);
@@ -1040,7 +1040,7 @@ int main(){
 
 		//intrinsic_fullop_test_time(10, 15, 25, 2, 14);
 
-		//only_dec_intrinsics_test_time(20, 1000000);
+		only_dec_intrinsics_test_time(20, 1000000);
 	}
 
     return 0;
