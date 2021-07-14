@@ -964,7 +964,7 @@ void only_dec_intrinsics_test_time(const int test_count, const int C_MAX_LEN) {
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\for_dec\\full_dec_intrinsics_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\for_dec\\release_optimizations\\mask_onspot_load_intrinsics_stats.txt", std::fstream::out | std::fstream::app);
 
 	certFHE::Library::initializeLibrary(true);
 	certFHE::Context context(1247, 16);
