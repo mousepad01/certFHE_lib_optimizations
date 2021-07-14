@@ -138,7 +138,34 @@ void certFHE::chunk_decrypt(Args * raw_args) {
 
 	*decrypted = 0;
 
-#ifdef __AVX2__
+#ifdef __AVX512F__
+
+	for (uint64_t i = args->fst_deflen_pos; i < snd_deflen_pos; i++) {
+
+		uint64_t * current_chunk = to_decrypt + i * default_len;
+		uint64_t current_decrypted = 0x01;
+
+		int u = 0;
+
+		for (u; u + 8 <= default_len; u += 8) {
+
+			__m512i avx_aux = _mm512_loadu_si512((const void *)(current_chunk + u));
+			__m512i avx_mask = _mm512_loadu_si512((const void *)(sk_mask + u));
+
+			avx_aux = _mm512_and_si512(avx_aux, avx_mask);
+			avx_aux = _mm512_xor_si512(avx_aux, avx_mask);
+
+			__mmask8 is_zero_mask = _mm512_test_epi64_mask(avx_aux, avx_aux);
+			current_decrypted &= (_cvtmask8_u32(is_zero_mask) == 0);
+		}
+
+		for (u; u < default_len; u++)
+			current_decrypted &= ((current_chunk[u] & sk_mask[u]) ^ sk_mask[u]) == (uint64_t)0;
+
+		*decrypted ^= current_decrypted;
+}
+
+#elif __AVX2__
 
 	for (uint64_t i = args->fst_deflen_pos; i < snd_deflen_pos; i++) {
 

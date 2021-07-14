@@ -353,7 +353,22 @@ void certFHE::chunk_multiply(Args * raw_args) {
 		uint64_t fst_ch_i = (i / snd_chlen) * default_len;
 		uint64_t snd_ch_j = (i % snd_chlen) * default_len;
 
-#ifdef __AVX2__
+#ifdef __AVX512F__
+
+		int k = 0;
+		for (k; k + 8 <= default_len; k += 8) {
+
+			__m512i avx_fst_chunk = _mm512_loadu_si512((const void *)(fst_chunk + fst_ch_i + k));
+			__m512i avx_snd_chunk = _mm512_loadu_si512((const void *)(snd_chunk + snd_ch_j + k));
+			__m512i avx_result = _mm512_and_si512(avx_fst_chunk, avx_snd_chunk);
+
+			_mm512_store_si512((void *)(result + i * default_len + k), avx_result);
+		}
+
+		for (k; k < default_len; k++)
+			result[i * default_len + k] = fst_chunk[fst_ch_i + k] & snd_chunk[snd_ch_j + k];
+
+#elif __AVX2__
 
 		int k = 0;
 		for (k; k + 4 <= default_len; k += 4) {
@@ -408,7 +423,22 @@ uint64_t* Ciphertext::multiply(const Context& ctx, uint64_t *c1, uint64_t*c2, ui
 			uint64_t fst_ch_i = (i / times2) * _defaultLen;
 			uint64_t snd_ch_j = (i % times2) * _defaultLen;
 
-#ifdef __AVX2__
+#ifdef __AVX512F__
+
+			int k = 0;
+			for (k; k + 4 <= _defaultLen; k += 4) {
+
+				__m512i avx_c1 = _mm512_loadu_si512((const void *)(c1 + fst_ch_i + k));
+				__m512i avx_c2 = _mm512_loadu_si512((const void *)(c2 + snd_ch_j + k));
+				__m512i avx_res = _mm512_and_si512(avx_c1, avx_c2);
+
+				_mm512_store_si512((void *)(res + i * _defaultLen + k), avx_res);
+			}
+
+			for (k; k < _defaultLen; k++)
+				res[i * _defaultLen + k] = c1[fst_ch_i + k] & c2[snd_ch_j + k];
+
+#elif __AVX2__
 
 			int k = 0;
 			for (k; k + 4 <= _defaultLen; k += 4) {

@@ -1005,7 +1005,7 @@ void only_perm_intrinsics_test_time(const int test_count, const int C_MAX_LEN) {
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\for_perm\\perm_intrinsics_added_invs_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\for_perm\\release_perm_intrinsics_added_invs_stats.txt", std::fstream::out | std::fstream::app);
 
 	certFHE::Library::initializeLibrary(true);
 	certFHE::Context context(1247, 16);
@@ -1058,7 +1058,7 @@ int main(){
 
 		//mul_add_test_time(20, 15, 25, 2, 15);
 
-		//test_res_correct();
+		test_res_correct();
 
 		//only_dec_test_time(20, 1000000);
 
@@ -1092,7 +1092,7 @@ int main(){
 
 		//only_dec_intrinsics_test_time(20, 1000000);
 
-		only_perm_intrinsics_test_time(6, 5000);
+		//only_perm_intrinsics_test_time(6, 5000);
 	}
 
     return 0;
