@@ -154,16 +154,16 @@ void certFHE::chunk_decrypt(Args * raw_args) {
 
 			avx_aux = _mm512_and_si512(avx_aux, avx_mask);
 			avx_aux = _mm512_xor_si512(avx_aux, avx_mask);
-
+			
 			__mmask8 is_zero_mask = _mm512_test_epi64_mask(avx_aux, avx_aux);
-			current_decrypted &= (_cvtmask8_u32(is_zero_mask) == 0);
+			current_decrypted &= (is_zero_mask == 0);
 		}
 
 		for (u; u < default_len; u++)
 			current_decrypted &= ((current_chunk[u] & sk_mask[u]) ^ sk_mask[u]) == (uint64_t)0;
 
 		*decrypted ^= current_decrypted;
-}
+	}
 
 #elif __AVX2__
 
@@ -227,16 +227,16 @@ uint64_t SecretKey::decrypt(uint64_t* v,uint64_t len,uint64_t defLen, uint64_t n
 
 	if (deflen_cnt < MTValues::dec_m_threshold) {
 
-#ifdef __AVX2__WORSE
+#ifdef __AVX2__
 
-		for (uint64_t i = args->fst_deflen_pos; i < snd_deflen_pos; i++) {
+		for (uint64_t i = 0; i < deflen_cnt; i++) {
 
-			uint64_t * current_chunk = to_decrypt + i * default_len;
+			uint64_t * current_chunk = v + i * defLen;
 			uint64_t current_decrypted = 0x01;
 
 			int u = 0;
 
-			for (u; u + 4 <= default_len; u += 4) {
+			for (u; u + 4 <= defLen; u += 4) {
 
 				__m256i avx_aux = _mm256_loadu_si256((const __m256i *)(current_chunk + u));
 				__m256i avx_mask = _mm256_loadu_si256((const __m256i *)(sk_mask + u));
@@ -247,10 +247,10 @@ uint64_t SecretKey::decrypt(uint64_t* v,uint64_t len,uint64_t defLen, uint64_t n
 				current_decrypted &= _mm256_testz_si256(avx_aux, avx_aux);
 			}
 
-			for (u; u < default_len; u++)
+			for (u; u < defLen; u++)
 				current_decrypted &= ((current_chunk[u] & sk_mask[u]) ^ sk_mask[u]) == (uint64_t)0;
 
-			*decrypted ^= current_decrypted;
+			dec ^= current_decrypted;
 		}
 
 #else

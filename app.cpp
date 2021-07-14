@@ -43,9 +43,9 @@ void test_res_correct() {
 	certFHE::Context context(1247, 16);
 	certFHE::SecretKey sk(context);
 
-	MTValues::m_threshold_autoselect(context);
+	//MTValues::m_threshold_autoselect(context, false);
 
-	const int TEST_COUNT = 100; // sansa fals pozitiv: 2^(-TEST_COUNT)
+	const int TEST_COUNT = 20; // sansa fals pozitiv: 2^(-TEST_COUNT)
 
 	for (int tst = 0; tst < TEST_COUNT; tst++) {  // decriptare deflen
 
@@ -1053,6 +1053,8 @@ void only_perm_intrinsics_test_time(const int test_count, const int C_MAX_LEN) {
 
 int main(){
 
+	std::cout << "started...\n";
+
 	{
 		//only_mul_test_time(25, 3, 2, 22);
 
@@ -1094,6 +1096,9 @@ int main(){
 
 		//only_perm_intrinsics_test_time(6, 5000);
 	}
+
+	int a;
+	std::cin >> a;
 
     return 0;
 }
