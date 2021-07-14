@@ -105,9 +105,19 @@ uint64_t Permutation::getLength() const
     return this->length;
 }
 
-uint64_t* Permutation::getPermutation() const
+uint64_t Permutation::getInversionsCnt() const {
+
+	return this->inversions_cnt;
+}
+
+uint64_t * Permutation::getPermutation() const
 {
     return this->permutation;
+}
+
+CtxtInversion * Permutation::getInversions() const {
+
+	return this->inversions;
 }
 
 void Permutation::setLength(uint64_t len)
@@ -115,7 +125,12 @@ void Permutation::setLength(uint64_t len)
     this->length = len;
 }
 
-void Permutation::setPermutation(uint64_t* perm,uint64_t len)
+void Permutation::setInversionsCnt(uint64_t inv_cnt) {
+
+	this->inversions_cnt = inv_cnt;
+}
+
+void Permutation::setPermutation(uint64_t * perm, uint64_t len)
 {
     if (this->permutation != nullptr)
         delete [] this->permutation;
@@ -124,6 +139,29 @@ void Permutation::setPermutation(uint64_t* perm,uint64_t len)
     this->length = len;
     for(uint64_t i = 0; i<len;i++)
         this->permutation[i] = perm[i];
+
+	this->inversions = nullptr;
+}
+
+void Permutation::setPermutation(uint64_t * perm, uint64_t len, uint64_t inv_cnt, CtxtInversion * invs) {
+
+	if (this->permutation != nullptr)
+		delete[] this->permutation;
+
+	if (this->inversions != nullptr)
+		delete[] this->inversions;
+
+	this->permutation = new uint64_t[len];
+	this->inversions = new CtxtInversion[inv_cnt];
+
+	this->length = len;
+	this->inversions_cnt = inv_cnt;
+
+	for (uint64_t i = 0; i < len; i++)
+		this->permutation[i] = perm[i];
+
+	for (uint64_t i = 0; i < len; i++)
+		this->inversions[i] = invs[i];
 }
 
 #pragma endregion
@@ -133,68 +171,130 @@ void Permutation::setPermutation(uint64_t* perm,uint64_t len)
 Permutation::Permutation()
 {
     this->length = 0;
-    this->permutation = nullptr;
+	this->inversions_cnt = 0;
 
+    this->permutation = nullptr;
+	this->inversions = nullptr;
 }
 
-Permutation::Permutation(const uint64_t size) {
+Permutation::Permutation(const uint64_t len) {
 
-	this->permutation = new uint64_t[size];
-	this->length = size;
+	this->permutation = new uint64_t[len];
+	this->inversions = new CtxtInversion[len]; // allocating for maximum number of inversions
+
+	this->length = len;
+	this->inversions_cnt = 0;
 
 	uint64_t sRandom = 0;
-	for (int i = 0; i < size; i++)
+	for (int i = 0; i < len; i++)
 		permutation[i] = i;
 
 #if _MSC_VER && !__INTEL_COMPILER // std::random_devide guaranteed by MSVC to be criptographically secure
 
 	std::random_device csprng;
 
-	for (int pos = 0; pos < length - 2; pos++)
-		swap(permutation[pos], permutation[pos + csprng() % (length - pos)]);
+	for (int pos = 0; pos < length - 2; pos++) {
 
+		int newpos = pos + csprng() % (length - pos);
+		swap(permutation[pos], permutation[newpos]);
+
+		if (newpos != pos) {
+			
+			inversions[inversions_cnt].fst_u64_ch = pos / 64;
+			inversions[inversions_cnt].fst_u64_r = 63 - (pos % 64);
+
+			inversions[inversions_cnt].snd_u64_ch = newpos / 64;
+			inversions[inversions_cnt].snd_u64_r = 63 - (newpos % 64);
+
+			inversions_cnt += 1;
+		}
+	}
+		
 #else // for now, the default (insecure) rand
 
-	for (int pos = 0; pos < length - 2; pos++)
-		swap(permutation[pos], permutation[pos + rand() % (length - pos)]);
+	for (int pos = 0; pos < length - 2; pos++) {
+
+		int newpos = pos + rand() % (length - pos);
+		swap(permutation[pos], permutation[newpos]);
+
+		if (newpos != pos) {
+
+			inversions[inversions_cnt].fst_u64_ch = pos / 64;
+			inversions[inversions_cnt].fst_u64_r = 63 - (pos % 64);
+
+			inversions[inversions_cnt].snd_u64_ch = newpos / 64;
+			inversions[inversions_cnt].snd_u64_r = 63 - (newpos % 64);
+
+			inversions_cnt += 1;
+		}
+	}
 
 #endif
 }
 
-Permutation::Permutation(const Context& context) : Permutation(context.getN())
+Permutation::Permutation(const Context & context) : Permutation(context.getN())
 {
 
-}        
+}    
 
 Permutation::Permutation(const uint64_t *perm, const uint64_t len) : Permutation()
 {
-    this->length = len ;
-    this->permutation  = new uint64_t [len];
-    for(uint64_t i=0;i<len;i++)
-        this->permutation[i] = perm[i];
+	this->permutation = new uint64_t[len];
+
+	this->length = len;
+
+	for (uint64_t i = 0; i < len; i++)
+		this->permutation[i] = perm[i];
+}
+
+Permutation::Permutation(const uint64_t *perm, const uint64_t len, uint64_t inv_cnt, CtxtInversion * invs) {
+
+	this->permutation = new uint64_t[len];
+	this->inversions = new CtxtInversion[inv_cnt];
+
+	this->length = len;
+	this->inversions_cnt = inv_cnt;
+
+	for (uint64_t i = 0; i < len; i++)
+		this->permutation[i] = perm[i];
+
+	for (uint64_t i = 0; i < inv_cnt; i++)
+		this->inversions[i] = invs[i];
 }
 
 Permutation::Permutation(const Permutation& perm)
 {
+	this->length = perm.getLength();
+    this->permutation = new uint64_t [this->length];
 
-    this->permutation = new uint64_t [perm.getLength()];
-    this->length = perm.getLength();
+	this->inversions_cnt = perm.getInversionsCnt();
 
     uint64_t * _perm = perm.getPermutation();
+	CtxtInversion * _invs = perm.getInversions();
 
     for(uint64_t i =0 ;i <this->length ;i++)
         this->permutation[i] = _perm[i];
+	
+	for (uint64_t i = 0; i < this->inversions_cnt; i++)
+		this->inversions[i] = _invs[i];
 }
 
+Permutation::~Permutation(){
 
- Permutation::~Permutation()
- {
-     if (this->permutation != nullptr)
-        {
-            delete [] this->permutation;
-            this->permutation = nullptr;
-        }
-    this->length = 0;
- }
+	if (this->permutation != nullptr) {
+
+		delete[] this->permutation;
+		this->permutation = nullptr;
+	}
+
+	if (this->inversions != nullptr) {
+
+		delete[] this->inversions;
+		this->inversions = nullptr;
+	}
+
+	this->length = 0;
+	this->inversions_cnt = 0;
+}
 
  #pragma endregion

@@ -5,6 +5,7 @@
 #include <fstream>
 
 #include <immintrin.h>
+#include <intrin.h>
 
 #include <random>
 

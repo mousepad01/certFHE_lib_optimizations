@@ -709,7 +709,7 @@ void only_perm_autoselect_test_time(const int test_count, const int C_MAX_LEN) {
 				acc += t.stop_timer();
 			}
 
-			f << "decrypting len=" << i << " in time_cost=" << acc << " miliseconds\n";
+			f << "permuting len=" << i << " in time_cost=" << acc << " miliseconds\n";
 		}
 	}
 }
@@ -735,7 +735,7 @@ void only_mul_test_time(const int test_count, const int FIRST_LEN = 3,
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\for_mul\\mul_intrinsics_100rounds_mul_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\for_mul\\release_optimizations\\no_intrinsics_stats.txt", std::fstream::out | std::fstream::app);
 
 	certFHE::Library::initializeLibrary(true);
 	certFHE::Context context(1247, 16);
@@ -814,7 +814,7 @@ void only_add_test_time(const int test_count, const int FIRST_LEN = 3, const int
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\for_add\\only_add_intrinsics_add_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\for_add\\release_optimizations\\no_intrinsics_stats.txt", std::fstream::out | std::fstream::app);
 
 	certFHE::Library::initializeLibrary(true);
 	certFHE::Context context(1247, 16);
@@ -1000,6 +1000,56 @@ void only_dec_intrinsics_test_time(const int test_count, const int C_MAX_LEN) {
 	}
 }
 
+void only_perm_intrinsics_test_time(const int test_count, const int C_MAX_LEN) {
+
+	Timervar t;
+
+	std::fstream f;
+	f.open(STATS_PATH + "\\for_perm\\perm_intrinsics_added_invs_stats.txt", std::fstream::out | std::fstream::app);
+
+	certFHE::Library::initializeLibrary(true);
+	certFHE::Context context(1247, 16);
+	certFHE::SecretKey sk(context);
+
+	MTValues::m_threshold_autoselect(context);
+
+	for (int ts = 0; ts < test_count; ts++) {
+
+		f << "TEST\n";
+
+		Plaintext p(rand() % 2);
+		Ciphertext ctxt = sk.encrypt(p);
+
+		Permutation perm(context);
+
+		Timervar t;
+		t.start_timer();
+
+		for (int i = 2; i <= C_MAX_LEN; i *= 2) {
+
+			ctxt += ctxt;
+
+			t.stop_timer();
+
+			uint64_t acc = 0;
+
+			for (int rnd = 0; rnd < 100; rnd++) {
+
+				Ciphertext aux_c(ctxt);
+
+				t.stop_timer();
+
+				aux_c.applyPermutation_inplace(perm);
+
+				acc += t.stop_timer();
+			}
+
+			f << "permuting len=" << i << " in time_cost=" << acc << " miliseconds\n";
+		}
+		f.flush();
+	}
+}
+
 
 int main(){
 
@@ -1040,7 +1090,9 @@ int main(){
 
 		//intrinsic_fullop_test_time(10, 15, 25, 2, 14);
 
-		only_dec_intrinsics_test_time(20, 1000000);
+		//only_dec_intrinsics_test_time(20, 1000000);
+
+		only_perm_intrinsics_test_time(6, 5000);
 	}
 
     return 0;

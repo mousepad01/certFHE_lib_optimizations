@@ -86,6 +86,19 @@ namespace certFHE{
 		~DecArgs(){}
 	};
 
+	/**
+	 * Structure for retaining permutations as inversions
+	**/
+	class CtxtInversion {
+
+	public:
+
+		uint64_t fst_u64_ch;
+		uint64_t snd_u64_ch;
+		uint64_t fst_u64_r;
+		uint64_t snd_u64_r;
+	};
+
 	/*
 	 * Structure for permuting multithreading function
 	*/
@@ -93,10 +106,10 @@ namespace certFHE{
 
 	public:
 
-		uint64_t * perm;
+		CtxtInversion * perm_invs;
+		uint64_t inv_cnt;
 
-		uint64_t * original_c;
-		uint64_t * result_c;
+		uint64_t * ctxt;
 
 		uint64_t fst_deflen_pos;
 		uint64_t snd_deflen_pos;

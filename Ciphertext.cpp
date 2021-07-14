@@ -10,9 +10,9 @@ void certFHE::chunk_permute(Args * raw_args) {
 
 	PermArgs * args = (PermArgs *)raw_args;
 
-	uint64_t * perm = args->perm;
-	uint64_t * original_c = args->original_c;
-	uint64_t * result_c = args->result_c;
+	CtxtInversion * perm_invs = args->perm_invs;
+	uint64_t inv_cnt = args->inv_cnt;
+	uint64_t * ctxt = args->ctxt;
 	uint64_t default_len = args->default_len;
 	uint64_t n = args->n;
 
@@ -20,18 +20,29 @@ void certFHE::chunk_permute(Args * raw_args) {
 
 	for (uint64_t i = args->fst_deflen_pos; i < snd_deflen_pos; i++) {
 
-		uint64_t * current_chunk_original = original_c + i * default_len;
-		uint64_t * current_chunk_result = result_c + i * default_len;
+		uint64_t * current_chunk = ctxt + i * default_len;
 
-		for (uint64_t k = 0; k < n; k++) {
+		for (uint64_t k = 0; k < inv_cnt; k++) {
 
-			int u64_k = k / 64;
-			int b_k = 63 - (k % 64);
+			uint64_t fst_u64_ch = perm_invs[k].fst_u64_ch;
+			uint64_t snd_u64_ch = perm_invs[k].snd_u64_ch;
+			uint64_t fst_u64_r = perm_invs[k].fst_u64_r;
+			uint64_t snd_u64_r = perm_invs[k].snd_u64_r;
 
-			int u64_p = perm[k] / 64;
-			int b_p = 63 - (perm[k] % 64);
+			//int val_i = (current_chunk[fst_u64_ch] >> fst_u64_r) & 0x01;
+			//int val_j = (current_chunk[snd_u64_ch] >> snd_u64_r) & 0x01;
+			unsigned char val_i = _bittest64((const __int64 *)current_chunk + fst_u64_ch, fst_u64_r);
+			unsigned char val_j = _bittest64((const __int64 *)current_chunk + snd_u64_ch, snd_u64_r);
+			
+			if (val_i)
+				current_chunk[snd_u64_ch] |= (uint64_t)1 << snd_u64_r;
+			else
+				current_chunk[snd_u64_ch] &= ~((uint64_t)1 << snd_u64_r);
 
-			current_chunk_result[u64_k] |= ((current_chunk_original[u64_p] >> b_p) & 0x01) << b_k;
+			if (val_j)
+				current_chunk[fst_u64_ch] |= (uint64_t)1 << fst_u64_r;
+			else
+				current_chunk[fst_u64_ch] &= ~((uint64_t)1 << fst_u64_r);
 		}
 	}
 
@@ -47,10 +58,9 @@ void certFHE::chunk_permute(Args * raw_args) {
 //			when doing the permutation
 void Ciphertext::applyPermutation_inplace(const Permutation& permutation)
 {
-	uint64_t * result_v = new uint64_t[this->len];
-	memset(result_v, 0, sizeof(uint64_t) * this->len);
 
-	uint64_t * perm = permutation.getPermutation();
+	CtxtInversion * invs = permutation.getInversions();
+	uint64_t inv_cnt = permutation.getInversionsCnt();
 
 	uint64_t len = this->len;
 	uint64_t default_len = this->certFHEcontext->getDefaultN();
@@ -63,18 +73,24 @@ void Ciphertext::applyPermutation_inplace(const Permutation& permutation)
 
 		for (uint64_t i = 0; i < deflen_cnt; i++) {
 
-			uint64_t * current_chunk_original = this->v + i * default_len;
-			uint64_t * current_chunk_result = result_v + i * default_len;
+			uint64_t * current_chunk = this->v + i * default_len;
 
-			for (uint64_t k = 0; k < n; k++) {
+			for (uint64_t k = 0; k < inv_cnt; k++) {
 
-				int u64_k = k / 64;
-				int b_k = 63 - (k % 64);
+				//int val_i = (current_chunk[invs[k].fst_u64_ch] >> invs[k].fst_u64_r) & 0x01;
+				//int val_j = (current_chunk[invs[k].snd_u64_ch] >> invs[k].snd_u64_r) & 0x01;
+				unsigned char val_i = _bittest64((const __int64 *)current_chunk + invs[k].fst_u64_ch, invs[k].fst_u64_r);
+				unsigned char val_j = _bittest64((const __int64 *)current_chunk + invs[k].snd_u64_ch, invs[k].snd_u64_r);
 
-				int u64_p = perm[k] / 64;
-				int b_p = 63 - (perm[k] % 64);
+				if (val_i)
+					current_chunk[invs[k].snd_u64_ch] |= (uint64_t)1 << invs[k].snd_u64_r;
+				else
+					current_chunk[invs[k].snd_u64_ch] &= ~((uint64_t)1 << invs[k].snd_u64_r);
 
-				current_chunk_result[u64_k] |= ((current_chunk_original[u64_p] >> b_p) & 0x01) << b_k;
+				if (val_j)
+					current_chunk[invs[k].fst_u64_ch] |= (uint64_t)1 << invs[k].fst_u64_r;
+				else
+					current_chunk[invs[k].fst_u64_ch] &= ~((uint64_t)1 << invs[k].fst_u64_r);
 			}
 		}
 	}
@@ -109,10 +125,10 @@ void Ciphertext::applyPermutation_inplace(const Permutation& permutation)
 
 		for (int thr = 0; thr < worker_cnt; thr++) {
 
-			args[thr].perm = perm;
+			args[thr].perm_invs = invs;
+			args[thr].inv_cnt = inv_cnt;
 
-			args[thr].original_c = this->v;
-			args[thr].result_c = result_v;
+			args[thr].ctxt = this->v;
 
 			args[thr].fst_deflen_pos = prevchnk;
 			args[thr].snd_deflen_pos = prevchnk + q;
@@ -141,9 +157,6 @@ void Ciphertext::applyPermutation_inplace(const Permutation& permutation)
 
 		delete[] args;
 	}
-
-	delete[] this->v;
-	this->v = result_v;
 }
 
 Ciphertext Ciphertext::applyPermutation(const Permutation& permutation)
