@@ -43,9 +43,9 @@ void test_res_correct() {
 	certFHE::Context context(1247, 16);
 	certFHE::SecretKey sk(context);
 
-	//MTValues::m_threshold_autoselect(context, false);
+	MTValues::m_threshold_autoselect(context, false);
 
-	const int TEST_COUNT = 20; // sansa fals pozitiv: 2^(-TEST_COUNT)
+	const int TEST_COUNT = 100; // sansa fals pozitiv: 2^(-TEST_COUNT)
 
 	for (int tst = 0; tst < TEST_COUNT; tst++) {  // decriptare deflen
 
@@ -872,11 +872,14 @@ void intrinsic_fullop_test_time(const int test_count, const int FIRST_LEN = 15, 
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\full_op\\add_mul_intrinsics_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\full_op\\full_intrinsics_stats.txt", std::fstream::out | std::fstream::app);
 
-	certFHE::Library::initializeLibrary();
-	certFHE::Context context(1247, 16);
-	certFHE::SecretKey seckey(context);
+	Library::initializeLibrary();
+	Context context(1247, 16);
+	SecretKey seckey(context);
+
+	Permutation perm(context);
+	SecretKey perm_seckey = seckey.applyPermutation(perm);
 
 	MTValues::m_threshold_autoselect(context);
 
@@ -934,7 +937,15 @@ void intrinsic_fullop_test_time(const int test_count, const int FIRST_LEN = 15, 
 		for (int i = 0; i < ROUND_CNT; i++) {
 
 			ctxt1 *= ctxt3;
-			ctxt2 *= ctxt3;
+			ctxt2 = ctxt2 * ctxt3;
+
+			Ciphertext ctxt5;
+			ctxt5 = ctxt1;
+
+			ctxt5 = ctxt5 + ctxt2;
+
+			Ciphertext ctxt_perm = ctxt5.applyPermutation(perm);
+			Plaintext ptxt = perm_seckey.decrypt(ctxt_perm);
 
 			ctxt1 += ctxt2;
 
@@ -947,12 +958,6 @@ void intrinsic_fullop_test_time(const int test_count, const int FIRST_LEN = 15, 
 			snd_len_cpy *= trd_len_cpy;
 
 			first_len_cpy += snd_len_cpy;
-
-			t.stop_timer();
-			seckey.decrypt(ctxt1);
-
-			ti = t.stop_timer();
-			f << "decrypting len=" << first_len_cpy << " in time_cost=" << ti << " miliseconds\n";
 		}
 
 		f.flush();
@@ -1053,8 +1058,6 @@ void only_perm_intrinsics_test_time(const int test_count, const int C_MAX_LEN) {
 
 int main(){
 
-	std::cout << "started...\n";
-
 	{
 		//only_mul_test_time(25, 3, 2, 22);
 
@@ -1090,15 +1093,12 @@ int main(){
 
 		//only_add_test_time(10, 5, 23);
 
-		//intrinsic_fullop_test_time(10, 15, 25, 2, 14);
+		intrinsic_fullop_test_time(10, 15, 25, 2, 14);
 
 		//only_dec_intrinsics_test_time(20, 1000000);
 
 		//only_perm_intrinsics_test_time(6, 5000);
 	}
-
-	int a;
-	std::cin >> a;
 
     return 0;
 }

@@ -566,8 +566,8 @@ ostream& certFHE::operator<<(ostream &out, const Ciphertext &c)
 	return out;
 }
 
-Ciphertext Ciphertext::operator+(const Ciphertext& c) const
-{
+Ciphertext Ciphertext::operator+(const Ciphertext& c) const {
+
 	long newlen = this->len + c.getLen();
 
 	uint64_t len2 = c.getLen();
@@ -575,9 +575,12 @@ Ciphertext Ciphertext::operator+(const Ciphertext& c) const
 	uint64_t outlen = 0;
 	uint64_t* _values = add(this->v, c.v, this->len, len2, outlen);
 
-	Ciphertext result(_values, newlen, *this->certFHEcontext);
+	Ciphertext result;
 
-	delete[] _values;
+	result.len = newlen;
+	result.v = _values;
+	result.certFHEcontext = new Context(*this->certFHEcontext);
+
 	return result;
 }
 
@@ -589,9 +592,11 @@ Ciphertext Ciphertext::operator*(const Ciphertext& c) const
 	uint64_t newlen = 0;
 	uint64_t * _values = multiply(this->getContext(), this->v, valuesSecondOperand, this->len, len2, newlen);
 
-	Ciphertext result(_values, newlen, *this->certFHEcontext);
+	Ciphertext result;
 
-	delete[] _values;
+	result.len = newlen;
+	result.v = _values;
+	result.certFHEcontext = new Context(*this->certFHEcontext);
 
 	return result;
 }
@@ -636,6 +641,7 @@ Ciphertext& Ciphertext::operator=(const Ciphertext& c)
 {
 	if (this->v != nullptr)
 		delete[] this->v;
+
 	if (this->certFHEcontext != nullptr)
 		delete this->certFHEcontext;
 
