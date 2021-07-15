@@ -1,0 +1,5 @@
+To build on linux use:
+
+>mkdir build
+>cmake ../
+>make
