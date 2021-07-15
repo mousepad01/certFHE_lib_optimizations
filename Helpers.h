@@ -26,9 +26,7 @@ namespace certFHE{
         /**
          * Initialize the library by seeding the PRNG with local time
         **/
-        static void initializeLibrary();
-
-		static void initializeLibrary(bool initPools);
+		static void initializeLibrary(bool initPools = true);
 
 		/**
 		 * Getter for multiplication threadpool

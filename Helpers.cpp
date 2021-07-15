@@ -4,12 +4,6 @@ namespace certFHE{
 
 #pragma region Library class
 
-	void Library::initializeLibrary()
-	{
-		//Introducing local time as seed for further pseudo random generator calls
-		srand((unsigned int)time(NULL));
-	}
-
 	Threadpool <Args *> * Library::threadpool = NULL;
 
 	void Library::initializeLibrary(bool initPools)
@@ -19,6 +13,8 @@ namespace certFHE{
 
 		if (initPools == true) 
 			Library::threadpool = Threadpool <Args *> ::make_threadpool();
+		else
+			Library::threadpool = NULL;
 	}
 
 	Threadpool <Args *> * Library::getThreadpool() {
