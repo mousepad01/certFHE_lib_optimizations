@@ -189,7 +189,7 @@ Permutation::Permutation(const uint64_t len) {
 	for (int i = 0; i < len; i++)
 		permutation[i] = i;
 
-#if _MSC_VER && !__INTEL_COMPILER // std::random_devide guaranteed by MSVC to be criptographically secure
+#if MSVC_COMPILER_LOCAL_MACRO // std::random_devide guaranteed by MSVC to be criptographically secure
 
 	std::random_device csprng;
 

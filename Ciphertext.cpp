@@ -29,11 +29,18 @@ void certFHE::chunk_permute(Args * raw_args) {
 			uint64_t fst_u64_r = perm_invs[k].fst_u64_r;
 			uint64_t snd_u64_r = perm_invs[k].snd_u64_r;
 
-			//int val_i = (current_chunk[fst_u64_ch] >> fst_u64_r) & 0x01;
-			//int val_j = (current_chunk[snd_u64_ch] >> snd_u64_r) & 0x01;
+#if GPP_COMPILER_LOCAL_MACRO
+
+			unsigned char val_i = (current_chunk[fst_u64_ch] >> fst_u64_r) & 0x01;
+			unsigned char val_j = (current_chunk[snd_u64_ch] >> snd_u64_r) & 0x01;
+
+#elif MSVC_COMPILER_LOCAL_MACRO
+
 			unsigned char val_i = _bittest64((const __int64 *)current_chunk + fst_u64_ch, fst_u64_r);
 			unsigned char val_j = _bittest64((const __int64 *)current_chunk + snd_u64_ch, snd_u64_r);
-			
+
+#endif
+
 			if (val_i)
 				current_chunk[snd_u64_ch] |= (uint64_t)1 << snd_u64_r;
 			else
@@ -77,20 +84,32 @@ void Ciphertext::applyPermutation_inplace(const Permutation& permutation)
 
 			for (uint64_t k = 0; k < inv_cnt; k++) {
 
-				//int val_i = (current_chunk[invs[k].fst_u64_ch] >> invs[k].fst_u64_r) & 0x01;
-				//int val_j = (current_chunk[invs[k].snd_u64_ch] >> invs[k].snd_u64_r) & 0x01;
-				unsigned char val_i = _bittest64((const __int64 *)current_chunk + invs[k].fst_u64_ch, invs[k].fst_u64_r);
-				unsigned char val_j = _bittest64((const __int64 *)current_chunk + invs[k].snd_u64_ch, invs[k].snd_u64_r);
+				uint64_t fst_u64_ch = invs[k].fst_u64_ch;
+				uint64_t snd_u64_ch = invs[k].snd_u64_ch;
+				uint64_t fst_u64_r = invs[k].fst_u64_r;
+				uint64_t snd_u64_r = invs[k].snd_u64_r;
+
+#if GPP_COMPILER_LOCAL_MACRO
+
+				unsigned char val_i = (current_chunk[fst_u64_ch] >> fst_u64_r) & 0x01;
+				unsigned char val_j = (current_chunk[snd_u64_ch] >> snd_u64_r) & 0x01;
+
+#elif MSVC_COMPILER_LOCAL_MACRO
+
+				unsigned char val_i = _bittest64((const __int64 *)current_chunk + fst_u64_ch, fst_u64_r);
+				unsigned char val_j = _bittest64((const __int64 *)current_chunk + snd_u64_ch, snd_u64_r);
+
+#endif
 
 				if (val_i)
-					current_chunk[invs[k].snd_u64_ch] |= (uint64_t)1 << invs[k].snd_u64_r;
+					current_chunk[snd_u64_ch] |= (uint64_t)1 << snd_u64_r;
 				else
-					current_chunk[invs[k].snd_u64_ch] &= ~((uint64_t)1 << invs[k].snd_u64_r);
+					current_chunk[snd_u64_ch] &= ~((uint64_t)1 << snd_u64_r);
 
 				if (val_j)
-					current_chunk[invs[k].fst_u64_ch] |= (uint64_t)1 << invs[k].fst_u64_r;
+					current_chunk[fst_u64_ch] |= (uint64_t)1 << fst_u64_r;
 				else
-					current_chunk[invs[k].fst_u64_ch] &= ~((uint64_t)1 << invs[k].fst_u64_r);
+					current_chunk[fst_u64_ch] &= ~((uint64_t)1 << fst_u64_r);
 			}
 		}
 	}
@@ -244,37 +263,12 @@ uint64_t* Ciphertext::add(uint64_t* c1, uint64_t* c2, uint64_t len1, uint64_t le
 
 	if (newlen < MTValues::add_m_threshold) {
 
-#ifdef __AVX2__WORSE // no visible performance improvement
-
-		int i = 0;
-
-		for (i; i + 4 <= len1; i += 4) {
-
-			__m256i avx_c1 = _mm256_loadu_si256((const __m256i *)(c1 + i));
-			_mm256_store_si256((__m256i *)(res + i), avx_c1);
-		}
-
-		for (i; i < len1; i++)
-			res[i] = c1[i];
-
-		for (i; i + 4 <= len2; i += 4) {
-
-			__m256i avx_c2 = _mm256_loadu_si256((const __m256i *)(c2 + i - len1));
-			_mm256_store_si256((__m256i *)(res + i), avx_c2);
-		}
-
-		for (i; i < len2; i++)
-			res[i] = c2[i - len1];
-
-#else
-
 		for (int i = 0; i < len1; i++)
 			res[i] = c1[i];
 
 		for (int i = 0; i < len2; i++)
 			res[i + len1] = c2[i];
 
-#endif
 	}
 	else {
 
@@ -368,7 +362,9 @@ void certFHE::chunk_multiply(Args * raw_args) {
 		for (k; k < default_len; k++)
 			result[i * default_len + k] = fst_chunk[fst_ch_i + k] & snd_chunk[snd_ch_j + k];
 
-#elif __AVX2__
+#elif __AVX2__ 
+
+		std::cout << "avx2\n";
 
 		int k = 0;
 		for (k; k + 4 <= default_len; k += 4) {
@@ -383,8 +379,8 @@ void certFHE::chunk_multiply(Args * raw_args) {
 		for(k; k < default_len; k++)
 			result[i * default_len + k] = fst_chunk[fst_ch_i + k] & snd_chunk[snd_ch_j + k];
 
-#else
-
+#else	
+		std::cout << "nothing\n";
 		for (int k = 0; k < default_len; k++)
 			result[i * default_len + k] = fst_chunk[fst_ch_i + k] & snd_chunk[snd_ch_j + k];
 

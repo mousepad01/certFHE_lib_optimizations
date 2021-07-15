@@ -4,13 +4,19 @@
 #define MSVC_COMPILER_LOCAL_MACRO (_MSC_VER && !__INTEL_COMPILER)
 #endif
 
+#ifndef GPP_COMPILER_LOCAL_MACRO
+#define GPP_COMPILER_LOCAL_MACRO __GNUC__
+#endif
+
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
 
 #include <immintrin.h>
+//#include <avx2intrin.h>
+//#include <avxintrin.h>
 
-#ifdef MSVC_COMPILER_LOCAL_MACRO
+#if MSVC_COMPILER_LOCAL_MACRO
 #include <intrin.h>
 #endif
 
