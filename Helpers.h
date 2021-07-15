@@ -53,11 +53,6 @@ namespace certFHE{
         **/
         static bool exists(const uint64_t*v,const uint64_t len, const uint64_t value);
 
-        /**
-         * Deletes a pointer allocated through the certFHE library
-        **/
-        static void deletePointer(void* pointer, bool isArray);
-
 		static void u64_chunk_cpy(Args * raw_args);
 
 		static void u64_multithread_cpy(const uint64_t * src, uint64_t * dest, uint64_t to_cpy_len);
