@@ -5,21 +5,24 @@ namespace certFHE{
 
 #pragma region Operators
 
-	SecretKey& SecretKey::operator=(const SecretKey& secKey)
+	SecretKey & SecretKey::operator=(const SecretKey & secKey)
 	{
 		if (this->s != nullptr)
-		{
 			delete [] this->s;
-		}
+		
+		if (this->s_mask != nullptr)
+			delete [] this->s_mask;
 
 		this->length = secKey.length;
-		this->s = new uint64_t [secKey.length];
-		for(uint64_t i =0 ;i<secKey.length;i++)
+		this->s = new uint64_t[secKey.length];
+
+		for(uint64_t i = 0; i < secKey.length; i++)
 			this->s[i] = secKey.s[i];
+
 		return *this;
 	}
 
-	std::ostream& operator<<(std::ostream &out, const SecretKey &c)
+	std::ostream & operator<<(std::ostream &out, const SecretKey &c)
 	{
 		uint64_t* key = c.getKey();
 		for(uint64_t i =0;i<c.getLength();i++)
@@ -32,7 +35,7 @@ namespace certFHE{
 
 #pragma region Private functions
 
-	uint64_t* SecretKey::encrypt(unsigned char bit, uint64_t n, uint64_t d, uint64_t*s)
+	uint64_t * SecretKey::encrypt(unsigned char bit, uint64_t n, uint64_t d, uint64_t * s)
 	{
 		//@TODO: generate only a random of size n-d instead of n-d randoms()
 		uint64_t* res = new uint64_t[n];
@@ -111,7 +114,7 @@ namespace certFHE{
 		std::cout << '\n';*/
 	}
 
-	uint64_t SecretKey::defaultN_decrypt(uint64_t* v)
+	uint64_t SecretKey::defaultN_decrypt(uint64_t * v)
 	{
 		uint64_t decrypted = 0x01;
 		uint64_t * sk_mask = this->s_mask;
@@ -444,7 +447,6 @@ namespace certFHE{
 
 	SecretKey SecretKey::applyPermutation(const Permutation& permutation)
 	{
-
 		SecretKey secKey(*this);
 		secKey.applyPermutation_inplace(permutation);
 		return secKey;
@@ -499,11 +501,10 @@ namespace certFHE{
 
 #pragma region Constructors and destructor
 
-	SecretKey::SecretKey(const Context & context)
-	{
+	SecretKey::SecretKey(const Context & context){	
+
 		// seed once again the PRNG with local time
-		time_t t = time(NULL);
-		srand((unsigned int)t);
+		srand((unsigned int)time(NULL));
 
 		this->certFHEContext = new certFHE::Context(context);
 
@@ -531,16 +532,10 @@ namespace certFHE{
 		this->set_mask_key();
 	}
 
-	SecretKey::SecretKey(const SecretKey& secKey) 
-	{
-		this->certFHEContext = new certFHE::Context(*secKey.certFHEContext);
+	SecretKey::SecretKey(const SecretKey & secKey) {
 
-		if (this->s != nullptr)
-			delete[] this->s;
+		this->certFHEContext = new Context(*secKey.certFHEContext);
 
-		if (this->s_mask != nullptr)
-			delete[] this->s_mask;
-		
 		this->s = new uint64_t [secKey.length];
 		this->length = secKey.length;
 
@@ -550,8 +545,8 @@ namespace certFHE{
 		this->set_mask_key();
 	}
 
-	SecretKey::~SecretKey()
-	{
+	SecretKey::~SecretKey() { 	
+
 		for (uint64_t i = 0; i < length; i++)
 			s[i] = 0;
 
@@ -564,6 +559,12 @@ namespace certFHE{
 			delete [] this->s;
 			this->s = nullptr;
 		}
+
+		if (this->s_mask != nullptr)
+		{
+			delete[] this->s_mask;
+			this->s_mask = nullptr;
+		}
 		
 		this->length = -1;
 
@@ -572,15 +573,8 @@ namespace certFHE{
 			delete this->certFHEContext;
 			this->certFHEContext = nullptr;
 		}
-
-		if (this->s_mask != nullptr)
-		{
-			delete[] this->s_mask;
-			this->s_mask = nullptr;
-		}
 	}
 
 #pragma endregion
 
 }
-
