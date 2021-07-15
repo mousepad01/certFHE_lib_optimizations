@@ -872,7 +872,7 @@ void intrinsic_fullop_test_time(const int test_count, const int FIRST_LEN = 15, 
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\full_op\\full_intrinsics_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\full_op\\move_added\\debug_no_move_full_intrinsics_stats.txt", std::fstream::out | std::fstream::app);
 
 	Library::initializeLibrary();
 	Context context(1247, 16);
@@ -1063,7 +1063,7 @@ int main(){
 
 		//mul_add_test_time(20, 15, 25, 2, 15);
 
-		test_res_correct();
+		//test_res_correct();
 
 		//only_dec_test_time(20, 1000000);
 
@@ -1093,7 +1093,7 @@ int main(){
 
 		//only_add_test_time(10, 5, 23);
 
-		//intrinsic_fullop_test_time(10, 15, 25, 2, 11);
+		intrinsic_fullop_test_time(10, 15, 25, 2, 11);
 
 		//only_dec_intrinsics_test_time(20, 1000000);
 

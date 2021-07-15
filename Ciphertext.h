@@ -68,6 +68,11 @@ namespace certFHE{
         **/
         Ciphertext(const Ciphertext & ctxt);
 
+		/**
+		 * Move constructor
+		**/
+		Ciphertext(Ciphertext && ctxt);
+
         /**
          * Destructor
         **/
@@ -122,13 +127,18 @@ namespace certFHE{
         /**
          * Operators for multiplication of ciphertexts
         **/
-        Ciphertext operator*(const Ciphertext& c) const;
-        Ciphertext& operator*=(const Ciphertext& c);
+        Ciphertext operator*(const Ciphertext & c) const;
+        Ciphertext& operator*=(const Ciphertext & c);
 
         /**
-         * Operator for assignment
-        **/
-        Ciphertext& operator=(const Ciphertext& c);
+         * Operator for copy assignment
+        **/ 
+        Ciphertext& operator=(const Ciphertext & c);
+
+		/**
+		 * Operator for move assignment
+		**/
+		Ciphertext& operator=(Ciphertext && c);
 
         /**
          * Apply a permutation on the current ciphertxt

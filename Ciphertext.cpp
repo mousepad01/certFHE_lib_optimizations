@@ -652,6 +652,24 @@ namespace certFHE{
 		return *this;
 	}
 
+	Ciphertext& Ciphertext::operator=(Ciphertext && c)
+	{
+		if (this->v != nullptr)
+			delete[] this->v;
+
+		if (this->certFHEcontext != nullptr)
+			delete this->certFHEcontext;
+
+		this->len = c.len;
+		this->v = c.v;
+		this->certFHEcontext = c.certFHEcontext;
+
+		c.v = nullptr;
+		c.certFHEcontext = nullptr;
+
+		return *this;
+	}
+
 #pragma endregion
 
 #pragma region Constructors and destructor
@@ -682,6 +700,16 @@ namespace certFHE{
 	Ciphertext::Ciphertext(const Ciphertext & ctxt) : Ciphertext(ctxt.v, ctxt.len, ctxt.certFHEcontext)
 	{
 
+	}
+
+	Ciphertext::Ciphertext(Ciphertext && ctxt) {
+
+		this->v = ctxt.v;
+		this->len = ctxt.len;
+		this->certFHEcontext = ctxt.certFHEcontext;
+
+		ctxt.v = nullptr;
+		ctxt.certFHEcontext = nullptr;
 	}
 
 	Ciphertext::~Ciphertext()
