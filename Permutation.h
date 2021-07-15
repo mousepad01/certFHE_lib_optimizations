@@ -5,8 +5,6 @@
 #include "Helpers.h"
 #include "Context.h"
 
-using namespace std;
-
 namespace certFHE{
 
     /**
@@ -80,7 +78,7 @@ namespace certFHE{
         /**
          * Friend class for operator<<
         **/
-        friend ostream& operator<<(ostream &out, const Permutation &c);
+        friend std::ostream& operator<<(std::ostream &out, const Permutation &c);
 
         /**
          * Asignment operator

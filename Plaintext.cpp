@@ -7,7 +7,7 @@ namespace certFHE {
 
 #pragma region Operators
 
-ostream& operator<<(ostream &out, const Plaintext &c)
+std::ostream& operator<<(std::ostream &out, const Plaintext &c)
 {
    
     char val = c.getValue();

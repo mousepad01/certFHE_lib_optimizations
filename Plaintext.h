@@ -3,8 +3,6 @@
 
 #include "utils.h"
 
-using namespace std;
-
 namespace certFHE{
 
     /**
@@ -42,7 +40,7 @@ namespace certFHE{
         /**
          * Friend class for operator<<
         **/
-        friend ostream& operator<<(ostream &out, const Plaintext &c);
+        friend std::ostream& operator<<(std::ostream &out, const Plaintext &c);
         
     };
 

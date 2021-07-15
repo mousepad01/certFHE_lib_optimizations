@@ -13,8 +13,6 @@
 #include <fstream>
 
 #include <immintrin.h>
-//#include <avx2intrin.h>
-//#include <avxintrin.h>
 
 #if MSVC_COMPILER_LOCAL_MACRO
 #include <intrin.h>

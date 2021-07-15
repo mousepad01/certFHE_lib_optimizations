@@ -8,8 +8,6 @@
 #include "Helpers.h"
 #include "Permutation.h"
 
-using namespace std;
-
 namespace certFHE
 {
     /**
@@ -19,11 +17,11 @@ namespace certFHE
 
     private:
 
-        uint64_t *s;                    // secret positions from the vector [0,n-1]. 
-		uint64_t *s_mask;				// secret key as a bitmask
+        uint64_t * s;                    // secret positions from the vector [0,n-1]. 
+		uint64_t * s_mask;				 // secret key as a bitmask
 
-        long length;                    // length of the s vector, containing the secret posionts
-		long mask_length;				// length of secret key as bitmask IN UINT64 CHUNKS
+        long length;                     // length of the s vector, containing the secret posionts
+		long mask_length;				 // length of secret key as bitmask IN UINT64 CHUNKS
 
         Context *certFHEContext;
 
@@ -91,14 +89,14 @@ namespace certFHE
          * @param[in] plaintext: input to be encrypted ({0,1})
          * @return value: resultint ciphertext
         **/
-        Ciphertext encrypt( Plaintext &plaintext);
+        Ciphertext encrypt(Plaintext &plaintext);
 
         /**
          * Decrypts an ciphertxts
          * @param[in] ciphertext: ciphertext to be decrypted 
          * @return value: decrypted plaintext
         **/
-        Plaintext decrypt( Ciphertext& ciphertext);
+        Plaintext decrypt(Ciphertext& ciphertext);
 
         /**
          * Apply the permutation on current secret key
@@ -121,7 +119,7 @@ namespace certFHE
         /**
          * Friend class for operator<<
         **/
-        friend ostream& operator<<(ostream &out, const SecretKey &c);
+        friend std::ostream& operator<<(std::ostream &out, const SecretKey &c);
 
         /**
          * Assignment operator

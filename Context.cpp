@@ -35,7 +35,7 @@ Context::~Context()
 
 #pragma region Operators
 
-ostream& operator<<(ostream &out, const Context &c)
+std::ostream& operator<<(std::ostream &out, const Context &c)
 {
 	out<<"N= "<<c.getN()<<endl;
 	out<<"D= "<<c.getD()<<endl;

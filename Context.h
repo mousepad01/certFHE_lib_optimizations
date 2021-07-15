@@ -4,8 +4,6 @@
 #include "utils.h"
 #include "Helpers.h"
 
-using namespace std;
-
 namespace certFHE{
 
     /**
@@ -54,7 +52,7 @@ namespace certFHE{
         /**
          * Friend class for operator<<
         **/
-        friend ostream& operator<<(ostream &out, const Context &c);
+        friend std::ostream& operator<<(std::ostream &out, const Context &c);
 
 
         /**

@@ -31,7 +31,7 @@ Permutation Permutation::getInverse()
 
 #pragma region Operators
 
-ostream& certFHE::operator<<(ostream &out, const Permutation &p)
+std::ostream& certFHE::operator<<(std::ostream &out, const Permutation &p)
 {
     uint64_t* _p = p.getPermutation();
     uint64_t l = p.getLength();

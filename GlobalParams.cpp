@@ -18,8 +18,8 @@ void MTValues::__cpy_m_threshold_autoselect(const Context & context) {
 	double observed_multithreading[MAX_L_LOG];
 	double observed_sequential[MAX_L_LOG];
 
-	memset(observed_multithreading, 0, MAX_L_LOG * sizeof(uint64_t));
-	memset(observed_sequential, 0, MAX_L_LOG * sizeof(uint64_t));
+	memset(observed_multithreading, 0, MAX_L_LOG * sizeof(double));
+	memset(observed_sequential, 0, MAX_L_LOG * sizeof(double));
 
 	const int deflen = context.getDefaultN();
 
@@ -29,7 +29,7 @@ void MTValues::__cpy_m_threshold_autoselect(const Context & context) {
 	for (int ts = 0; ts < AUTOSELECT_TEST_CNT; ts++) {
 
 		for (int i = 0; i < MAX_L * deflen; i++)
-			src[i] = (rand() << 48) | (rand() << 16);
+			src[i] = ((uint64_t)rand() << 48) | ((uint64_t)rand() << 16);
 
 		for (int pow = 4; pow < MAX_L_LOG; pow++) {
 
@@ -145,8 +145,8 @@ void MTValues::__mul_m_threshold_autoselect(const Context & context) {
 	double observed_multithreading[MAX_L_LOG];
 	double observed_sequential[MAX_L_LOG];
 
-	memset(observed_multithreading, 0, MAX_L_LOG * sizeof(uint64_t));
-	memset(observed_sequential, 0, MAX_L_LOG * sizeof(uint64_t));
+	memset(observed_multithreading, 0, MAX_L_LOG * sizeof(double));
+	memset(observed_sequential, 0, MAX_L_LOG * sizeof(double));
 
 	SecretKey sk(context);
 
@@ -248,8 +248,8 @@ void MTValues::__add_m_threshold_autoselect(const Context & context) {
 	double observed_multithreading[MAX_L_LOG];
 	double observed_sequential[MAX_L_LOG];
 
-	memset(observed_multithreading, 0, MAX_L_LOG * sizeof(uint64_t));
-	memset(observed_sequential, 0, MAX_L_LOG * sizeof(uint64_t));
+	memset(observed_multithreading, 0, MAX_L_LOG * sizeof(double));
+	memset(observed_sequential, 0, MAX_L_LOG * sizeof(double));
 
 	SecretKey sk(context);
 
@@ -343,8 +343,8 @@ void MTValues::__perm_m_threshold_autoselect(const Context & context) {
 	double observed_multithreading[MAX_L_LOG];
 	double observed_sequential[MAX_L_LOG];
 
-	memset(observed_multithreading, 0, MAX_L_LOG * sizeof(uint64_t));
-	memset(observed_sequential, 0, MAX_L_LOG * sizeof(uint64_t));
+	memset(observed_multithreading, 0, MAX_L_LOG * sizeof(double));
+	memset(observed_sequential, 0, MAX_L_LOG * sizeof(double));
 
 	SecretKey sk(context);
 
@@ -410,7 +410,7 @@ void MTValues::__perm_m_threshold_autoselect(const Context & context) {
 	MTValues::perm_m_threshold = 1 << threshold_log;
 }
 
-void MTValues::cpy_m_threshold_autoselect(const Context & context, bool cache_in_file, string cache_file_name) {
+void MTValues::cpy_m_threshold_autoselect(const Context & context, bool cache_in_file, std::string cache_file_name) {
 
 	if (cache_in_file) {
 
@@ -453,7 +453,7 @@ void MTValues::cpy_m_threshold_autoselect(const Context & context, bool cache_in
 
 }
 
-void MTValues::dec_m_threshold_autoselect(const Context & context, bool cache_in_file, string cache_file_name) {
+void MTValues::dec_m_threshold_autoselect(const Context & context, bool cache_in_file, std::string cache_file_name) {
 
 	if (cache_in_file) {
 
@@ -495,7 +495,7 @@ void MTValues::dec_m_threshold_autoselect(const Context & context, bool cache_in
 		__dec_m_threshold_autoselect(context);
 }
 
-void MTValues::mul_m_threshold_autoselect(const Context & context, bool cache_in_file, string cache_file_name) {
+void MTValues::mul_m_threshold_autoselect(const Context & context, bool cache_in_file, std::string cache_file_name) {
 
 	if (cache_in_file) {
 
@@ -537,7 +537,7 @@ void MTValues::mul_m_threshold_autoselect(const Context & context, bool cache_in
 		__mul_m_threshold_autoselect(context);
 }
 
-void MTValues::add_m_threshold_autoselect(const Context & context, bool cache_in_file, string cache_file_name) {
+void MTValues::add_m_threshold_autoselect(const Context & context, bool cache_in_file, std::string cache_file_name) {
 
 	if (cache_in_file) {
 
@@ -579,7 +579,7 @@ void MTValues::add_m_threshold_autoselect(const Context & context, bool cache_in
 		__add_m_threshold_autoselect(context);
 }
 
-void MTValues::perm_m_threshold_autoselect(const Context & context, bool cache_in_file, string cache_file_name) {
+void MTValues::perm_m_threshold_autoselect(const Context & context, bool cache_in_file, std::string cache_file_name) {
 
 	if (cache_in_file) {
 
@@ -621,7 +621,7 @@ void MTValues::perm_m_threshold_autoselect(const Context & context, bool cache_i
 		__perm_m_threshold_autoselect(context);
 }
 
-void MTValues::m_threshold_autoselect(const Context & context, bool cache_in_file, string cache_file_name) {
+void MTValues::m_threshold_autoselect(const Context & context, bool cache_in_file, std::string cache_file_name) {
 
 	if (cache_in_file) {
 

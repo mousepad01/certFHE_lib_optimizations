@@ -220,7 +220,7 @@ void certFHE::chunk_add(Args * raw_args) {
 	for (i; i + 4 <= fst_for_limit; i += 4) {
 
 		__m256i avx_fst_chunk = _mm256_loadu_si256((const __m256i *)(fst_chunk + i));
-		_mm256_store_si256((__m256i *)(result + i), avx_fst_chunk);
+		_mm256_storeu_si256((__m256i *)(result + i), avx_fst_chunk);
 	}
 
 	for (i; i < fst_for_limit; i++)
@@ -307,7 +307,7 @@ uint64_t* Ciphertext::add(uint64_t* c1, uint64_t* c2, uint64_t len1, uint64_t le
 
 		for (int thr = 0; thr < thread_count; thr++) {
 
-		std:unique_lock <std::mutex> lock(args[thr].done_mutex);
+			std::unique_lock <std::mutex> lock(args[thr].done_mutex);
 
 			args[thr].done.wait(lock, [thr, args] {
 				return args[thr].task_is_done;
@@ -356,15 +356,13 @@ void certFHE::chunk_multiply(Args * raw_args) {
 			__m512i avx_snd_chunk = _mm512_loadu_si512((const void *)(snd_chunk + snd_ch_j + k));
 			__m512i avx_result = _mm512_and_si512(avx_fst_chunk, avx_snd_chunk);
 
-			_mm512_store_si512((void *)(result + i * default_len + k), avx_result);
+			_mm512_storeu_si512((void *)(result + i * default_len + k), avx_result);
 		}
 
 		for (k; k < default_len; k++)
 			result[i * default_len + k] = fst_chunk[fst_ch_i + k] & snd_chunk[snd_ch_j + k];
 
-#elif __AVX2__ 
-
-		std::cout << "avx2\n";
+#elif __AVX2__
 
 		int k = 0;
 		for (k; k + 4 <= default_len; k += 4) {
@@ -373,14 +371,14 @@ void certFHE::chunk_multiply(Args * raw_args) {
 			__m256i avx_snd_chunk = _mm256_loadu_si256((const __m256i *)(snd_chunk + snd_ch_j + k));
 			__m256i avx_result = _mm256_and_si256(avx_fst_chunk, avx_snd_chunk);
 
-			_mm256_store_si256((__m256i *)(result + i * default_len + k), avx_result);
+			_mm256_storeu_si256((__m256i *)(result + i * default_len + k), avx_result);
 		}
 
 		for(k; k < default_len; k++)
 			result[i * default_len + k] = fst_chunk[fst_ch_i + k] & snd_chunk[snd_ch_j + k];
 
 #else	
-		std::cout << "nothing\n";
+
 		for (int k = 0; k < default_len; k++)
 			result[i * default_len + k] = fst_chunk[fst_ch_i + k] & snd_chunk[snd_ch_j + k];
 
@@ -428,13 +426,13 @@ uint64_t* Ciphertext::multiply(const Context& ctx, uint64_t *c1, uint64_t*c2, ui
 				__m512i avx_c2 = _mm512_loadu_si512((const void *)(c2 + snd_ch_j + k));
 				__m512i avx_res = _mm512_and_si512(avx_c1, avx_c2);
 
-				_mm512_store_si512((void *)(res + i * _defaultLen + k), avx_res);
+				_mm512_storeu_si512((void *)(res + i * _defaultLen + k), avx_res);
 			}
 
 			for (k; k < _defaultLen; k++)
 				res[i * _defaultLen + k] = c1[fst_ch_i + k] & c2[snd_ch_j + k];
 
-#elif __AVX2__
+#elif __AVX2__asd
 
 			int k = 0;
 			for (k; k + 4 <= _defaultLen; k += 4) {
@@ -443,7 +441,7 @@ uint64_t* Ciphertext::multiply(const Context& ctx, uint64_t *c1, uint64_t*c2, ui
 				__m256i avx_c2 = _mm256_loadu_si256((const __m256i *)(c2 + snd_ch_j + k));
 				__m256i avx_res = _mm256_and_si256(avx_c1, avx_c2);
 
-				_mm256_store_si256((__m256i *)(res + i * _defaultLen + k), avx_res);
+				_mm256_storeu_si256((__m256i *)(res + i * _defaultLen + k), avx_res);
 			}
 
 			for (k; k < _defaultLen; k++)
@@ -530,7 +528,7 @@ uint64_t* Ciphertext::multiply(const Context& ctx, uint64_t *c1, uint64_t*c2, ui
 
 #pragma region Operators
 
-ostream& certFHE::operator<<(ostream &out, const Ciphertext &c)
+std::ostream & certFHE::operator<<(std::ostream &out, const Ciphertext &c)
 {
 	uint64_t* _v = c.getValues();
 

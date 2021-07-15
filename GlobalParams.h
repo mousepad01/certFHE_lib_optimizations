@@ -35,12 +35,12 @@ namespace certFHE {
 		static uint64_t add_m_threshold;
 		static uint64_t perm_m_threshold;
 
-		static void cpy_m_threshold_autoselect(const Context & context, bool cache_in_file = true, string cache_file_name = "cpy_m_thrsh_cache.bin");
-		static void dec_m_threshold_autoselect(const Context & context, bool cache_in_file = true, string cache_file_name = "dec_m_thrsh_cache.bin");
-		static void mul_m_threshold_autoselect(const Context & context, bool cache_in_file = true, string cache_file_name = "mul_m_thrsh_cache.bin");
-		static void add_m_threshold_autoselect(const Context & context, bool cache_in_file = true, string cache_file_name = "add_m_thrsh_cache.bin");
-		static void perm_m_threshold_autoselect(const Context & context, bool cache_in_file = true, string cache_file_name = "perm_m_thrsh_cache.bin");
-		static void m_threshold_autoselect(const Context & context, bool cache_in_file = true, string cache_file_name = "m_thrsh_cache.bin");
+		static void cpy_m_threshold_autoselect(const Context & context, bool cache_in_file = true, std::string cache_file_name = "cpy_m_thrsh_cache.bin");
+		static void dec_m_threshold_autoselect(const Context & context, bool cache_in_file = true, std::string cache_file_name = "dec_m_thrsh_cache.bin");
+		static void mul_m_threshold_autoselect(const Context & context, bool cache_in_file = true, std::string cache_file_name = "mul_m_thrsh_cache.bin");
+		static void add_m_threshold_autoselect(const Context & context, bool cache_in_file = true, std::string cache_file_name = "add_m_thrsh_cache.bin");
+		static void perm_m_threshold_autoselect(const Context & context, bool cache_in_file = true, std::string cache_file_name = "perm_m_thrsh_cache.bin");
+		static void m_threshold_autoselect(const Context & context, bool cache_in_file = true, std::string cache_file_name = "m_thrsh_cache.bin");
 	};
 
 }

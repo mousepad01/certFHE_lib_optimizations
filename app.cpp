@@ -11,7 +11,7 @@
 #include "certFHE.h"
 #include "Threadpool.hpp"
 
-static string STATS_PATH = "C:\\Users\\intern.andreis\\Desktop\\certfhe_stats\\intrinsics_stats";
+static std::string STATS_PATH = "C:\\Users\\intern.andreis\\Desktop\\certfhe_stats\\intrinsics_stats";
 
 using namespace certFHE;
 
@@ -45,7 +45,7 @@ void test_res_correct() {
 
 	MTValues::m_threshold_autoselect(context, false);
 
-	const int TEST_COUNT = 100; // sansa fals pozitiv: 2^(-TEST_COUNT)
+	const int TEST_COUNT = 10; // sansa fals pozitiv: 2^(-TEST_COUNT)
 
 	for (int tst = 0; tst < TEST_COUNT; tst++) {  // decriptare deflen
 

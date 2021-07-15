@@ -5,8 +5,6 @@
 #include "Context.h"
 #include "Permutation.h"
 
-using namespace std;
-
 namespace certFHE{
 
     /**
@@ -92,7 +90,7 @@ namespace certFHE{
         /**
          * Friend class for operator<<
         **/
-        friend ostream& operator<<(ostream &out, const Ciphertext &c);
+        friend std::ostream & operator<<(std::ostream &out, const Ciphertext &c);
         
         /**
          * Operators for addition of ciphertexts
