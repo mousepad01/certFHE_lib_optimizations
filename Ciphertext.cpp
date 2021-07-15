@@ -432,7 +432,7 @@ uint64_t* Ciphertext::multiply(const Context& ctx, uint64_t *c1, uint64_t*c2, ui
 			for (k; k < _defaultLen; k++)
 				res[i * _defaultLen + k] = c1[fst_ch_i + k] & c2[snd_ch_j + k];
 
-#elif __AVX2__asd
+#elif __AVX2__
 
 			int k = 0;
 			for (k; k + 4 <= _defaultLen; k += 4) {
