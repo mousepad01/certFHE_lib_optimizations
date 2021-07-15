@@ -18,8 +18,8 @@ namespace certFHE {
 	 */
 	class MTValues {
 
-		static const int AUTOSELECT_TEST_CNT = 4;  // number of tests, to be averaged
-		static const int ROUND_PER_TEST_CNT = 50;  // number of counted operations per test
+		static const uint64_t AUTOSELECT_TEST_CNT = 4;  // number of tests, to be averaged
+		static const uint64_t ROUND_PER_TEST_CNT = 50;  // number of counted operations per test
 
 		static void __cpy_m_threshold_autoselect(const Context & context);
 		static void __dec_m_threshold_autoselect(const Context & context);

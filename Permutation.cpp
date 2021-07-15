@@ -9,9 +9,9 @@ namespace certFHE{
 {
     uint64_t *p = new uint64_t[length];
 
-	for (int i = 0; i <length; i++)
+	for (uint64_t i = 0; i <length; i++)
 	{
-		for (int j = 0; j <length; j++)
+		for (uint64_t j = 0; j <length; j++)
 		{
 			if (permutation[j] == i)
 			{
@@ -67,7 +67,7 @@ namespace certFHE{
 
 		uint64_t *p = new uint64_t[length];
 		uint64_t *pB = permB.getPermutation();
-		for (int i = 0; i < length; i++)
+		for (uint64_t i = 0; i < length; i++)
 		{
 			p[i] = this->permutation[pB[i]];
 		}
@@ -84,7 +84,7 @@ namespace certFHE{
 
 		uint64_t *p = new uint64_t[length];
 		uint64_t *pB = permB.getPermutation();
-		for (int i = 0; i < length; i++)
+		for (uint64_t i = 0; i < length; i++)
 		{
 			p[i] = this->permutation[pB[i]];
 		}
@@ -184,17 +184,16 @@ namespace certFHE{
 		this->length = len;
 		this->inversions_cnt = 0;
 
-		uint64_t sRandom = 0;
-		for (int i = 0; i < len; i++)
+		for (uint64_t i = 0; i < len; i++)
 			permutation[i] = i;
 
 	#if MSVC_COMPILER_LOCAL_MACRO // std::random_devide guaranteed by MSVC to be criptographically secure
 
 		std::random_device csprng;
 
-		for (int pos = 0; pos < length - 2; pos++) {
+		for (uint64_t pos = 0; pos < length - 2; pos++) {
 
-			int newpos = pos + csprng() % (length - pos);
+			uint64_t newpos = (uint64_t)(pos + csprng() % (length - pos));
 			std::swap(permutation[pos], permutation[newpos]);
 
 			if (newpos != pos) {
@@ -211,9 +210,9 @@ namespace certFHE{
 			
 	#else // for now, the default (insecure) rand
 
-		for (int pos = 0; pos < length - 2; pos++) {
+		for (uint64_t pos = 0; pos < length - 2; pos++) {
 
-			int newpos = pos + rand() % (length - pos);
+			uint64_t newpos = (uint64_t)(pos + rand() % (length - pos));
 			std::swap(permutation[pos], permutation[newpos]);
 
 			if (newpos != pos) {

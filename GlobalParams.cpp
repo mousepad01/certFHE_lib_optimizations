@@ -21,37 +21,37 @@ namespace certFHE{
 		memset(observed_multithreading, 0, MAX_L_LOG * sizeof(double));
 		memset(observed_sequential, 0, MAX_L_LOG * sizeof(double));
 
-		const int deflen = context.getDefaultN();
+		uint64_t deflen = context.getDefaultN();
 
 		uint64_t * src = new uint64_t[MAX_L * deflen];
 		uint64_t * dest = new uint64_t[MAX_L * deflen];
 
-		for (int ts = 0; ts < AUTOSELECT_TEST_CNT; ts++) {
+		for (uint64_t ts = 0; ts < AUTOSELECT_TEST_CNT; ts++) {
 
-			for (int i = 0; i < MAX_L * deflen; i++)
+			for (uint64_t i = 0; i < MAX_L * deflen; i++)
 				src[i] = ((uint64_t)rand() << 48) | ((uint64_t)rand() << 16);
 
-			for (int pow = 4; pow < MAX_L_LOG; pow++) {
+			for (uint64_t pow = 4; pow < MAX_L_LOG; pow++) {
 
 				Timer timer("copy_m_threshold_autoselect_timer");
 				timer.start();
 
-				for (int rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++)
-					Helper::u64_multithread_cpy(src, dest, (1 << pow) * deflen);
+				for (uint64_t rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++)
+					Helper::u64_multithread_cpy(src, dest, ((uint64_t)1 << pow) * deflen);
 
 				observed_multithreading[pow] += timer.stop();
 			}
 
-			for (int pow = 4; pow < MAX_L_LOG; pow++) {
+			for (uint64_t pow = 4; pow < MAX_L_LOG; pow++) {
 
 				Timer timer("copy_m_threshold_autoselect_timer");
 				timer.start();
 
-				for (int rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++) {
+				for (uint64_t rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++) {
 
-					int maxpos = (1 << pow) * deflen;
+					uint64_t maxpos = ((uint64_t)1 << pow) * deflen;
 
-					for (int pos = 0; pos < maxpos; pos++)
+					for (uint64_t pos = 0; pos < maxpos; pos++)
 						dest[pos] = src[pos];
 				}
 
@@ -68,7 +68,7 @@ namespace certFHE{
 			if (observed_multithreading[threshold_log] <= observed_sequential[threshold_log])
 				break;
 
-		MTValues::cpy_m_threshold = 1 << threshold_log;
+		MTValues::cpy_m_threshold = (uint64_t)1 << threshold_log;
 	}
 		
 	void MTValues::__dec_m_threshold_autoselect(const Context & context) {
@@ -83,7 +83,7 @@ namespace certFHE{
 
 		SecretKey sk(context);
 
-		for (int ts = 0; ts < AUTOSELECT_TEST_CNT; ts++) {
+		for (uint64_t ts = 0; ts < AUTOSELECT_TEST_CNT; ts++) {
 
 			MTValues::dec_m_threshold = 0;
 
@@ -99,7 +99,7 @@ namespace certFHE{
 				Timer timer;
 				timer.start();
 
-				for (int rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++)
+				for (uint64_t rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++)
 					pt = sk.decrypt(ctxt);
 
 				observed_multithreading[pow] += timer.stop();
@@ -119,7 +119,7 @@ namespace certFHE{
 				Timer timer;
 				timer.start();
 
-				for (int rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++)
+				for (uint64_t rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++)
 					pt = sk.decrypt(ctxt);
 
 				observed_sequential[pow] += timer.stop();
@@ -135,7 +135,7 @@ namespace certFHE{
 			if (observed_multithreading[threshold_log] <= observed_sequential[threshold_log])
 				break;
 
-		MTValues::dec_m_threshold = 1 << threshold_log;
+		MTValues::dec_m_threshold = (uint64_t)1 << threshold_log;
 	}
 
 	void MTValues::__mul_m_threshold_autoselect(const Context & context) {
@@ -150,7 +150,7 @@ namespace certFHE{
 
 		SecretKey sk(context);
 
-		for (int ts = 0; ts < AUTOSELECT_TEST_CNT; ts++) {
+		for (uint64_t ts = 0; ts < AUTOSELECT_TEST_CNT; ts++) {
 
 			int first_len = 2;
 
@@ -177,7 +177,7 @@ namespace certFHE{
 
 			for (int pow = 2; pow < MAX_L_LOG; pow++) {
 
-				for (int rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++) {
+				for (uint64_t rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++) {
 
 					Ciphertext aux_c(ctxt1);
 
@@ -213,7 +213,7 @@ namespace certFHE{
 
 			for (int pow = 2; pow < MAX_L_LOG; pow++) {
 
-				for (int rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++) {
+				for (uint64_t rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++) {
 
 					Ciphertext aux_c(ctxt1);
 
@@ -238,7 +238,7 @@ namespace certFHE{
 			if (observed_multithreading[threshold_log] <= observed_sequential[threshold_log])
 				break;
 
-		MTValues::mul_m_threshold = 1 << threshold_log;
+		MTValues::mul_m_threshold = (uint64_t)1 << threshold_log;
 	}
 
 	void MTValues::__add_m_threshold_autoselect(const Context & context) {
@@ -253,7 +253,7 @@ namespace certFHE{
 
 		SecretKey sk(context);
 
-		for (int ts = 0; ts < AUTOSELECT_TEST_CNT; ts++) {
+		for (uint64_t ts = 0; ts < AUTOSELECT_TEST_CNT; ts++) {
 
 			int first_len = 64;
 
@@ -275,7 +275,7 @@ namespace certFHE{
 
 			for (int pow = 6; pow < MAX_L_LOG; pow += 2) {
 
-				for (int rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++) {
+				for (uint64_t rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++) {
 
 					Ciphertext aux_c(ctxt);
 
@@ -307,7 +307,7 @@ namespace certFHE{
 
 			for (int pow = 6; pow < MAX_L_LOG; pow += 2) {
 
-				for (int rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++) {
+				for (uint64_t rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++) {
 
 					Ciphertext aux_c(ctxt);
 
@@ -333,7 +333,7 @@ namespace certFHE{
 			if (observed_multithreading[threshold_log] <= observed_sequential[threshold_log])
 				break;
 
-		MTValues::add_m_threshold = 1 << threshold_log;
+		MTValues::add_m_threshold = (uint64_t)1 << threshold_log;
 	}
 
 	void MTValues::__perm_m_threshold_autoselect(const Context & context) {
@@ -348,7 +348,7 @@ namespace certFHE{
 
 		SecretKey sk(context);
 
-		for (int ts = 0; ts < AUTOSELECT_TEST_CNT; ts++) {
+		for (uint64_t ts = 0; ts < AUTOSELECT_TEST_CNT; ts++) {
 
 			MTValues::perm_m_threshold = 0;
 
@@ -361,7 +361,7 @@ namespace certFHE{
 
 				ctxt += ctxt;
 
-				for (int rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++) {
+				for (uint64_t rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++) {
 
 					Ciphertext aux_c(ctxt);
 
@@ -383,7 +383,7 @@ namespace certFHE{
 
 				ctxt += ctxt;
 
-				for (int rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++) {
+				for (uint64_t rnd = 0; rnd < ROUND_PER_TEST_CNT; rnd++) {
 
 					Ciphertext aux_c(ctxt);
 
@@ -407,7 +407,7 @@ namespace certFHE{
 			if (observed_multithreading[threshold_log] <= observed_sequential[threshold_log])
 				break;
 
-		MTValues::perm_m_threshold = 1 << threshold_log;
+		MTValues::perm_m_threshold = (uint64_t)1 << threshold_log;
 	}
 
 	void MTValues::cpy_m_threshold_autoselect(const Context & context, bool cache_in_file, std::string cache_file_name) {

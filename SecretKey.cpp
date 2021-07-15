@@ -22,7 +22,7 @@ namespace certFHE{
 	std::ostream& operator<<(std::ostream &out, const SecretKey &c)
 	{
 		uint64_t* key = c.getKey();
-		for(long i =0;i<c.getLength();i++)
+		for(uint64_t i =0;i<c.getLength();i++)
 			out<<key[i]<<" ";
 		out<<'\n';
 		return out;
@@ -40,7 +40,7 @@ namespace certFHE{
 
 		if (bit == 0x01)
 		{
-			for (int i = 0; i < n; i++)
+			for (uint64_t i = 0; i < n; i++)
 				if (Helper::exists(s, d, i))
 					res[i] = 0x01;
 				else
@@ -48,11 +48,11 @@ namespace certFHE{
 		}
 		else
 		{
-			uint64_t sRandom = rand() % d;
+			uint64_t sRandom = (uint64_t)rand() % d;
 			uint64_t v = 0x00;
 			bool vNok = true;
 
-			for (int i = 0; i < n; i++)
+			for (uint64_t i = 0; i < n; i++)
 				if (i != s[sRandom])
 				{
 					res[i] = rand() % 2;
@@ -81,16 +81,16 @@ namespace certFHE{
 
 	void SecretKey::set_mask_key() {
 
-		long length = this->length;
-		long default_len = this->certFHEContext->getDefaultN();
+		uint64_t length = this->length;
+		uint64_t default_len = this->certFHEContext->getDefaultN();
 
 		uint64_t * mask = new uint64_t[default_len];
 		memset(mask, 0, sizeof(uint64_t) * default_len);
 		
-		for (int j = 0; j < length; j++) {
+		for (uint64_t j = 0; j < length; j++) {
 
-			int u64_j = s[j] / 64;
-			int b = 63 - (s[j] % 64);
+			uint64_t u64_j = s[j] / 64;
+			uint64_t b = 63 - (s[j] % 64);
 
 			mask[u64_j] |= (uint64_t)1 << b;
 		}
@@ -111,13 +111,13 @@ namespace certFHE{
 		std::cout << '\n';*/
 	}
 
-	uint64_t SecretKey::defaultN_decrypt(uint64_t* v,uint64_t len, uint64_t n, uint64_t d, uint64_t* s)
+	uint64_t SecretKey::defaultN_decrypt(uint64_t* v)
 	{
 		uint64_t decrypted = 0x01;
 		uint64_t * sk_mask = this->s_mask;
 		uint64_t default_len = this->certFHEContext->getDefaultN();
 		
-		for (int u = 0; u < default_len; u++)
+		for (uint64_t u = 0; u < default_len; u++)
 			decrypted &= (((v[u] & sk_mask[u]) ^ sk_mask[u]) == (uint64_t)0);
 		
 		return decrypted;
@@ -144,9 +144,9 @@ namespace certFHE{
 			uint64_t * current_chunk = to_decrypt + i * default_len;
 			uint64_t current_decrypted = 0x01;
 
-			int u = 0;
+			uint64_t u = 0;
 
-			for (u; u + 8 <= default_len; u += 8) {
+			for (; u + 8 <= default_len; u += 8) {
 
 				__m512i avx_aux = _mm512_loadu_si512((const void *)(current_chunk + u));
 				__m512i avx_mask = _mm512_loadu_si512((const void *)(sk_mask + u));
@@ -171,9 +171,9 @@ namespace certFHE{
 			uint64_t * current_chunk = to_decrypt + i * default_len;
 			uint64_t current_decrypted = 0x01;
 
-			int u = 0;
+			uint64_t u = 0;
 
-			for (u; u + 4 <= default_len; u += 4) {
+			for (; u + 4 <= default_len; u += 4) {
 
 				__m256i avx_aux = _mm256_loadu_si256((const __m256i *)(current_chunk + u));
 				__m256i avx_mask = _mm256_loadu_si256((const __m256i *)(sk_mask + u));
@@ -184,7 +184,7 @@ namespace certFHE{
 				current_decrypted &= _mm256_testz_si256(avx_aux, avx_aux);
 			}
 
-			for (u; u < default_len; u++)
+			for (; u < default_len; u++)
 				current_decrypted &= ((current_chunk[u] & sk_mask[u]) ^ sk_mask[u]) == (uint64_t)0;
 
 			*decrypted ^= current_decrypted;
@@ -197,7 +197,7 @@ namespace certFHE{
 			uint64_t * current_chunk = to_decrypt + i * default_len;
 			uint64_t current_decrypted = 0x01;
 
-			for (int u = 0; u < default_len; u++)
+			for (uint64_t u = 0; u < default_len; u++)
 				current_decrypted &= ((current_chunk[u] & sk_mask[u]) ^ sk_mask[u]) == (uint64_t)0;
 
 			*decrypted ^= current_decrypted;
@@ -213,10 +213,10 @@ namespace certFHE{
 		}
 	}
 
-	uint64_t SecretKey::decrypt(uint64_t* v,uint64_t len,uint64_t defLen, uint64_t n, uint64_t d, uint64_t* s)
+	uint64_t SecretKey::decrypt(uint64_t* v, uint64_t len, uint64_t defLen, uint64_t d)
 	{
 		if (len == defLen)
-			return defaultN_decrypt(v,len,n,d,s);
+			return defaultN_decrypt(v);
 
 		uint64_t dec = 0;
 
@@ -233,9 +233,9 @@ namespace certFHE{
 				uint64_t * current_chunk = v + i * defLen;
 				uint64_t current_decrypted = 0x01;
 
-				int u = 0;
+				uint64_t u = 0;
 
-				for (u; u + 4 <= defLen; u += 4) {
+				for (; u + 4 <= defLen; u += 4) {
 
 					__m256i avx_aux = _mm256_loadu_si256((const __m256i *)(current_chunk + u));
 					__m256i avx_mask = _mm256_loadu_si256((const __m256i *)(sk_mask + u));
@@ -246,7 +246,7 @@ namespace certFHE{
 					current_decrypted &= _mm256_testz_si256(avx_aux, avx_aux);
 				}
 
-				for (u; u < defLen; u++)
+				for (; u < defLen; u++)
 					current_decrypted &= ((current_chunk[u] & sk_mask[u]) ^ sk_mask[u]) == (uint64_t)0;
 
 				dec ^= current_decrypted;
@@ -259,7 +259,7 @@ namespace certFHE{
 				uint64_t * current_chunk = v + i * defLen;
 				uint64_t current_decrypted = 0x01;
 
-				for (int u = 0; u < defLen; u++)
+				for (uint64_t u = 0; u < defLen; u++)
 					current_decrypted &= (((current_chunk[u] & sk_mask[u]) ^ sk_mask[u]) == (uint64_t)0);
 
 				dec ^= current_decrypted;
@@ -270,12 +270,12 @@ namespace certFHE{
 		else {
 
 			Threadpool <Args *> * threadpool = Library::getThreadpool();
-			int thread_count = threadpool->THR_CNT;
+			uint64_t thread_count = threadpool->THR_CNT;
 
 			uint64_t q;
 			uint64_t r;
 
-			int worker_cnt;
+			uint64_t worker_cnt;
 
 			if (thread_count >= deflen_cnt) {
 
@@ -296,7 +296,7 @@ namespace certFHE{
 
 			uint64_t prevchnk = 0;
 
-			for (int thr = 0; thr < worker_cnt; thr++) {
+			for (uint64_t thr = 0; thr < worker_cnt; thr++) {
 
 				args[thr].to_decrypt = v;
 				args[thr].sk_mask = this->s_mask;
@@ -319,7 +319,7 @@ namespace certFHE{
 				threadpool->add_task(&chunk_decrypt, args + thr);
 			}
 
-			for (int thr = 0; thr < worker_cnt; thr++) {
+			for (uint64_t thr = 0; thr < worker_cnt; thr++) {
 
 				std::unique_lock <std::mutex> lock(args[thr].done_mutex);
 
@@ -357,14 +357,14 @@ namespace certFHE{
 		uint64_t * vect =  encrypt(value,n,d,s);
 		uint64_t * _encValues = new uint64_t[len];
 
-		int uint64index = 0;
-		for (int step = 0; step < div; step++)
+		uint64_t uint64index = 0;
+		for (uint64_t step = 0; step < div; step++)
 		{
 				_encValues[uint64index] = 0x00;
-				for (int s = 0; s < 64; s++)
+				for (uint64_t s = 0; s < 64; s++)
 				{
-					uint64_t inter = (vect[step*64+s] & 0x01)<<sizeof(uint64_t)*8 - 1 -s;
-					_encValues[uint64index] = (_encValues[uint64index] ) | ( inter );
+					uint64_t inter = (vect[step*64+s] & 0x01) << (sizeof(uint64_t) * 8 - 1 - s);
+					_encValues[uint64index] = _encValues[uint64index] | inter;
 				}
 				uint64index++;
 		}
@@ -372,9 +372,9 @@ namespace certFHE{
 		if (rem != 0)
 		{		
 				_encValues[uint64index]= 0x00;
-				for (int r = 0 ;r<rem;r++)
+				for (uint64_t r = 0 ;r<rem;r++)
 				{
-					uint64_t inter = ((vect[ div*64 +r ]  ) & 0x01)<<sizeof(uint64_t)*8 - 1-r;
+					uint64_t inter = (vect[div*64 +r]  & 0x01) << (sizeof(uint64_t)*8 - 1 - r);
 					_encValues[uint64index] = (_encValues[uint64index] ) | ( inter );
 
 				}
@@ -394,7 +394,7 @@ namespace certFHE{
 		uint64_t n = this->certFHEContext->getN();
 		uint64_t d = this->certFHEContext->getD();
 
-		uint64_t div = n/ (sizeof(uint64_t)*8);
+		uint64_t div = n / (sizeof(uint64_t)*8);
 		uint64_t rem = n % (sizeof(uint64_t)*8);
 		uint64_t defLen = div;
 		if ( rem != 0)
@@ -402,7 +402,7 @@ namespace certFHE{
 
 		uint64_t* _v = ciphertext.getValues();
 
-		uint64_t decV =  decrypt(_v,ciphertext.getLen(),defLen,n,d,s);
+		uint64_t decV =  decrypt(_v,ciphertext.getLen(),defLen,d);
 		return Plaintext(decV);
 	}
 
@@ -421,12 +421,12 @@ namespace certFHE{
 
 		uint64_t *temp = new uint64_t[this->certFHEContext->getN()];
 
-		for (int i = 0; i < this->certFHEContext->getN(); i++)
+		for (uint64_t i = 0; i < this->certFHEContext->getN(); i++)
 			temp[i] = current_key[perm[i]];
 
 		uint64_t *newKey = new uint64_t[length];
 		uint64_t index = 0; 
-		for(uint64_t i =0;i<this->certFHEContext->getN();i++)
+		for(uint64_t i = 0; i<this->certFHEContext->getN(); i++)
 		{
 			if (temp[i] == 1)
 				newKey[index++] = i;
@@ -450,9 +450,9 @@ namespace certFHE{
 		return secKey;
 	}
 
-	long SecretKey::size()
+	uint64_t SecretKey::size()
 	{
-		long size = 0;
+		uint64_t size = 0;
 		size += sizeof(this->certFHEContext);
 		size += sizeof(this->length);
 		size += sizeof(uint64_t)*this->length;
@@ -499,11 +499,11 @@ namespace certFHE{
 
 #pragma region Constructors and destructor
 
-	SecretKey::SecretKey(const Context &context)
+	SecretKey::SecretKey(const Context & context)
 	{
 		// seed once again the PRNG with local time
 		time_t t = time(NULL);
-		srand(t);
+		srand((unsigned int)t);
 
 		this->certFHEContext = new certFHE::Context(context);
 
@@ -513,7 +513,7 @@ namespace certFHE{
 		this->s =  new uint64_t[_d];
 		this->length = _d;
 
-		int count = 0;
+		uint64_t count = 0;
 		bool go = true;
 		while (go)
 		{
@@ -535,9 +535,6 @@ namespace certFHE{
 	{
 		this->certFHEContext = new certFHE::Context(*secKey.certFHEContext);
 
-		if (secKey.length < 0)
-			return;
-
 		if (this->s != nullptr)
 			delete[] this->s;
 
@@ -547,7 +544,7 @@ namespace certFHE{
 		this->s = new uint64_t [secKey.length];
 		this->length = secKey.length;
 
-		for(long i = 0; i < secKey.length; i++)
+		for(uint64_t i = 0; i < secKey.length; i++)
 			this->s[i] = secKey.s[i];
 		
 		this->set_mask_key();
@@ -568,7 +565,7 @@ namespace certFHE{
 			this->s = nullptr;
 		}
 		
-		this->length =-1;
+		this->length = -1;
 
 		if (this->certFHEContext != nullptr)
 		{

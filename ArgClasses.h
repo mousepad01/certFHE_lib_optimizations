@@ -34,7 +34,6 @@ namespace certFHE{
 		uint64_t * result;
 
 		uint64_t fst_len;
-		uint64_t snd_len;
 
 		uint64_t res_fst_deflen_pos;
 		uint64_t res_snd_deflen_pos;
@@ -54,7 +53,6 @@ namespace certFHE{
 
 		uint64_t * result;
 
-		uint64_t fst_chlen;
 		uint64_t snd_chlen;
 
 		uint64_t default_len;
@@ -114,7 +112,6 @@ namespace certFHE{
 		uint64_t fst_deflen_pos;
 		uint64_t snd_deflen_pos;
 
-		uint64_t n;
 		uint64_t default_len;
 
 		~PermArgs(){}

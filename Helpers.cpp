@@ -7,7 +7,7 @@ namespace certFHE{
 	void Library::initializeLibrary()
 	{
 		//Introducing local time as seed for further pseudo random generator calls
-		srand(time(NULL));
+		srand((unsigned int)time(NULL));
 	}
 
 	Threadpool <Args *> * Library::threadpool = NULL;
@@ -15,7 +15,7 @@ namespace certFHE{
 	void Library::initializeLibrary(bool initPools)
 	{
 		//Introducing local time as seed for further pseudo random generator calls
-		srand(time(NULL));
+		srand((unsigned int)time(NULL));
 
 		if (initPools == true) 
 			Library::threadpool = Threadpool <Args *> ::make_threadpool();
@@ -35,7 +35,7 @@ namespace certFHE{
 
 	bool Helper::exists(const uint64_t*v,const uint64_t len,const uint64_t value)
 	{
-		for (int i = 0; i < len; i++)
+		for (uint64_t i = 0; i < len; i++)
 			if (v[i] == value)
 				return true;
 
@@ -65,12 +65,12 @@ namespace certFHE{
 	void Helper::u64_multithread_cpy(const uint64_t * src, uint64_t * dest, uint64_t to_cpy_len) {
 
 		Threadpool <Args *> * threadpool = Library::getThreadpool();
-		int thread_count = threadpool->THR_CNT;
+		uint64_t thread_count = threadpool->THR_CNT;
 
 		uint64_t q;
 		uint64_t r;
 
-		int worker_cnt;
+		uint64_t worker_cnt;
 
 		if (thread_count >= to_cpy_len) {
 
@@ -89,9 +89,9 @@ namespace certFHE{
 
 		U64CpyArgs * args = new U64CpyArgs[worker_cnt];
 
-		int prevchnk = 0;
+		uint64_t prevchnk = 0;
 
-		for (int thr = 0; thr < worker_cnt; thr++) {
+		for (uint64_t thr = 0; thr < worker_cnt; thr++) {
 
 			args[thr].src = src;
 			args[thr].dest = dest;
@@ -109,7 +109,7 @@ namespace certFHE{
 			threadpool->add_task(&u64_chunk_cpy, args + thr);
 		}
 
-		for (int thr = 0; thr < worker_cnt; thr++) {
+		for (uint64_t thr = 0; thr < worker_cnt; thr++) {
 
 			std::unique_lock <std::mutex> lock(args[thr].done_mutex);
 

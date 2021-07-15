@@ -16,7 +16,6 @@ namespace certFHE{
 		uint64_t inv_cnt = args->inv_cnt;
 		uint64_t * ctxt = args->ctxt;
 		uint64_t default_len = args->default_len;
-		uint64_t n = args->n;
 
 		uint64_t snd_deflen_pos = args->snd_deflen_pos;
 
@@ -78,8 +77,6 @@ namespace certFHE{
 
 		if (deflen_cnt < MTValues::perm_m_threshold) {
 
-			uint64_t n = this->certFHEcontext->getN();
-
 			for (uint64_t i = 0; i < deflen_cnt; i++) {
 
 				uint64_t * current_chunk = this->v + i * default_len;
@@ -118,12 +115,12 @@ namespace certFHE{
 		else {
 
 			Threadpool <Args *> * threadpool = Library::getThreadpool();
-			int thread_count = threadpool->THR_CNT;
+			uint64_t thread_count = threadpool->THR_CNT;
 
 			uint64_t q;
 			uint64_t r;
 
-			int worker_cnt;
+			uint64_t worker_cnt;
 
 			if (thread_count >= deflen_cnt) {
 
@@ -142,9 +139,9 @@ namespace certFHE{
 
 			PermArgs * args = new PermArgs[worker_cnt];
 
-			int prevchnk = 0;
+			uint64_t prevchnk = 0;
 
-			for (int thr = 0; thr < worker_cnt; thr++) {
+			for (uint64_t thr = 0; thr < worker_cnt; thr++) {
 
 				args[thr].perm_invs = invs;
 				args[thr].inv_cnt = inv_cnt;
@@ -161,13 +158,12 @@ namespace certFHE{
 				}
 				prevchnk = args[thr].snd_deflen_pos;
 
-				args[thr].n = this->certFHEcontext->getN();
 				args[thr].default_len = default_len;
 
 				threadpool->add_task(&chunk_permute, args + thr);
 			}
 
-			for (int thr = 0; thr < worker_cnt; thr++) {
+			for (uint64_t thr = 0; thr < worker_cnt; thr++) {
 
 				std::unique_lock <std::mutex> lock(args[thr].done_mutex);
 
@@ -187,9 +183,9 @@ namespace certFHE{
 		return newCiphertext;
 	}
 
-	long Ciphertext::size()
+	uint64_t Ciphertext::size()
 	{
-		long size = 0;
+		uint64_t size = 0;
 		size += sizeof(this->certFHEcontext);
 		size += sizeof(this->len);
 		size += sizeof(this->v);
@@ -210,11 +206,10 @@ namespace certFHE{
 		uint64_t * fst_chunk = args->fst_chunk;
 		uint64_t * snd_chunk = args->snd_chunk;
 		uint64_t fst_len = args->fst_len;
-		uint64_t snd_len = args->snd_len;
 
 	#ifdef __AVX2__WORSE  // no visible performance improvement
 
-		int i = args->res_fst_deflen_pos;
+		uint64_t i = args->res_fst_deflen_pos;
 		uint64_t res_snd_deflen_pos = args->res_snd_deflen_pos;
 
 		uint64_t fst_for_limit = fst_len < res_snd_deflen_pos ? fst_len : res_snd_deflen_pos;
@@ -265,26 +260,26 @@ namespace certFHE{
 
 		if (newlen < MTValues::add_m_threshold) {
 
-			for (int i = 0; i < len1; i++)
+			for (uint64_t i = 0; i < len1; i++)
 				res[i] = c1[i];
 
-			for (int i = 0; i < len2; i++)
+			for (uint64_t i = 0; i < len2; i++)
 				res[i + len1] = c2[i];
 
 		}
 		else {
 
 			Threadpool <Args *> * threadpool = Library::getThreadpool();
-			int thread_count = threadpool->THR_CNT;
+			uint64_t thread_count = threadpool->THR_CNT;
 
 			AddArgs * args = new AddArgs[thread_count];
 
 			uint64_t r = newlen % thread_count;
 			uint64_t q = newlen / thread_count;
 
-			int prevchnk = 0;
+			uint64_t prevchnk = 0;
 
-			for (int thr = 0; thr < thread_count; thr++) {
+			for (uint64_t thr = 0; thr < thread_count; thr++) {
 
 				args[thr].fst_chunk = c1;
 				args[thr].snd_chunk = c2;
@@ -302,12 +297,11 @@ namespace certFHE{
 				prevchnk = args[thr].res_snd_deflen_pos;
 
 				args[thr].fst_len = len1;
-				args[thr].snd_len = len2;
 
 				threadpool->add_task(&chunk_add, args + thr);
 			}
 
-			for (int thr = 0; thr < thread_count; thr++) {
+			for (uint64_t thr = 0; thr < thread_count; thr++) {
 
 				std::unique_lock <std::mutex> lock(args[thr].done_mutex);
 
@@ -325,7 +319,7 @@ namespace certFHE{
 	uint64_t* Ciphertext::defaultN_multiply(uint64_t* c1, uint64_t* c2, uint64_t len) const
 	{
 		uint64_t* res = new uint64_t[len];
-		for (int i = 0; i < len; i++)
+		for (uint64_t i = 0; i < len; i++)
 			res[i] = c1[i] & c2[i];
 
 		return res;
@@ -338,7 +332,6 @@ namespace certFHE{
 		uint64_t * result = args->result;
 		uint64_t * fst_chunk = args->fst_chunk;
 		uint64_t * snd_chunk = args->snd_chunk;
-		uint64_t fst_chlen = args->fst_chlen;
 		uint64_t snd_chlen = args->snd_chlen;
 		uint64_t default_len = args->default_len;
 
@@ -349,10 +342,10 @@ namespace certFHE{
 			uint64_t fst_ch_i = (i / snd_chlen) * default_len;
 			uint64_t snd_ch_j = (i % snd_chlen) * default_len;
 
-	#ifdef __AVX512F__
+#ifdef __AVX512F__
 
-			int k = 0;
-			for (k; k + 8 <= default_len; k += 8) {
+			uint64_t k = 0;
+			for (; k + 8 <= default_len; k += 8) {
 
 				__m512i avx_fst_chunk = _mm512_loadu_si512((const void *)(fst_chunk + fst_ch_i + k));
 				__m512i avx_snd_chunk = _mm512_loadu_si512((const void *)(snd_chunk + snd_ch_j + k));
@@ -361,13 +354,13 @@ namespace certFHE{
 				_mm512_storeu_si512((void *)(result + i * default_len + k), avx_result);
 			}
 
-			for (k; k < default_len; k++)
+			for (; k < default_len; k++)
 				result[i * default_len + k] = fst_chunk[fst_ch_i + k] & snd_chunk[snd_ch_j + k];
 
-	#elif __AVX2__
+#elif __AVX2__
 
-			int k = 0;
-			for (k; k + 4 <= default_len; k += 4) {
+			uint64_t k = 0;
+			for (; k + 4 <= default_len; k += 4) {
 
 				__m256i avx_fst_chunk = _mm256_loadu_si256((const __m256i *)(fst_chunk + fst_ch_i + k));
 				__m256i avx_snd_chunk = _mm256_loadu_si256((const __m256i *)(snd_chunk + snd_ch_j + k));
@@ -376,15 +369,15 @@ namespace certFHE{
 				_mm256_storeu_si256((__m256i *)(result + i * default_len + k), avx_result);
 			}
 
-			for(k; k < default_len; k++)
+			for(; k < default_len; k++)
 				result[i * default_len + k] = fst_chunk[fst_ch_i + k] & snd_chunk[snd_ch_j + k];
 
-	#else	
+#else	
 
-			for (int k = 0; k < default_len; k++)
+			for (uint64_t k = 0; k < default_len; k++)
 				result[i * default_len + k] = fst_chunk[fst_ch_i + k] & snd_chunk[snd_ch_j + k];
 
-	#endif
+#endif
 		}
 
 		{
@@ -419,10 +412,10 @@ namespace certFHE{
 				uint64_t fst_ch_i = (i / times2) * _defaultLen;
 				uint64_t snd_ch_j = (i % times2) * _defaultLen;
 
-	#ifdef __AVX512F__
+#ifdef __AVX512F__
 
-				int k = 0;
-				for (k; k + 4 <= _defaultLen; k += 4) {
+				uint64_t k = 0;
+				for (; k + 4 <= _defaultLen; k += 4) {
 
 					__m512i avx_c1 = _mm512_loadu_si512((const void *)(c1 + fst_ch_i + k));
 					__m512i avx_c2 = _mm512_loadu_si512((const void *)(c2 + snd_ch_j + k));
@@ -431,13 +424,13 @@ namespace certFHE{
 					_mm512_storeu_si512((void *)(res + i * _defaultLen + k), avx_res);
 				}
 
-				for (k; k < _defaultLen; k++)
+				for (; k < _defaultLen; k++)
 					res[i * _defaultLen + k] = c1[fst_ch_i + k] & c2[snd_ch_j + k];
 
-	#elif __AVX2__
+#elif __AVX2__
 
-				int k = 0;
-				for (k; k + 4 <= _defaultLen; k += 4) {
+				uint64_t k = 0;
+				for (; k + 4 <= _defaultLen; k += 4) {
 
 					__m256i avx_c1 = _mm256_loadu_si256((const __m256i *)(c1 + fst_ch_i + k));
 					__m256i avx_c2 = _mm256_loadu_si256((const __m256i *)(c2 + snd_ch_j + k));
@@ -446,26 +439,26 @@ namespace certFHE{
 					_mm256_storeu_si256((__m256i *)(res + i * _defaultLen + k), avx_res);
 				}
 
-				for (k; k < _defaultLen; k++)
+				for (; k < _defaultLen; k++)
 					res[i * _defaultLen + k] = c1[fst_ch_i + k] & c2[snd_ch_j + k];
 
-	#else
+#else
 
-				for (int k = 0; k < _defaultLen; k++)
+				for (uint64_t k = 0; k < _defaultLen; k++)
 					res[i * _defaultLen + k] = c1[fst_ch_i + k] & c2[snd_ch_j + k];
 
-	#endif
+#endif
 			}
 		}
 		else {
 
 			Threadpool <Args *> * threadpool = Library::getThreadpool();
-			int thread_count = threadpool->THR_CNT;
+			uint64_t thread_count = threadpool->THR_CNT;
 
 			uint64_t q;
 			uint64_t r;
 
-			int worker_cnt;
+			uint64_t worker_cnt;
 
 			if (thread_count >= res_defChunks_len) {
 
@@ -484,9 +477,9 @@ namespace certFHE{
 
 			MulArgs * args = new MulArgs[worker_cnt];
 
-			int prevchnk = 0;
+			uint64_t prevchnk = 0;
 
-			for (int thr = 0; thr < worker_cnt; thr++) {
+			for (uint64_t thr = 0; thr < worker_cnt; thr++) {
 
 				args[thr].fst_chunk = c1;
 				args[thr].snd_chunk = c2;
@@ -503,7 +496,6 @@ namespace certFHE{
 				}
 				prevchnk = args[thr].res_snd_deflen_pos;
 
-				args[thr].fst_chlen = times1;
 				args[thr].snd_chlen = times2;
 
 				args[thr].default_len = _defaultLen;
@@ -511,7 +503,7 @@ namespace certFHE{
 				threadpool->add_task(&chunk_multiply, args + thr);
 			}
 
-			for (int thr = 0; thr < worker_cnt; thr++) {
+			for (uint64_t thr = 0; thr < worker_cnt; thr++) {
 
 				std::unique_lock <std::mutex> lock(args[thr].done_mutex);
 
@@ -543,11 +535,9 @@ namespace certFHE{
 		else
 			current_bitlen = n;
 
-		int cnt = 0;
+		for (uint64_t step = 0; step < u64_length; step++) {
 
-		for (int step = 0; step < u64_length; step++) {
-
-			for (int b = 0; b < current_bitlen; b++) 
+			for (uint64_t b = 0; b < current_bitlen; b++) 
 				out << (char)(0x30 | ((_v[step] >> (63 - b)) & 0x01));
 
 			if (current_bitlen < 64)

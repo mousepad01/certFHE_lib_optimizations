@@ -24,7 +24,7 @@ namespace certFHE{
         /**
          * Custom constructor
         **/
-        Plaintext(const int value);
+        Plaintext(uint64_t value);
 
         /**
          * Destructor

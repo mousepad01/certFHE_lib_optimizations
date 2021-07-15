@@ -147,7 +147,7 @@ namespace certFHE{
          * Get the size of ciphertext in bytes
          * @return value: size in bytes
         **/
-        long size();
+        uint64_t size();
     };
 
 

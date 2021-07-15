@@ -26,7 +26,7 @@ namespace certFHE {
         this->value = 0x00;
     }
 
-    Plaintext::Plaintext(const int value) : Plaintext()
+    Plaintext::Plaintext(uint64_t value) : Plaintext()
     {
         this->value = BIT(value);
     }
