@@ -19,6 +19,8 @@ namespace certFHE{
 		for(uint64_t i = 0; i < secKey.length; i++)
 			this->s[i] = secKey.s[i];
 
+		this->set_mask_key();
+
 		return *this;
 	}
 
