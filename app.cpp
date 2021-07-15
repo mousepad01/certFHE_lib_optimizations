@@ -1093,7 +1093,7 @@ int main(){
 
 		//only_add_test_time(10, 5, 23);
 
-		intrinsic_fullop_test_time(10, 15, 25, 2, 14);
+		//intrinsic_fullop_test_time(10, 15, 25, 2, 11);
 
 		//only_dec_intrinsics_test_time(20, 1000000);
 

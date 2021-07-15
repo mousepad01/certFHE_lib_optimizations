@@ -73,13 +73,13 @@ void MTValues::__cpy_m_threshold_autoselect(const Context & context) {
 	
 void MTValues::__dec_m_threshold_autoselect(const Context & context) {
 
-	const int MAX_L_LOG = 14;
+	const int MAX_L_LOG = 15;
 
 	double observed_multithreading[MAX_L_LOG];
 	double observed_sequential[MAX_L_LOG];
 
-	memset(observed_multithreading, 0, MAX_L_LOG * sizeof(uint64_t));
-	memset(observed_sequential, 0, MAX_L_LOG * sizeof(uint64_t));
+	memset(observed_multithreading, 0, MAX_L_LOG * sizeof(double));
+	memset(observed_sequential, 0, MAX_L_LOG * sizeof(double));
 
 	SecretKey sk(context);
 
@@ -90,7 +90,7 @@ void MTValues::__dec_m_threshold_autoselect(const Context & context) {
 		Plaintext p(rand() % 2);
 		Ciphertext ctxt = sk.encrypt(p);
 
-		for (int pow = 1; pow <= MAX_L_LOG; pow += 1) {
+		for (int pow = 1; pow < MAX_L_LOG; pow += 1) {
 
 			ctxt += ctxt;
 
@@ -110,7 +110,7 @@ void MTValues::__dec_m_threshold_autoselect(const Context & context) {
 		p = Plaintext(rand() % 2);
 		ctxt = sk.encrypt(p);
 
-		for (int pow = 1; pow <= MAX_L_LOG; pow += 1) {
+		for (int pow = 1; pow < MAX_L_LOG; pow += 1) {
 
 			ctxt += ctxt;
 
@@ -338,7 +338,7 @@ void MTValues::__add_m_threshold_autoselect(const Context & context) {
 
 void MTValues::__perm_m_threshold_autoselect(const Context & context) {
 
-	const int MAX_L_LOG = 6;
+	const int MAX_L_LOG = 7;
 
 	double observed_multithreading[MAX_L_LOG];
 	double observed_sequential[MAX_L_LOG];
@@ -357,7 +357,7 @@ void MTValues::__perm_m_threshold_autoselect(const Context & context) {
 
 		Permutation perm(context);
 
-		for (int pow = 1; pow <= MAX_L_LOG; pow += 1) {
+		for (int pow = 1; pow < MAX_L_LOG; pow += 1) {
 
 			ctxt += ctxt;
 
@@ -379,7 +379,7 @@ void MTValues::__perm_m_threshold_autoselect(const Context & context) {
 		p = Plaintext(rand() % 2);
 		ctxt = sk.encrypt(p);
 
-		for (int pow = 1; pow <= MAX_L_LOG; pow += 1) {
+		for (int pow = 1; pow < MAX_L_LOG; pow += 1) {
 
 			ctxt += ctxt;
 
