@@ -61,12 +61,12 @@ namespace certFHE{
         /**
          * Customer constructor
         **/
-        Ciphertext(const uint64_t* V, const uint64_t len, const Context& context);
+        Ciphertext(const uint64_t* V, const uint64_t len, const Context * context);
 
         /**
          * Copy constructor
         **/
-        Ciphertext(const Ciphertext& ctxt);
+        Ciphertext(const Ciphertext & ctxt);
 
         /**
          * Destructor

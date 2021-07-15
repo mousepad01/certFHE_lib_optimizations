@@ -663,7 +663,7 @@ namespace certFHE{
 		this->certFHEcontext = nullptr;
 	}
 
-	Ciphertext::Ciphertext(const uint64_t* V, const uint64_t len, const Context& context) : Ciphertext()
+	Ciphertext::Ciphertext(const uint64_t* V, const uint64_t len, const Context * context) : Ciphertext()
 	{
 		this->len = len;
 		this->v = new uint64_t[len];
@@ -675,11 +675,11 @@ namespace certFHE{
 		else
 			Helper::u64_multithread_cpy(V, this->v, len);
 			
-		if (&context != nullptr)
-			this->certFHEcontext = new Context(context);
+		if (context != nullptr)
+			this->certFHEcontext = new Context(*context);
 	}
 
-	Ciphertext::Ciphertext(const Ciphertext& ctxt) : Ciphertext(ctxt.v, ctxt.len, (const Context&)*ctxt.certFHEcontext)
+	Ciphertext::Ciphertext(const Ciphertext & ctxt) : Ciphertext(ctxt.v, ctxt.len, ctxt.certFHEcontext)
 	{
 
 	}

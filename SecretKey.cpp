@@ -384,7 +384,7 @@ namespace certFHE{
 
 		}
 		
-		Ciphertext c(_encValues,len,*this->certFHEContext);
+		Ciphertext c(_encValues,len,this->certFHEContext);
 		delete [] vect;  
 		delete [] _encValues;
 
