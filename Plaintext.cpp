@@ -6,7 +6,7 @@ namespace certFHE {
 
 #pragma region Operators
 
-std::ostream& operator<<(std::ostream &out, const Plaintext &c)
+    std::ostream& operator<<(std::ostream &out, const Plaintext &c)
 {
    
     char val = c.getValue();
@@ -21,34 +21,34 @@ std::ostream& operator<<(std::ostream &out, const Plaintext &c)
 
 #pragma region Constructors and destructor
    
-Plaintext::Plaintext()
-{
-    this->value = 0x00;
-}
+    Plaintext::Plaintext()
+    {
+        this->value = 0x00;
+    }
 
-Plaintext::Plaintext(const int value) : Plaintext()
-{
-    this->value = BIT(value);
-}
+    Plaintext::Plaintext(const int value) : Plaintext()
+    {
+        this->value = BIT(value);
+    }
 
-Plaintext::~Plaintext()
-{
+    Plaintext::~Plaintext()
+    {
 
-}
+    }
 
 #pragma endregion
 
 #pragma region Getters and setters
 
-unsigned char Plaintext::getValue() const
-{
-    return this->value;
-}
+    unsigned char Plaintext::getValue() const
+    {
+        return this->value;
+    }
 
-void Plaintext::setValue(unsigned char value)
-{
-    this->value = value & 0x01;
-}
+    void Plaintext::setValue(unsigned char value)
+    {
+        this->value = value & 0x01;
+    }
 
 #pragma endregion
 
