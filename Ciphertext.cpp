@@ -554,7 +554,7 @@ namespace certFHE{
 
 	Ciphertext Ciphertext::operator+(const Ciphertext& c) const {
 
-		long newlen = this->len + c.getLen();
+		uint64_t newlen = this->len + c.getLen();
 
 		uint64_t len2 = c.getLen();
 
@@ -589,7 +589,7 @@ namespace certFHE{
 
 	Ciphertext& Ciphertext::operator+=(const Ciphertext& c)
 	{
-		long newlen = this->len + c.getLen();
+		uint64_t newlen = this->len + c.getLen();
 
 		uint64_t len2 = c.getLen();
 
