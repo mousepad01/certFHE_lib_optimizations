@@ -2,7 +2,6 @@
 #include "GlobalParams.h"
 
 using namespace certFHE;
-using namespace std;
 
 #pragma region Operators
 
@@ -20,12 +19,12 @@ SecretKey& SecretKey::operator=(const SecretKey& secKey)
 	return *this;
 }
 
-ostream& certFHE::operator<<(ostream &out, const SecretKey &c)
+std::ostream& certFHE::operator<<(std::ostream &out, const SecretKey &c)
   {
 	  uint64_t* key = c.getKey();
 	  for(long i =0;i<c.getLength();i++)
 	  	out<<key[i]<<" ";
-	  out<<endl;
+	  out<<'\n';
 	  return out;
   }
 
@@ -322,7 +321,7 @@ uint64_t SecretKey::decrypt(uint64_t* v,uint64_t len,uint64_t defLen, uint64_t n
 
 		for (int thr = 0; thr < worker_cnt; thr++) {
 
-		std:unique_lock <std::mutex> lock(args[thr].done_mutex);
+			std::unique_lock <std::mutex> lock(args[thr].done_mutex);
 
 			args[thr].done.wait(lock, [thr, args] {
 				return args[thr].task_is_done;
@@ -409,7 +408,7 @@ Plaintext SecretKey::decrypt(Ciphertext& ciphertext)
 
 void SecretKey::applyPermutation_inplace(const Permutation& permutation)
 {
-	uint64_t permLen = permutation.getLength();
+
 	uint64_t *perm = permutation.getPermutation();
 
 	uint64_t *current_key = new uint64_t[this->certFHEContext->getN()];

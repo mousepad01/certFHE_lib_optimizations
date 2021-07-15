@@ -1,7 +1,6 @@
 #include "Plaintext.h"
 
 using namespace certFHE;
-using namespace std;
 
 namespace certFHE {
 

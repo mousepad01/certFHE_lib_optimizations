@@ -2,7 +2,6 @@
 #include "GlobalParams.h"
 
 using namespace certFHE;
-using namespace std;
 
 #pragma region Public methods
 
@@ -196,7 +195,7 @@ Permutation::Permutation(const uint64_t len) {
 	for (int pos = 0; pos < length - 2; pos++) {
 
 		int newpos = pos + csprng() % (length - pos);
-		swap(permutation[pos], permutation[newpos]);
+		std::swap(permutation[pos], permutation[newpos]);
 
 		if (newpos != pos) {
 			
@@ -215,7 +214,7 @@ Permutation::Permutation(const uint64_t len) {
 	for (int pos = 0; pos < length - 2; pos++) {
 
 		int newpos = pos + rand() % (length - pos);
-		swap(permutation[pos], permutation[newpos]);
+		std::swap(permutation[pos], permutation[newpos]);
 
 		if (newpos != pos) {
 

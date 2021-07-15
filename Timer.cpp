@@ -1,11 +1,10 @@
 #include "Timer.h"
 
 using namespace certFHE;
-using namespace std;
 
 #pragma region Constructors and destructor
 
-Timer::Timer(string pname) : name(pname)
+Timer::Timer(std::string pname) : name(pname)
 {
     this->chronometer = std::chrono::duration<double>(0);
 }
@@ -29,7 +28,7 @@ double Timer::stop(){
 }
 
 void Timer::print(){
-    cout<<this->name<<" : "<<chronometer.count()*1000<< " ms "<<endl;fflush(stdout);
+    std::cout<<this->name<<" : "<<chronometer.count()*1000<< " ms "<<'\n';fflush(stdout);
 }
 
 void Timer::reset(){

@@ -1,7 +1,6 @@
 #include "Context.h"
 
 using namespace certFHE;
-using namespace std;
 
 namespace certFHE {
 
@@ -37,8 +36,8 @@ Context::~Context()
 
 std::ostream& operator<<(std::ostream &out, const Context &c)
 {
-	out<<"N= "<<c.getN()<<endl;
-	out<<"D= "<<c.getD()<<endl;
+	out<<"N= "<<c.getN()<<'\n';
+	out<<"D= "<<c.getD()<<'\n';
 	out<<"S= "<<c.getS();	
 	out<<'\n';
 	return out;
