@@ -5,8 +5,6 @@
 #include "Context.h"
 #include "Permutation.h"
 
-using namespace std;
-
 namespace certFHE{
 
     /**
@@ -63,12 +61,17 @@ namespace certFHE{
         /**
          * Customer constructor
         **/
-        Ciphertext(const uint64_t* V, const uint64_t len, const Context& context);
+        Ciphertext(const uint64_t* V, const uint64_t len, const Context * context);
 
         /**
          * Copy constructor
         **/
-        Ciphertext(const Ciphertext& ctxt);
+        Ciphertext(const Ciphertext & ctxt);
+
+		/**
+		 * Move constructor
+		**/
+		Ciphertext(Ciphertext && ctxt);
 
         /**
          * Destructor
@@ -92,7 +95,7 @@ namespace certFHE{
         /**
          * Friend class for operator<<
         **/
-        friend ostream& operator<<(ostream &out, const Ciphertext &c);
+        friend std::ostream & operator<<(std::ostream &out, const Ciphertext &c);
         
         /**
          * Operators for addition of ciphertexts
@@ -124,13 +127,18 @@ namespace certFHE{
         /**
          * Operators for multiplication of ciphertexts
         **/
-        Ciphertext operator*(const Ciphertext& c) const;
-        Ciphertext& operator*=(const Ciphertext& c);
+        Ciphertext operator*(const Ciphertext & c) const;
+        Ciphertext& operator*=(const Ciphertext & c);
 
         /**
-         * Operator for assignment
-        **/
-        Ciphertext& operator=(const Ciphertext& c);
+         * Operator for copy assignment
+        **/ 
+        Ciphertext& operator=(const Ciphertext & c);
+
+		/**
+		 * Operator for move assignment
+		**/
+		Ciphertext& operator=(Ciphertext && c);
 
         /**
          * Apply a permutation on the current ciphertxt
@@ -149,7 +157,7 @@ namespace certFHE{
          * Get the size of ciphertext in bytes
          * @return value: size in bytes
         **/
-        long size();
+        uint64_t size();
     };
 
 

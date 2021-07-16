@@ -26,9 +26,7 @@ namespace certFHE{
         /**
          * Initialize the library by seeding the PRNG with local time
         **/
-        static void initializeLibrary();
-
-		static void initializeLibrary(bool initPools);
+		static void initializeLibrary(bool initPools = true);
 
 		/**
 		 * Getter for multiplication threadpool
@@ -52,11 +50,6 @@ namespace certFHE{
          * Static function to validate if a vector contains a specific value
         **/
         static bool exists(const uint64_t*v,const uint64_t len, const uint64_t value);
-
-        /**
-         * Deletes a pointer allocated through the certFHE library
-        **/
-        static void deletePointer(void* pointer, bool isArray);
 
 		static void u64_chunk_cpy(Args * raw_args);
 

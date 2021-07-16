@@ -8,8 +8,6 @@
 #include "Helpers.h"
 #include "Permutation.h"
 
-using namespace std;
-
 namespace certFHE
 {
     /**
@@ -19,8 +17,11 @@ namespace certFHE
 
     private:
 
-        uint64_t *s;                    // secret positions from the vector [0,n-1]. 
-        long length;                    // length of the s vector, containing the secret posionts
+        uint64_t * s;                    // secret positions from the vector [0,n-1]. 
+		uint64_t * s_mask;				 // secret key as a bitmask
+
+        uint64_t length;                 // length of the s vector, containing the secret posionts
+		uint64_t mask_length;		     // length of secret key as bitmask IN UINT64 CHUNKS
 
         Context *certFHEContext;
 
@@ -34,16 +35,19 @@ namespace certFHE
         **/
         uint64_t* encrypt(unsigned char bit, uint64_t n, uint64_t d, uint64_t*s);
 
+		/**
+		 * Useful for decryption optimization
+		 * Sets key mask according to the already existing s
+		 * @return value : nothing
+		**/
+		void set_mask_key();
+
         /**
          * Decryption function when the size of ciphertext is equal to context.N
          * @param[in] v: vector of size n bits
-         * @param[in] len: size of vector v in bytes
-         * @param[in] n: n value from context
-         * @param[in] d: d value from context
-         * @param[in] s: secret key s
          * @return value: decrypted bit (F2 space)
         **/
-        uint64_t defaultN_decrypt(uint64_t* v,uint64_t len, uint64_t n, uint64_t d, uint64_t* s);
+        uint64_t defaultN_decrypt(uint64_t* v);
 
         /**
          * Decrypts an encrypted value 
@@ -55,7 +59,7 @@ namespace certFHE
          * @param[in] s: secret key s
          * @return value: decrypted bit (F2 space)
         **/
-        uint64_t decrypt(uint64_t* v,uint64_t len,uint64_t defLen, uint64_t n, uint64_t d, uint64_t* s);
+        uint64_t decrypt(uint64_t* v,uint64_t len, uint64_t defLen, uint64_t d);
 
     public:
 
@@ -81,14 +85,14 @@ namespace certFHE
          * @param[in] plaintext: input to be encrypted ({0,1})
          * @return value: resultint ciphertext
         **/
-        Ciphertext encrypt( Plaintext &plaintext);
+        Ciphertext encrypt(Plaintext &plaintext);
 
         /**
          * Decrypts an ciphertxts
          * @param[in] ciphertext: ciphertext to be decrypted 
          * @return value: decrypted plaintext
         **/
-        Plaintext decrypt( Ciphertext& ciphertext);
+        Plaintext decrypt(Ciphertext& ciphertext);
 
         /**
          * Apply the permutation on current secret key
@@ -111,7 +115,7 @@ namespace certFHE
         /**
          * Friend class for operator<<
         **/
-        friend ostream& operator<<(ostream &out, const SecretKey &c);
+        friend std::ostream& operator<<(std::ostream &out, const SecretKey &c);
 
         /**
          * Assignment operator
@@ -133,6 +137,12 @@ namespace certFHE
          * DO NOT DELETE THIS POINTER
         **/
         uint64_t* getKey() const;
+
+		/**
+		 * DO NOT DELETE THIS POINTER
+		**/
+		uint64_t* getMaskKey() const;
+
 		
 		/**
 		 * Setters
@@ -143,7 +153,7 @@ namespace certFHE
          * Get the size in bytes of the secret key
          * @return value: size in bytes
         **/
-        long size();
+        uint64_t size();
 
     };
 

@@ -34,7 +34,6 @@ namespace certFHE{
 		uint64_t * result;
 
 		uint64_t fst_len;
-		uint64_t snd_len;
 
 		uint64_t res_fst_deflen_pos;
 		uint64_t res_snd_deflen_pos;
@@ -54,7 +53,6 @@ namespace certFHE{
 
 		uint64_t * result;
 
-		uint64_t fst_chlen;
 		uint64_t snd_chlen;
 
 		uint64_t default_len;
@@ -73,7 +71,7 @@ namespace certFHE{
 	public:
 
 		uint64_t * to_decrypt;
-		uint64_t * sk;
+		uint64_t * sk_mask;
 
 		uint64_t default_len;
 		uint64_t d;
@@ -86,6 +84,19 @@ namespace certFHE{
 		~DecArgs(){}
 	};
 
+	/**
+	 * Structure for retaining permutations as inversions
+	**/
+	class CtxtInversion {
+
+	public:
+
+		uint64_t fst_u64_ch;
+		uint64_t snd_u64_ch;
+		uint64_t fst_u64_r;
+		uint64_t snd_u64_r;
+	};
+
 	/*
 	 * Structure for permuting multithreading function
 	*/
@@ -93,15 +104,14 @@ namespace certFHE{
 
 	public:
 
-		uint64_t * perm;
+		CtxtInversion * perm_invs;
+		uint64_t inv_cnt;
 
-		uint64_t * original_c;
-		uint64_t * result_c;
+		uint64_t * ctxt;
 
 		uint64_t fst_deflen_pos;
 		uint64_t snd_deflen_pos;
 
-		uint64_t n;
 		uint64_t default_len;
 
 		~PermArgs(){}

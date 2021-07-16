@@ -5,8 +5,6 @@
 #include "Helpers.h"
 #include "Context.h"
 
-using namespace std;
-
 namespace certFHE{
 
     /**
@@ -16,8 +14,11 @@ namespace certFHE{
 
     private:
 
-        uint64_t* permutation;     // vector used to store permutation
-        uint64_t  length;          // size of permutation vector
+        uint64_t * permutation;			// vector used to store permutation
+		CtxtInversion * inversions;		// permutation as inversions on a default len chunk -- for optimized permutation op --
+        
+		uint64_t length;				// size of permutation vector
+		uint64_t inversions_cnt;		// number of inversions
 
     public:
 
@@ -31,7 +32,7 @@ namespace certFHE{
         **/
         Permutation(const uint64_t *perm, const uint64_t len);
 
-		Permutation(const uint64_t len, int inv_cnt);
+		Permutation(const uint64_t *perm, const uint64_t len, uint64_t inv_cnt, CtxtInversion * invs);
 
         /**
          * Custom constructor - generates a random permutation using the N from context
@@ -57,18 +58,27 @@ namespace certFHE{
         * Getters and setters
        **/
        uint64_t getLength() const;
+	   uint64_t getInversionsCnt() const;
+
        void setLength(uint64_t len);
-       void setPermutation(uint64_t* perm,uint64_t len);
+	   void setInversionsCnt(uint64_t inv_cnt);
+       void setPermutation(uint64_t * perm,uint64_t len);
+	   void setPermutation(uint64_t * perm, uint64_t len, uint64_t inv_cnt, CtxtInversion * invs);
 
        /**
         * DO NOT DELETE THE RETUNING POINTER
         **/
         uint64_t* getPermutation() const; 
 
+		/**
+		* DO NOT DELETE THE RETUNING POINTER
+		**/
+		CtxtInversion * getInversions() const;
+
         /**
          * Friend class for operator<<
         **/
-        friend ostream& operator<<(ostream &out, const Permutation &c);
+        friend std::ostream& operator<<(std::ostream &out, const Permutation &c);
 
         /**
          * Asignment operator
