@@ -872,7 +872,7 @@ void intrinsic_fullop_test_time(const int test_count, const int FIRST_LEN = 15, 
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\full_op\\move_added\\release_bittest_full_intrinsics_stats2.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\full_op\\move_added\\debug_no_bextr_full_intrinsics_stats.txt", std::fstream::out | std::fstream::app);
 
 	Library::initializeLibrary();
 	Context context(1247, 16);
@@ -970,7 +970,7 @@ void intrinsics_add_mul_cpy_test_time(const int test_count, const int FIRST_LEN 
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\add_mul_cpy\\optimised_multithreading_indexes\\release_big_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\add_mul_cpy\\release_stats.txt", std::fstream::out | std::fstream::app);
 
 	Library::initializeLibrary();
 	Context context(1247, 16);
@@ -1200,7 +1200,7 @@ int main(){
 
 		//mul_add_test_time(20, 15, 25, 2, 15);
 
-		test_res_correct();
+		//test_res_correct();
 
 		//only_dec_test_time(20, 1000000);
 
@@ -1230,9 +1230,9 @@ int main(){
 
 		//only_add_test_time(10, 5, 23);
 
-		//intrinsic_fullop_test_time(10, 15, 25, 2, 11);
+		//intrinsic_fullop_test_time(5, 15, 25, 2, 11);
 
-		//intrinsics_add_mul_cpy_test_time(4, 15, 25, 2, 15);
+		intrinsics_add_mul_cpy_test_time(4, 15, 25, 2, 15);
 
 		//only_dec_intrinsics_test_time(20, 1000000);
 

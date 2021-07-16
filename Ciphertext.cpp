@@ -32,8 +32,11 @@ namespace certFHE{
 
 #if MSVC_COMPILER_LOCAL_MACRO_WORSE
 
-				unsigned char val_i = _bittest64((const __int64 *)current_chunk + fst_u64_ch, fst_u64_r);
-				unsigned char val_j = _bittest64((const __int64 *)current_chunk + snd_u64_ch, snd_u64_r);
+				//unsigned char val_i = _bittest64((const __int64 *)current_chunk + fst_u64_ch, fst_u64_r);
+				//unsigned char val_j = _bittest64((const __int64 *)current_chunk + snd_u64_ch, snd_u64_r);
+
+				unsigned char val_i = _bextr_u64(current_chunk[fst_u64_ch], fst_u64_r, 1);
+				unsigned char val_j = _bextr_u64(current_chunk[snd_u64_ch], snd_u64_r, 1);
 
 #else
 
