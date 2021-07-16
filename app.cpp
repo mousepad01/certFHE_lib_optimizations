@@ -872,7 +872,7 @@ void intrinsic_fullop_test_time(const int test_count, const int FIRST_LEN = 15, 
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\full_op\\move_added\\debug_no_move_full_intrinsics_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\full_op\\move_added\\release_bittest_full_intrinsics_stats2.txt", std::fstream::out | std::fstream::app);
 
 	Library::initializeLibrary();
 	Context context(1247, 16);

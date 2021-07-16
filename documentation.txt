@@ -1,5 +1,6 @@
 diferite surse parcurse, pe langa documentatiile oficiale
 
+https://stackoverflow.com/questions/50832505/xcode-and-bittest-function
 https://stackoverflow.com/questions/53562739/if-i-have-an-8-bit-value-is-there-any-advantage-to-using-an-8-bit-register-inst
 https://www.codeproject.com/Articles/874396/Crunching-Numbers-with-AVX-and-AVX
 https://pabloariasal.github.io/2020/01/02/static-variable-initialization/

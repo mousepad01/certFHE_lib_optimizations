@@ -30,17 +30,17 @@ namespace certFHE{
 				uint64_t fst_u64_r = perm_invs[k].fst_u64_r;
 				uint64_t snd_u64_r = perm_invs[k].snd_u64_r;
 
-	#if GPP_COMPILER_LOCAL_MACRO
-
-				unsigned char val_i = (current_chunk[fst_u64_ch] >> fst_u64_r) & 0x01;
-				unsigned char val_j = (current_chunk[snd_u64_ch] >> snd_u64_r) & 0x01;
-
-	#elif MSVC_COMPILER_LOCAL_MACRO
+#if MSVC_COMPILER_LOCAL_MACRO_WORSE
 
 				unsigned char val_i = _bittest64((const __int64 *)current_chunk + fst_u64_ch, fst_u64_r);
 				unsigned char val_j = _bittest64((const __int64 *)current_chunk + snd_u64_ch, snd_u64_r);
 
-	#endif
+#else
+
+				unsigned char val_i = (current_chunk[fst_u64_ch] >> fst_u64_r) & 0x01;
+				unsigned char val_j = (current_chunk[snd_u64_ch] >> snd_u64_r) & 0x01;
+
+#endif
 
 				if (val_i)
 					current_chunk[snd_u64_ch] |= (uint64_t)1 << snd_u64_r;
