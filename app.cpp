@@ -45,7 +45,7 @@ void test_res_correct() {
 
 	MTValues::m_threshold_autoselect(context, false);
 
-	const int TEST_COUNT = 10; // sansa fals pozitiv: 2^(-TEST_COUNT)
+	const int TEST_COUNT = 100; // sansa fals pozitiv: 2^(-TEST_COUNT)
 
 	for (int tst = 0; tst < TEST_COUNT; tst++) {  // decriptare deflen
 
@@ -964,6 +964,101 @@ void intrinsic_fullop_test_time(const int test_count, const int FIRST_LEN = 15, 
 	}
 }
 
+void intrinsics_add_mul_cpy_test_time(const int test_count, const int FIRST_LEN = 15, const int SECOND_LEN = 25,
+										const int THIRD_LEN = 2, const int ROUND_CNT = 5) {
+
+	Timervar t;
+
+	std::fstream f;
+	f.open(STATS_PATH + "\\add_mul_cpy\\optimised_multithreading_indexes\\release_big_stats.txt", std::fstream::out | std::fstream::app);
+
+	Library::initializeLibrary();
+	Context context(1247, 16);
+	SecretKey seckey(context);
+
+	Permutation perm(context);
+	SecretKey perm_seckey = seckey.applyPermutation(perm);
+
+	MTValues::m_threshold_autoselect(context);
+
+	for (int ts = 0; ts < test_count; ts++) {
+
+		int first_len_cpy = FIRST_LEN;
+		int snd_len_cpy = SECOND_LEN;
+		int trd_len_cpy = THIRD_LEN;
+
+		Timervar t;
+
+		t.start_timer();
+
+		uint64_t ti = t.stop_timer();
+		f << "TEST\n";
+		t.stop_timer();
+
+		Ciphertext ctxt1, ctxt2, ctxt3;
+
+		for (int i = 0; i < first_len_cpy; i++) {
+
+			Plaintext p(rand() % 2);
+			Ciphertext c = seckey.encrypt(p);
+
+			if (i == 0)
+				ctxt1 = c;
+			else
+				ctxt1 += c;
+		}
+
+		for (int i = 0; i < snd_len_cpy; i++) {
+
+			Plaintext p(rand() % 2);
+			Ciphertext c = seckey.encrypt(p);
+
+			if (i == 0)
+				ctxt2 = c;
+			else
+				ctxt2 += c;
+		}
+
+		for (int i = 0; i < trd_len_cpy; i++) {
+
+			Plaintext p(rand() % 2);
+			Ciphertext c = seckey.encrypt(p);
+
+			if (i == 0)
+				ctxt3 = c;
+			else
+				ctxt3 += c;
+		}
+
+		t.stop_timer();
+
+		for (int i = 0; i < ROUND_CNT; i++) {
+
+			ctxt1 *= ctxt3;
+			ctxt2 = ctxt2 * ctxt3;
+
+			Ciphertext ctxt5;
+			ctxt5 = ctxt1;
+
+			ctxt5 = ctxt5 + ctxt2;
+
+			ctxt1 += ctxt2;
+
+			uint64_t ti = t.stop_timer();
+			f << "round with len1=" << first_len_cpy << " len2=" << snd_len_cpy << " len3="
+				<< trd_len_cpy << " time_cost=" << ti << " miliseconds\n";
+			t.stop_timer();
+
+			first_len_cpy *= trd_len_cpy;
+			snd_len_cpy *= trd_len_cpy;
+
+			first_len_cpy += snd_len_cpy;
+		}
+
+		f.flush();
+	}
+}
+
 void only_dec_intrinsics_test_time(const int test_count, const int C_MAX_LEN) {
 
 	Timervar t;
@@ -1055,6 +1150,48 @@ void only_perm_intrinsics_test_time(const int test_count, const int C_MAX_LEN) {
 	}
 }
 
+void shift_vs_mul_test_time(const int test_count) {
+
+	Timervar t;
+	t.start_timer();
+
+	double mul_cnt = 0;
+	double shift_cnt = 0;
+
+	uint64_t var1 = 182389243239;
+	uint64_t var2 = 318912480321110;
+	
+	for (int i = 0; i < test_count; i++) {
+
+		var1 = 18238924312239 + rand();
+		var2 = 31821110 - rand();
+
+		t.stop_timer();
+
+		var1 >>= 16;
+		var2 <<= 6;
+
+		double te = t.stop_timer();
+		shift_cnt += te;
+	}
+
+	for (int i = 0; i < test_count; i++) {
+
+		var1 = 18238924312239;
+		var2 = 31821110;
+
+		t.stop_timer();
+
+		var1 /= 12312;
+		var2 *= 242;
+
+		double te = t.stop_timer();
+		mul_cnt += te;
+	}
+	
+	std::cout << "shift " << shift_cnt << " mul " << mul_cnt << '\n';
+	
+}
 
 int main(){
 
@@ -1063,7 +1200,7 @@ int main(){
 
 		//mul_add_test_time(20, 15, 25, 2, 15);
 
-		//test_res_correct();
+		test_res_correct();
 
 		//only_dec_test_time(20, 1000000);
 
@@ -1093,12 +1230,16 @@ int main(){
 
 		//only_add_test_time(10, 5, 23);
 
-		intrinsic_fullop_test_time(10, 15, 25, 2, 11);
+		//intrinsic_fullop_test_time(10, 15, 25, 2, 11);
+
+		//intrinsics_add_mul_cpy_test_time(4, 15, 25, 2, 15);
 
 		//only_dec_intrinsics_test_time(20, 1000000);
 
 		//only_perm_intrinsics_test_time(6, 5000);
 	}
+
+	//shift_vs_mul_test_time(100000);
 
     return 0;
 }

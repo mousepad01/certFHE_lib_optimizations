@@ -336,6 +336,7 @@ namespace certFHE{
 		uint64_t default_len = args->default_len;
 
 		uint64_t res_snd_deflen_pos = args->res_snd_deflen_pos;
+		uint64_t res_fst_deflen_pos = args->res_fst_deflen_pos;
 
 		for (uint64_t i = args->res_fst_deflen_pos; i < res_snd_deflen_pos; i++) {
 
