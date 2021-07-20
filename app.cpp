@@ -11,7 +11,7 @@
 #include "certFHE.h"
 #include "Threadpool.hpp"
 
-static std::string STATS_PATH = "C:\\Users\\intern.andreis\\Desktop\\certfhe_stats\\intrinsics_stats";
+static std::string STATS_PATH = "";
 
 using namespace certFHE;
 
@@ -54,7 +54,7 @@ void test_res_correct() {
 
 		Ciphertext c = sk.encrypt(p);
 
-		if (r != sk.decrypt(c).getValue() & 0x01)
+		if (r != (sk.decrypt(c).getValue() & 0x01))
 			std::cout << "DEFLEN DECRYPTION FAIL " << r << " " << (sk.decrypt(c).getValue() & 0x01) << '\n';
 	}
 
@@ -80,9 +80,9 @@ void test_res_correct() {
 
 		Ciphertext caux_c2(caux);
 
-		if ((sk.decrypt(caux).getValue() & 0x01 != pauxn) || 
-			(sk.decrypt(caux_c).getValue() & 0x01 != pauxn) ||
-			(sk.decrypt(caux_c2).getValue() & 0x01 != pauxn))
+		if (((sk.decrypt(caux).getValue() & 0x01) != pauxn) || 
+			((sk.decrypt(caux_c).getValue() & 0x01) != pauxn) ||
+			((sk.decrypt(caux_c2).getValue() & 0x01) != pauxn))
 
 			std::cout << "COPY FAIL\n";
 	}
