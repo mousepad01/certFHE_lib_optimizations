@@ -10,10 +10,10 @@ namespace certFHE {
 	protected:
 
 		CMUL() = delete;
-		CMUL(Context * context) : COP(context) {}
+		CMUL(Context * context): COP(context) {}
 
-		CMUL(const CMUL & other) : COP(other) {}
-		CMUL(const CMUL && other) : COP(other) {}
+		CMUL(const CMUL & other): COP(other) {}
+		CMUL(const CMUL && other): COP(other) {}
 
 		CMUL & operator = (const CMUL & other) = delete;
 		CMUL & operator = (const CMUL && other) = delete;
@@ -21,6 +21,8 @@ namespace certFHE {
 		virtual ~CMUL() {}
 
 		void upstream_merging();
+
+		CNODE * make_copy();
 
 		static CNODE * upstream_merging(CNODE * fst, CNODE * snd);
 

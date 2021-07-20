@@ -25,6 +25,8 @@ namespace certFHE {
 		CCC & operator = (const CCC && other) = delete;
 
 		void upstream_merging() {}
+
+		CNODE * make_copy();
 	};
 
 }

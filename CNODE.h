@@ -17,10 +17,6 @@ namespace certFHE {
 		CNODE() = delete;
 		CNODE(Context * context) : downstream_reference_count(1), context(context) {}
 
-		CNODE(Context * context, uint64_t deflen_count): downstream_reference_count(1),
-															deflen_count(deflen_count),
-															context(context) {}
-
 		CNODE(const CNODE & other);
 		CNODE(const CNODE && other);
 
@@ -30,6 +26,7 @@ namespace certFHE {
 		CNODE & operator = (const CNODE && other) = delete;
 
 		virtual void upstream_merging() = 0;
+		virtual CNODE * make_copy() = 0; // virtual copy constructor
 		void try_delete();
 
 		friend class CNODE_list;

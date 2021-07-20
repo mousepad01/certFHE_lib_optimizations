@@ -28,6 +28,7 @@ namespace certFHE {
 		COP & operator = (const COP && other) = delete;
 
 		void upstream_merging() = 0;
+		CNODE * make_copy() = 0;
 	};
 }
 
