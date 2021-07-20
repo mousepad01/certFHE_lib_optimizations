@@ -10,4 +10,10 @@
 #include "Helpers.h"
 #include "GlobalParams.h"
 
+#include "CNODE.h"
+#include "CNODE_list.h"
+#include "COP.h"
+#include "CADD.h"
+#include "CMUL.h"
+
 #endif
