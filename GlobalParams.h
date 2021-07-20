@@ -12,6 +12,15 @@
 
 namespace certFHE {
 
+	class OPTValues {
+
+	public:
+
+		static uint64_t max_ccc_deflen_size;
+		static bool remove_duplicates_onadd;
+		static bool remove_duplicates_onmul;
+	};
+
 	/*
 	 * Class for multithreading threshold values
 	 * and their management

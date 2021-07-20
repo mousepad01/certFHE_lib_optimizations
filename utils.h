@@ -1,4 +1,7 @@
 #define BIT(X) X & 0x01
+#define MODPOW32(x) ((x) & 4294967295)
+#define MOD32(x) ((x) & 31)
+#define ROTR32(x, n) ((x >> MOD32(n)) | ((x << (32 - MOD32(n))) & 4294967295))
 
 #ifndef MSVC_COMPILER_LOCAL_MACRO
 #define MSVC_COMPILER_LOCAL_MACRO (_MSC_VER && !__INTEL_COMPILER)
@@ -26,6 +29,7 @@
 #include <chrono>
 #include <bitset>
 #include <string>
+#include <unordered_map>
 
 #include <condition_variable>
 #include <mutex>
