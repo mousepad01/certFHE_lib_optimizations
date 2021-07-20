@@ -58,10 +58,101 @@ namespace certFHE {
 		return new CCC(*this);
 	}
 
+	void CCC::chunk_add(Args * raw_args) {
+
+		AddArgs * args = (AddArgs *)raw_args;
+
+		uint64_t * result = args->result;
+		uint64_t * fst_chunk = args->fst_chunk;
+		uint64_t * snd_chunk = args->snd_chunk;
+		uint64_t fst_len = args->fst_len;
+
+		uint64_t res_snd_deflen_pos = args->res_snd_deflen_pos;
+
+		for (uint64_t i = args->res_fst_deflen_pos; i < res_snd_deflen_pos; i++)
+
+			if (i < fst_len)
+				result[i] = fst_chunk[i];
+			else
+				result[i] = snd_chunk[i - fst_len];
+
+		{
+			std::lock_guard <std::mutex> lock(args->done_mutex);
+
+			args->task_is_done = true;
+			args->done.notify_all();
+		}
+	}
+
 	CCC * CCC::add(CCC * fst, CCC * snd) {
 
-		//TODO: addition as in original Ciphertext.cpp
+		uint64_t deflen_to_u64 = fst->context->getDefaultN();
 
+		uint64_t fst_u64_cnt = fst->deflen_count * deflen_to_u64;
+		uint64_t snd_u64_cnt = snd->deflen_count * deflen_to_u64;
+		uint64_t res_u64_cnt = fst_u64_cnt + snd_u64_cnt;
+
+		uint64_t * fst_c = fst->ctxt;
+		uint64_t * snd_c = snd->ctxt;
+
+		uint64_t * res = new uint64_t[res_u64_cnt];
+		
+		if (res_u64_cnt < MTValues::add_m_threshold) {
+
+			for (uint64_t i = 0; i < fst_u64_cnt; i++)
+				res[i] = fst_c[i];
+
+			for (uint64_t i = 0; i < snd_u64_cnt; i++)
+				res[i + fst_u64_cnt] = snd_c[i];
+
+		}
+		else {
+
+			Threadpool <Args *> * threadpool = Library::getThreadpool();
+			uint64_t thread_count = threadpool->THR_CNT;
+
+			AddArgs * args = new AddArgs[thread_count];
+
+			uint64_t r = res_u64_cnt % thread_count;
+			uint64_t q = res_u64_cnt / thread_count;
+
+			uint64_t prevchnk = 0;
+
+			for (uint64_t thr = 0; thr < thread_count; thr++) {
+
+				args[thr].fst_chunk = fst_c;
+				args[thr].snd_chunk = snd_c;
+
+				args[thr].result = res;
+
+				args[thr].res_fst_deflen_pos = prevchnk;
+				args[thr].res_snd_deflen_pos = prevchnk + q;
+
+				if (r > 0) {
+
+					args[thr].res_snd_deflen_pos += 1;
+					r -= 1;
+				}
+				prevchnk = args[thr].res_snd_deflen_pos;
+
+				args[thr].fst_len = fst_u64_cnt;
+
+				threadpool->add_task(&chunk_add, args + thr);
+			}
+
+			for (uint64_t thr = 0; thr < thread_count; thr++) {
+
+				std::unique_lock <std::mutex> lock(args[thr].done_mutex);
+
+				args[thr].done.wait(lock, [thr, args] {
+					return args[thr].task_is_done;
+				});
+			}
+
+			delete[] args;
+		}
+
+		return new CCC(fst->context, res, res_u64_cnt / deflen_to_u64);
 	}
 }
 

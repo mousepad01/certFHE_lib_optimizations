@@ -28,6 +28,12 @@ namespace certFHE {
 
 		CNODE * make_copy();
 
+		static void chunk_add(Args * raw_args);
+
+		/**
+		 * It will add WITHOUT ANY CHECK
+		 * Proper checks are expected to be managed by the caller function
+		**/
 		static CCC * add(CCC * fst, CCC * snd);
 	};
 
