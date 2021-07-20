@@ -8,6 +8,11 @@ namespace certFHE {
 
 	}
 
+	CNODE * CMUL::make_copy() {
+
+		return new CMUL(*this);
+	}
+
 	CNODE * CMUL::upstream_merging(CNODE * fst, CNODE * snd) {
 
 		CCC * fst_c = dynamic_cast<CCC *>(fst);

@@ -28,6 +28,8 @@ namespace certFHE {
 		**/
 		void upstream_merging();
 
+		CNODE * make_copy();
+
 		static CNODE * upstream_merging(CNODE * fst, CNODE * snd);
 
 		static CNODE * __upstream_merging(CADD * fst, CADD * snd);

@@ -46,6 +46,11 @@ namespace certFHE {
 
 	}
 
+	CNODE * CADD::make_copy() {
+
+		return new CADD(*this);
+	}
+
 	CNODE * CADD::upstream_merging(CNODE * fst, CNODE * snd) {
 
 		CCC * fst_c = dynamic_cast<CCC *>(fst);
@@ -118,6 +123,25 @@ namespace certFHE {
 		CNODE_list * nodes_fst = fst->nodes;
 		CNODE_list * nodes_snd = snd->nodes;
 
+		/**
+		 * When one of the input nodes is empty
+		 * return the other one
+		 * but the caller function will see it as a "different node"
+		 * so also increase ref count
+		 * (copy constructor avoided for efficiency)
+		**/
+		if (fst->nodes == 0 || fst->nodes->current == 0) {
+
+			snd->downstream_reference_count += 1;
+			return snd;
+		}
+
+		if (snd->nodes == 0 || snd->nodes->current == 0) {
+
+			fst->downstream_reference_count += 1;
+			return fst;
+		}
+			
 		CADD * merged = new CADD(fst->context); // fst->context == snd->context assumed
 
 		if (OPTValues::remove_duplicates_onadd) {
@@ -151,29 +175,62 @@ namespace certFHE {
 
 			while (nodes_fst != 0 && nodes_fst->current != 0) {
 
-				if(freq[nodes_fst->current] % 2)
+				if (freq[nodes_fst->current] % 2) {
 
+					CNODE * new_pointer_same_node = nodes_fst->current;
+					merged->nodes->insert_next_element(new_pointer_same_node);
+
+					new_pointer_same_node->downstream_reference_count += 1;
+				}
 
 				nodes_fst = nodes_fst->next;
 			}
 
 			while (nodes_snd != 0 && nodes_snd->current != 0) {
 
-				if (freq.find(nodes_snd->current) == freq.end())
-					freq[nodes_snd->current] = 1;
+				if (freq[nodes_snd->current] % 2) {
 
-				else
-					freq[nodes_snd->current] += 1;
+					CNODE * new_pointer_same_node = nodes_snd->current;
+					merged->nodes->insert_next_element(new_pointer_same_node);
 
-				nodes_snd = nodes_snd->next;
+					new_pointer_same_node->downstream_reference_count += 1;
+				}
+
+				nodes_fst = nodes_fst->next;
 			}
 		}
 		else {
 
+			while (nodes_fst != 0 && nodes_fst->current != 0) {
 
+				CNODE * new_pointer_same_node = nodes_fst->current;
+				merged->nodes->insert_next_element(new_pointer_same_node);
+
+				new_pointer_same_node->downstream_reference_count += 1;
+
+				nodes_fst = nodes_fst->next;
+			}
+
+			while (nodes_snd != 0 && nodes_snd->current != 0) {
+
+				CNODE * new_pointer_same_node = nodes_snd->current;
+				merged->nodes->insert_next_element(new_pointer_same_node);
+
+				new_pointer_same_node->downstream_reference_count += 1;
+
+				nodes_fst = nodes_fst->next;
+			}
 		}
+
+		return merged;
 	}
-	CNODE * CADD::__upstream_merging(CADD * fst, CMUL * snd) { return 0; }
+
+	CNODE * CADD::__upstream_merging(CADD * fst, CMUL * snd) { 
+
+
+	
+	}
+
 	CNODE * CADD::__upstream_merging(CMUL * fst, CMUL * snd) { return 0; }
 
 	CNODE * CADD::__upstream_merging(CADD * fst, CCC * snd) { return 0; }

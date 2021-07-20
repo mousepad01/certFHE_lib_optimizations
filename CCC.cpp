@@ -53,6 +53,11 @@ namespace certFHE {
 		this->ctxt = other.ctxt;
 	}
 
+	CNODE * CCC::make_copy() {
+
+		return new CCC(*this);
+	}
+
 }
 
 /*
