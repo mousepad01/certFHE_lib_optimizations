@@ -5,10 +5,12 @@ namespace certFHE {
 
 	void CADD::upstream_merging() {
 
-		if (this->nodes == 0 || this->nodes->current == 0)
+		CNODE_list * thisnodes = this->nodes->next; // skipping dummy element
+
+		if (thisnodes == 0 || thisnodes->current == 0)
 			return;
 
-		CNODE_list * node_i = this->nodes;
+		CNODE_list * node_i = thisnodes;
 		while (node_i != 0 && node_i->next != 0) {
 
 			CNODE_list * node_j = node_i->next;
@@ -120,8 +122,8 @@ namespace certFHE {
 
 	CNODE * CADD::__upstream_merging(CADD * fst, CADD * snd) { 
 
-		CNODE_list * nodes_fst = fst->nodes;
-		CNODE_list * nodes_snd = snd->nodes;
+		CNODE_list * nodes_fst = fst->nodes->next; // skipping dummy elements
+		CNODE_list * nodes_snd = snd->nodes->next;
 
 		/**
 		 * When one of the input nodes is empty
@@ -130,13 +132,13 @@ namespace certFHE {
 		 * so also increase ref count
 		 * (copy constructor avoided for efficiency)
 		**/
-		if (fst->nodes == 0 || fst->nodes->current == 0) {
+		if (nodes_fst == 0 || nodes_fst->current == 0) {
 
 			snd->downstream_reference_count += 1;
 			return snd;
 		}
 
-		if (snd->nodes == 0 || snd->nodes->current == 0) {
+		if (nodes_snd == 0 || nodes_snd->current == 0) {
 
 			fst->downstream_reference_count += 1;
 			return fst;
@@ -170,8 +172,8 @@ namespace certFHE {
 				nodes_snd = nodes_snd->next;
 			}
 
-			nodes_fst = fst->nodes;
-			nodes_snd = snd->nodes;
+			nodes_fst = fst->nodes->next;
+			nodes_snd = snd->nodes->next;
 
 			while (nodes_fst != 0 && nodes_fst->current != 0) {
 
@@ -231,13 +233,16 @@ namespace certFHE {
 
 	CNODE * CADD::__upstream_merging(CADD * fst, CMUL * snd) { 
 
-		if (fst->nodes == 0 || fst->nodes->current == 0) {
+		CNODE_list * fst_nodes = fst->nodes->next;
+		CNODE_list * snd_nodes = snd->nodes->next;
+
+		if (fst_nodes == 0 || fst_nodes->current == 0) {
 
 			snd->downstream_reference_count += 1;
 			return snd;
 		}
 
-		if (snd->nodes == 0 || snd->nodes->current == 0) {
+		if (snd_nodes == 0 || snd_nodes->current == 0) {
 
 			fst->downstream_reference_count += 1;
 			return fst;
@@ -252,7 +257,7 @@ namespace certFHE {
 			fst->downstream_reference_count += 1;
 
 			snd->downstream_reference_count += 1;
-			fst->nodes->insert_next_element(snd); // insertion on first/second position, order does not matter
+			fst->nodes->insert_next_element(snd); // insertion on second position, order does not matter (as long as dummy element remains on first position)
 			fst->deflen_count += snd->deflen_count;
 
 			return fst;
@@ -277,7 +282,7 @@ namespace certFHE {
 
 	CNODE * CADD::__upstream_merging(CADD * fst, CCC * snd) { 
 		
-		if (fst->nodes == 0 || fst->nodes->current == 0) {
+		if (fst->nodes->next == 0 || fst->nodes->next->current == 0) {
 
 			snd->downstream_reference_count += 1;
 			return snd;

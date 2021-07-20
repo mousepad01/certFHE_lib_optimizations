@@ -14,10 +14,13 @@ namespace certFHE {
 
 	protected:
 
+		/**
+		 * ALWAYS first element is a dummy, to avoid changing first element address
+		**/
 		CNODE_list * nodes;
 
 		COP() = delete;
-		COP(Context * context) : CNODE(context), nodes(0) {}
+		COP(Context * context);
 
 		virtual ~COP();
 
