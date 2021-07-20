@@ -27,6 +27,8 @@ namespace certFHE {
 		void upstream_merging() {}
 
 		CNODE * make_copy();
+
+		static CCC * add(CCC * fst, CCC * snd);
 	};
 
 }

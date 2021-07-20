@@ -1,7 +1,7 @@
 #include "CNODE_list.h"
 
 namespace certFHE {
-
+	//TODO: fix problems when eliminating first element from the list
 	CNODE_list * CNODE_list::pop_current_node() {
 
 		CNODE_list * to_return = this->next;

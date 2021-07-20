@@ -12,7 +12,7 @@
 
 namespace certFHE {
 
-	class OPTValues {
+	class OPValues {
 
 	public:
 

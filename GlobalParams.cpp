@@ -2,11 +2,11 @@
 
 namespace certFHE{
 
-#pragma region OPTValues definitions
+#pragma region OPValues definitions
 
-	uint64_t OPTValues::max_ccc_deflen_size = 256;
-	bool OPTValues::remove_duplicates_onadd = true;
-	bool OPTValues::remove_duplicates_onmul = true;
+	uint64_t OPValues::max_ccc_deflen_size = 256;
+	bool OPValues::remove_duplicates_onadd = true;
+	bool OPValues::remove_duplicates_onmul = true;
 
 #pragma endregion
 

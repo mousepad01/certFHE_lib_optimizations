@@ -4,10 +4,10 @@ namespace certFHE {
 
 	CCC::CCC(Context * context, uint64_t * ctxt, uint64_t deflen_cnt) : CNODE(context) {
 
-		if (deflen_cnt > OPTValues::max_ccc_deflen_size) {
+		if (deflen_cnt > OPValues::max_ccc_deflen_size) {
 
 			std::cout << "ERROR creating CCC node: deflen " << deflen_cnt
-				<< " exceeds limit " << OPTValues::max_ccc_deflen_size << "\n";
+				<< " exceeds limit " << OPValues::max_ccc_deflen_size << "\n";
 
 			throw new std::invalid_argument("ERROR creating CCC node: deflen exceeds limit");
 		}
@@ -58,6 +58,11 @@ namespace certFHE {
 		return new CCC(*this);
 	}
 
+	CCC * CCC::add(CCC * fst, CCC * snd) {
+
+		//TODO: addition as in original Ciphertext.cpp
+
+	}
 }
 
 /*

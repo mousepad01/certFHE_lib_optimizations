@@ -15,7 +15,7 @@ namespace certFHE {
 		uint64_t downstream_reference_count;
 
 		CNODE() = delete;
-		CNODE(Context * context) : downstream_reference_count(1), context(context) {}
+		CNODE(Context * context): downstream_reference_count(1), context(context), deflen_count(0) {}
 
 		CNODE(const CNODE & other);
 		CNODE(const CNODE && other);

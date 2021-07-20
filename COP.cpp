@@ -6,6 +6,8 @@ namespace certFHE {
 
 		try {
 
+			CNODE_list * original_list = nodes;
+
 			while (nodes != 0 && nodes->current != 0) {
 
 				nodes->current->downstream_reference_count -= 1;
@@ -13,6 +15,8 @@ namespace certFHE {
 
 				nodes = nodes->next;
 			}
+
+			delete original_list;
 		}
 		catch (std::exception e) {
 

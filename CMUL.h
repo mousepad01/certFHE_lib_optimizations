@@ -33,6 +33,8 @@ namespace certFHE {
 		static CNODE * __upstream_merging(CADD * fst, CCC * snd);
 		static CNODE * __upstream_merging(CCC * fst, CCC * snd);
 		static CNODE * __upstream_merging(CMUL * fst, CCC * snd);
+
+		friend class CADD;
 	};
 
 }
