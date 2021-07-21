@@ -10,12 +10,18 @@ namespace certFHE {
 		if (thisnodes == 0 || thisnodes->current == 0)
 			return;
 
+		/**
+		 * Iterating through all upstream referenced nodes and trying to merge as much as possible
+		**/
 		CNODE_list * node_i = thisnodes;
 		while (node_i != 0 && node_i->next != 0) {
 
 			CNODE_list * node_j = node_i->next;
 			while (node_j != 0) {
 
+				/**
+				 * (optional) Check for duplicate nodes to be added that cancel each other (a + a = 0)
+				**/
 				if (OPValues::remove_duplicates_onadd && node_i != node_j && node_i->current == node_j->current) {
 
 					node_i = node_i->pop_current_node();
@@ -26,9 +32,25 @@ namespace certFHE {
 
 				CNODE * merged = CADD::upstream_merging(node_i->current, node_j->current);
 
+				/**
+				 * If nothing has been returned, it means no merge happened, so everything stays the same
+				**/
 				if (merged == 0) {
 
 					node_j = node_j->next;
+					continue;
+				}
+
+				/**
+				 * If merged has deflen_cnt = 0, it means 
+				 * that by adding that node, you actually add nothing
+				 * so it is removed
+				**/
+				if (merged->deflen_count == 0) {
+
+					node_i = node_i->pop_current_node();
+					node_j = node_j->pop_current_node();
+
 					continue;
 				}
 
@@ -43,9 +65,25 @@ namespace certFHE {
 				node_j = node_j->pop_current_node(); // try_delete included
 			}
 
-			node_i = node_i->next;
+			if(node_i != 0)
+				node_i = node_i->next;
 		}
 
+		/**
+		 * If at least one of the options is activated, size of any node can shrink when merging 
+		 * So the recalculation of deflen_cnt is necessary
+		**/
+		if (OPValues::remove_duplicates_onadd || OPValues::remove_duplicates_onmul) {
+
+			this->deflen_count = 0;
+
+			thisnodes = this->nodes->next;
+			while (thisnodes != 0 && thisnodes->current != 0) {
+
+				this->deflen_count += thisnodes->current->deflen_count;
+				thisnodes = thisnodes->next;
+			}
+		}
 	}
 
 	CNODE * CADD::make_copy() {
@@ -121,6 +159,12 @@ namespace certFHE {
 	}
 
 	CNODE * CADD::__upstream_merging(CADD * fst, CADD * snd) { 
+
+		/**
+		 * Check maximum operation size for when to try to merge or not
+		**/
+		if (fst->deflen_count + snd->deflen_count > OPValues::max_merge_size)
+			return 0;
 
 		CNODE_list * nodes_fst = fst->nodes->next; // skipping dummy elements
 		CNODE_list * nodes_snd = snd->nodes->next;
@@ -228,10 +272,21 @@ namespace certFHE {
 			}
 		}
 
+		/**
+		 * Recursive call that stops when max_merge_size < merging size
+		**/
+		merged->upstream_merging();
+
 		return merged;
 	}
 
 	CNODE * CADD::__upstream_merging(CADD * fst, CMUL * snd) { 
+
+		/**
+		 * Check maximum operation size for when to try to merge or not
+		**/
+		if (fst->deflen_count + snd->deflen_count > OPValues::max_merge_size)
+			return 0;
 
 		CNODE_list * fst_nodes = fst->nodes->next;
 		CNODE_list * snd_nodes = snd->nodes->next;
@@ -248,6 +303,8 @@ namespace certFHE {
 			return fst;
 		}
 
+		CADD * merged;
+
 		/**
 		 * Check to see whether the first node is referenced multiple times or not
 		 * if not, the changes will be done inplace to save time
@@ -260,18 +317,20 @@ namespace certFHE {
 			fst->nodes->insert_next_element(snd); // insertion on second position, order does not matter (as long as dummy element remains on first position)
 			fst->deflen_count += snd->deflen_count;
 
-			return fst;
+			merged = fst;
 		}
 		else {
 
-			CADD * merged = new CADD(*fst);
+			merged = new CADD(*fst);
 
 			snd->downstream_reference_count += 1;
 			merged->nodes->insert_next_element(snd); 
 			merged->deflen_count += snd->deflen_count;
-
-			return merged;
 		}
+
+		merged->upstream_merging();
+
+		return merged;
 
 	}
 
@@ -281,12 +340,20 @@ namespace certFHE {
 	}
 
 	CNODE * CADD::__upstream_merging(CADD * fst, CCC * snd) { 
+
+		/**
+		 * Check maximum operation size for when to try to merge or not
+		**/
+		if (fst->deflen_count + snd->deflen_count > OPValues::max_merge_size)
+			return 0;
 		
 		if (fst->nodes->next == 0 || fst->nodes->next->current == 0) {
 
 			snd->downstream_reference_count += 1;
 			return snd;
 		}
+
+		CADD * merged;
 
 		if (fst->downstream_reference_count == 1) {
 
@@ -296,18 +363,20 @@ namespace certFHE {
 			fst->nodes->insert_next_element(snd); 
 			fst->deflen_count += snd->deflen_count;
 
-			return fst;
+			merged = fst;
 		}
 		else {
 
-			CADD * merged = new CADD(*fst);
+			merged = new CADD(*fst);
 
 			snd->downstream_reference_count += 1;
 			merged->nodes->insert_next_element(snd);
 			merged->deflen_count += snd->deflen_count;
-
-			return merged;
 		}
+
+		merged->upstream_merging();
+
+		return merged;
 	}
 
 	CNODE * CADD::__upstream_merging(CCC * fst, CCC * snd) { 

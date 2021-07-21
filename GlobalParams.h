@@ -16,9 +16,26 @@ namespace certFHE {
 
 	public:
 
+		/**
+		 * (guaranteed) Maximum size in deflen chunks for a contiguous ciphertext chunk
+		**/
 		static uint64_t max_ccc_deflen_size;
+
+		/**
+		 * (guaranteed) Maximum size in deflen chunks for a CADD/CMUL node 
+		**/
+		static uint64_t max_merge_size;
+
+		/**
+		 * If true, removes duplicates when adding two CADD nodes (a + a = 0)
+		**/
 		static bool remove_duplicates_onadd;
+
+		/**
+		 * If true, removes duplicates when multiplying two CMUL nodes (a * a = a)
+		**/
 		static bool remove_duplicates_onmul;
+
 	};
 
 	/*

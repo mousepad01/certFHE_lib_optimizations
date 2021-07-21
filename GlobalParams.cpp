@@ -4,7 +4,8 @@ namespace certFHE{
 
 #pragma region OPValues definitions
 
-	uint64_t OPValues::max_ccc_deflen_size = 256;
+	uint64_t OPValues::max_ccc_deflen_size = 2048;  // for now, random value
+	uint64_t OPValues::max_merge_size = 2048 * 16;  // for now, random value
 	bool OPValues::remove_duplicates_onadd = true;
 	bool OPValues::remove_duplicates_onmul = true;
 

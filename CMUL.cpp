@@ -84,11 +84,15 @@ namespace certFHE {
 	}
 
 	CNODE * CMUL::__upstream_merging(CADD * fst, CADD * snd) { return 0; }
+
 	CNODE * CMUL::__upstream_merging(CADD * fst, CMUL * snd) { return 0; }
+
 	CNODE * CMUL::__upstream_merging(CMUL * fst, CMUL * snd) { return 0; }
 
 	CNODE * CMUL::__upstream_merging(CADD * fst, CCC * snd) { return 0; }
+
 	CNODE * CMUL::__upstream_merging(CCC * fst, CCC * snd) { return 0; }
+
 	CNODE * CMUL::__upstream_merging(CMUL * fst, CCC * snd) { return 0; }
 }
 
