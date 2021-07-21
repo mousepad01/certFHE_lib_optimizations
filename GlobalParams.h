@@ -22,22 +22,27 @@ namespace certFHE {
 		static uint64_t max_ccc_deflen_size;
 
 		/**
-		 * (not always) Upper defchunk len limit for a CADD node, under which it tries to merge upstream ndoes
+		 * (not always) Upper defchunk len limit for a CADD node, under which it tries to merge upstream nodes
 		**/
 		static uint64_t max_cadd_merge_size;
 
 		/**
-		 * Upper defchunk len limit for a CMUL node, under which it tries to merge upstream ndoes
+		 * (not always) Upper defchunk len limit for a CMUL node, under which it tries to merge upstream nodes
 		**/
 		static uint64_t max_cmul_merge_size;
 
 		/**
-		 * If true, removes duplicates when adding two CADD nodes (a + a = 0)
+		 * (not always ???) If true and if the algorithm encounters chunk with deflen 1, it will multiply no matter what
+		**/
+		static bool always_default_multiplication;
+
+		/**
+		 * (almost always) If true, removes duplicates when adding two CADD nodes (a + a = 0)
 		**/
 		static bool remove_duplicates_onadd;
 
 		/**
-		 * If true, removes duplicates when multiplying two CMUL nodes (a * a = a)
+		 * (almost always) If true, removes duplicates when multiplying two CMUL nodes (a * a = a)
 		**/
 		static bool remove_duplicates_onmul;
 

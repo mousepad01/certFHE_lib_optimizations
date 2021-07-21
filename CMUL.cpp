@@ -173,7 +173,11 @@ namespace certFHE {
 		/**
 		 * Check maximum operation size for when to try to merge or not
 		**/
-		if (fst->deflen_count * snd->deflen_count > OPValues::max_cmul_merge_size)
+		if ((fst->deflen_count * snd->deflen_count > OPValues::max_cmul_merge_size) &&
+				(OPValues::always_default_multiplication == false || 
+					(OPValues::always_default_multiplication && (fst->deflen_count != 1) && (snd->deflen_count != 1))
+				)
+			)
 			return 0;
 
 		/**
@@ -232,7 +236,11 @@ namespace certFHE {
 		/**
 		 * Check maximum operation size for when to try to merge or not
 		**/
-		if (fst->deflen_count * snd->deflen_count > OPValues::max_cmul_merge_size)
+		if ((fst->deflen_count * snd->deflen_count > OPValues::max_cmul_merge_size) &&
+				(OPValues::always_default_multiplication == false ||
+					(OPValues::always_default_multiplication && (fst->deflen_count != 1) && (snd->deflen_count != 1))
+				)
+			)
 			return 0;
 
 		/**
@@ -284,7 +292,11 @@ namespace certFHE {
 		/**
 		 * Check maximum operation size for when to try to merge or not
 		**/
-		if (fst->deflen_count * snd->deflen_count > OPValues::max_cmul_merge_size)
+		if ((fst->deflen_count * snd->deflen_count > OPValues::max_cmul_merge_size) &&
+				(OPValues::always_default_multiplication == false ||
+					(OPValues::always_default_multiplication && (fst->deflen_count != 1) && (snd->deflen_count != 1))
+				)
+			)
 			return 0;
 
 		CNODE_list * nodes_fst = fst->nodes->next; // skipping dummy elements
@@ -389,7 +401,11 @@ namespace certFHE {
 		/**
 		 * Check maximum operation size for when to try to merge or not
 		**/
-		if (fst->deflen_count * snd->deflen_count > OPValues::max_cmul_merge_size)
+		if ((fst->deflen_count * snd->deflen_count > OPValues::max_cmul_merge_size) &&
+				(OPValues::always_default_multiplication == false ||
+					(OPValues::always_default_multiplication && (fst->deflen_count != 1) && (snd->deflen_count != 1))
+				)
+			)
 			return 0;
 
 		/**
@@ -444,7 +460,11 @@ namespace certFHE {
 		/**
 		 * Check maximum operation size for when to try to merge or not
 		**/
-		if (fst->deflen_count * snd->deflen_count > OPValues::max_cmul_merge_size)
+		if ((fst->deflen_count * snd->deflen_count > OPValues::max_cmul_merge_size) &&
+				(OPValues::always_default_multiplication == false ||
+					(OPValues::always_default_multiplication && (fst->deflen_count != 1) && (snd->deflen_count != 1))
+				)
+			)
 			return 0;
 
 		if (fst->nodes->next == 0 || fst->nodes->next->current == 0) {
