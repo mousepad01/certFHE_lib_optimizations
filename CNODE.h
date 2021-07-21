@@ -3,6 +3,7 @@
 
 #include "Context.h"
 #include "GlobalParams.h"
+#include "ArgClasses.h"
 
 namespace certFHE {
 

@@ -29,12 +29,27 @@ namespace certFHE {
 		CNODE * make_copy();
 
 		static void chunk_add(Args * raw_args);
+		static void chunk_multiply(Args * raw_args);
+		static void chunk_permute(Args * raw_args);
 
 		/**
 		 * It will add WITHOUT ANY CHECK
 		 * Proper checks are expected to be managed by the caller function
 		**/
 		static CCC * add(CCC * fst, CCC * snd);
+
+		/**
+		 * It will multiply WITHOUT ANY CHECK
+		 * Proper checks are expected to be managed by the caller function
+		**/
+		static CCC * multiply(CCC * fst, CCC * snd);
+
+		/**
+		 * It will permute WITHOUT ANY CHECK
+		 * Proper checks are expected to be managed by the caller function
+		**/
+		static CCC * permute(CCC * c, Permutation & perm);
+
 	};
 
 }

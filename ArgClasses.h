@@ -108,6 +108,7 @@ namespace certFHE{
 		uint64_t inv_cnt;
 
 		uint64_t * ctxt;
+		uint64_t * res;
 
 		uint64_t fst_deflen_pos;
 		uint64_t snd_deflen_pos;
