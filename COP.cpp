@@ -53,7 +53,6 @@ namespace certFHE {
 
 		this->nodes = other.nodes;
 	}
-
 }
 
 

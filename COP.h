@@ -32,6 +32,9 @@ namespace certFHE {
 
 		void upstream_merging() = 0;
 		CNODE * make_copy() = 0;
+
+		friend class CMUL;
+		friend class CADD;
 	};
 }
 

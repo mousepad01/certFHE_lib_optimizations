@@ -17,7 +17,7 @@ namespace certFHE {
 		while (node_i != 0 && node_i->next != 0) {
 
 			CNODE_list * node_j = node_i->next;
-			while (node_j != 0) {
+			while (node_j != 0 && node_i != 0) {
 
 				/**
 				 * (optional) Check for duplicate nodes to be added that cancel each other (a + a = 0)
@@ -163,7 +163,7 @@ namespace certFHE {
 		/**
 		 * Check maximum operation size for when to try to merge or not
 		**/
-		if (fst->deflen_count + snd->deflen_count > OPValues::max_merge_size)
+		if (fst->deflen_count + snd->deflen_count > OPValues::max_cadd_merge_size)
 			return 0;
 
 		CNODE_list * nodes_fst = fst->nodes->next; // skipping dummy elements
@@ -228,6 +228,8 @@ namespace certFHE {
 
 					new_pointer_same_node->downstream_reference_count += 1;
 					merged->deflen_count += new_pointer_same_node->deflen_count;
+
+					freq[nodes_fst->current] = 0;
 				}
 
 				nodes_fst = nodes_fst->next;
@@ -242,6 +244,8 @@ namespace certFHE {
 
 					new_pointer_same_node->downstream_reference_count += 1;
 					merged->deflen_count += new_pointer_same_node->deflen_count;
+
+					freq[nodes_snd->current] = 0;
 				}
 
 				nodes_fst = nodes_fst->next;
@@ -285,7 +289,7 @@ namespace certFHE {
 		/**
 		 * Check maximum operation size for when to try to merge or not
 		**/
-		if (fst->deflen_count + snd->deflen_count > OPValues::max_merge_size)
+		if (fst->deflen_count + snd->deflen_count > OPValues::max_cadd_merge_size)
 			return 0;
 
 		CNODE_list * fst_nodes = fst->nodes->next;
@@ -344,7 +348,7 @@ namespace certFHE {
 		/**
 		 * Check maximum operation size for when to try to merge or not
 		**/
-		if (fst->deflen_count + snd->deflen_count > OPValues::max_merge_size)
+		if (fst->deflen_count + snd->deflen_count > OPValues::max_cadd_merge_size)
 			return 0;
 		
 		if (fst->nodes->next == 0 || fst->nodes->next->current == 0) {

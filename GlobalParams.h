@@ -22,9 +22,14 @@ namespace certFHE {
 		static uint64_t max_ccc_deflen_size;
 
 		/**
-		 * (guaranteed) Maximum size in deflen chunks for a CADD/CMUL node 
+		 * (not always) Upper defchunk len limit for a CADD node, under which it tries to merge upstream ndoes
 		**/
-		static uint64_t max_merge_size;
+		static uint64_t max_cadd_merge_size;
+
+		/**
+		 * Upper defchunk len limit for a CMUL node, under which it tries to merge upstream ndoes
+		**/
+		static uint64_t max_cmul_merge_size;
 
 		/**
 		 * If true, removes duplicates when adding two CADD nodes (a + a = 0)

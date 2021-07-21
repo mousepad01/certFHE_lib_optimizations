@@ -1232,7 +1232,7 @@ int main(){
 
 		//intrinsic_fullop_test_time(5, 15, 25, 2, 11);
 
-		intrinsics_add_mul_cpy_test_time(4, 15, 25, 2, 15);
+		//intrinsics_add_mul_cpy_test_time(4, 15, 25, 2, 15);
 
 		//only_dec_intrinsics_test_time(20, 1000000);
 
