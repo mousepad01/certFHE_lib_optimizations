@@ -106,18 +106,18 @@ namespace certFHE {
 
 			CCC * snd_c = dynamic_cast<CCC *>(fst);
 			if (snd_c != 0)
-				return CMUL::upstream_merging((CCC *)fst_c, (CCC *)snd_c);
+				return CMUL::__upstream_merging((CCC *)fst_c, (CCC *)snd_c);
 
 			else {
 
 				CADD * snd_c = dynamic_cast<CADD *>(fst);
 				if (snd_c != 0)
-					return CMUL::upstream_merging((CADD *)snd_c, (CCC *)fst_c);
+					return CMUL::__upstream_merging((CADD *)snd_c, (CCC *)fst_c);
 
 				else {
 
 					CMUL * snd_c = dynamic_cast<CMUL *>(fst);
-					return CMUL::upstream_merging((CMUL *)snd_c, (CCC *)fst_c);
+					return CMUL::__upstream_merging((CMUL *)snd_c, (CCC *)fst_c);
 				}
 			}
 		}
@@ -128,18 +128,18 @@ namespace certFHE {
 
 				CCC * snd_c = dynamic_cast<CCC *>(fst);
 				if (snd_c != 0)
-					return CMUL::upstream_merging((CADD *)fst_c, (CCC *)snd_c);
+					return CMUL::__upstream_merging((CADD *)fst_c, (CCC *)snd_c);
 
 				else {
 
 					CADD * snd_c = dynamic_cast<CADD *>(fst);
 					if (snd_c != 0)
-						return CMUL::upstream_merging((CADD *)fst_c, (CADD *)snd_c);
+						return CMUL::__upstream_merging((CADD *)fst_c, (CADD *)snd_c);
 
 					else {
 
 						CMUL * snd_c = dynamic_cast<CMUL *>(fst);
-						return CMUL::upstream_merging((CADD *)fst_c, (CMUL *)snd_c);
+						return CMUL::__upstream_merging((CADD *)fst_c, (CMUL *)snd_c);
 					}
 				}
 			}
@@ -148,18 +148,18 @@ namespace certFHE {
 				CMUL * fst_c = dynamic_cast<CMUL *>(fst);
 				CCC * snd_c = dynamic_cast<CCC *>(fst);
 				if (snd_c != 0)
-					return CMUL::upstream_merging((CMUL *)fst_c, (CCC *)snd_c);
+					return CMUL::__upstream_merging((CMUL *)fst_c, (CCC *)snd_c);
 
 				else {
 
 					CADD * snd_c = dynamic_cast<CADD *>(fst);
 					if (snd_c != 0)
-						return CMUL::upstream_merging((CADD *)snd_c, (CMUL *)fst_c);
+						return CMUL::__upstream_merging((CADD *)snd_c, (CMUL *)fst_c);
 
 					else {
 
 						CMUL * snd_c = dynamic_cast<CMUL *>(fst);
-						return CMUL::upstream_merging((CMUL *)fst_c, (CMUL *)snd_c);
+						return CMUL::__upstream_merging((CMUL *)fst_c, (CMUL *)snd_c);
 					}
 				}
 			}
@@ -168,9 +168,116 @@ namespace certFHE {
 		return 0;
 	}
 
-	CNODE * CMUL::__upstream_merging(CADD * fst, CADD * snd) { return 0; }
+	CNODE * CMUL::__upstream_merging(CADD * fst, CADD * snd) { 
 
-	CNODE * CMUL::__upstream_merging(CADD * fst, CMUL * snd) { return 0; }
+		/**
+		 * Check maximum operation size for when to try to merge or not
+		**/
+		if (fst->deflen_count * snd->deflen_count > OPValues::max_cmul_merge_size)
+			return 0;
+
+		/**
+		 * a * 0 = 0
+		**/
+		if (fst->deflen_count == 0) {
+
+			fst->downstream_reference_count += 1;
+			return fst;
+		}
+
+		if (snd->deflen_count == 0) {
+
+			snd->downstream_reference_count += 1;
+			return snd;
+		}
+
+		CNODE_list * fst_nodes = fst->nodes->next;
+		CNODE_list * snd_nodes = snd->nodes->next;
+
+		/**
+		 * Distributing multiplication with snd node to each sum term from fst
+		**/
+		CADD * distributed_mul = new CADD(fst->context);
+		distributed_mul->deflen_count = 1;
+
+		while (fst_nodes != 0 && fst_nodes->current != 0) {
+
+			while (snd_nodes != 0 && snd_nodes->current != 0) {
+
+				CMUL * term_mul = new CMUL(fst->context);
+				distributed_mul->nodes->insert_next_element(term_mul);
+
+				CNODE * new_pointer_same_fst_node = fst_nodes->current;
+				CNODE * new_pointer_same_snd_node = fst_nodes->current;
+
+				new_pointer_same_fst_node->downstream_reference_count += 1;
+				new_pointer_same_snd_node->downstream_reference_count += 1;
+
+				term_mul->nodes->insert_next_element(new_pointer_same_fst_node);
+				term_mul->nodes->insert_next_element(new_pointer_same_snd_node);
+
+				term_mul->upstream_merging();
+
+				distributed_mul->deflen_count *= term_mul->deflen_count;
+			}
+		}
+
+		return distributed_mul;
+	}
+
+	CNODE * CMUL::__upstream_merging(CADD * fst, CMUL * snd) { 
+
+		// almost identical to upstream merging (CADD, CCC) ?
+		
+		/**
+		 * Check maximum operation size for when to try to merge or not
+		**/
+		if (fst->deflen_count * snd->deflen_count > OPValues::max_cmul_merge_size)
+			return 0;
+
+		/**
+		 * a * 0 = 0
+		**/
+		if (fst->deflen_count == 0) {
+
+			fst->downstream_reference_count += 1;
+			return fst;
+		}
+
+		if (snd->deflen_count == 0) {
+
+			snd->downstream_reference_count += 1;
+			return snd;
+		}
+
+		CNODE_list * fst_nodes = fst->nodes->next;
+
+		/**
+		 * Distributing multiplication with snd node to each sum term from fst
+		**/
+		CADD * distributed_mul = new CADD(fst->context);
+		distributed_mul->deflen_count = 1;
+
+		while (fst_nodes != 0 && fst_nodes->current != 0) {
+
+			CMUL * term_mul = new CMUL(fst->context);
+			distributed_mul->nodes->insert_next_element(term_mul);
+
+			CNODE * new_pointer_same_node = fst_nodes->current;
+
+			new_pointer_same_node->downstream_reference_count += 1;
+			snd->downstream_reference_count += 1;
+
+			term_mul->nodes->insert_next_element(new_pointer_same_node);
+			term_mul->nodes->insert_next_element(snd);
+
+			term_mul->upstream_merging();
+
+			distributed_mul->deflen_count *= term_mul->deflen_count;
+		}
+
+		return distributed_mul;
+	}
 
 	CNODE * CMUL::__upstream_merging(CMUL * fst, CMUL * snd) { 
 		

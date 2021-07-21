@@ -98,18 +98,18 @@ namespace certFHE {
 
 			CCC * snd_c = dynamic_cast<CCC *>(fst);
 			if (snd_c != 0)
-				return CADD::upstream_merging((CCC *)fst_c, (CCC *)snd_c);
+				return CADD::__upstream_merging((CCC *)fst_c, (CCC *)snd_c);
 
 			else {
 
 				CADD * snd_c = dynamic_cast<CADD *>(fst);
 				if (snd_c != 0)
-					return CADD::upstream_merging((CADD *)snd_c, (CCC *)fst_c);
+					return CADD::__upstream_merging((CADD *)snd_c, (CCC *)fst_c);
 
 				else {
 
 					CMUL * snd_c = dynamic_cast<CMUL *>(fst);
-					return CADD::upstream_merging((CMUL *)snd_c, (CCC *)fst_c);
+					return CADD::__upstream_merging((CMUL *)snd_c, (CCC *)fst_c);
 				}
 			}
 		}
@@ -120,18 +120,18 @@ namespace certFHE {
 
 				CCC * snd_c = dynamic_cast<CCC *>(fst);
 				if (snd_c != 0)
-					return CADD::upstream_merging((CADD *)fst_c, (CCC *)snd_c);
+					return CADD::__upstream_merging((CADD *)fst_c, (CCC *)snd_c);
 
 				else {
 
 					CADD * snd_c = dynamic_cast<CADD *>(fst);
 					if (snd_c != 0)
-						return CADD::upstream_merging((CADD *)fst_c, (CADD *)snd_c);
+						return CADD::__upstream_merging((CADD *)fst_c, (CADD *)snd_c);
 
 					else {
 
 						CMUL * snd_c = dynamic_cast<CMUL *>(fst);
-						return CADD::upstream_merging((CADD *)fst_c, (CMUL *)snd_c);
+						return CADD::__upstream_merging((CADD *)fst_c, (CMUL *)snd_c);
 					}
 				}
 			}
@@ -140,18 +140,18 @@ namespace certFHE {
 				CMUL * fst_c = dynamic_cast<CMUL *>(fst);
 				CCC * snd_c = dynamic_cast<CCC *>(fst);
 				if (snd_c != 0)
-					return CADD::upstream_merging((CMUL *)fst_c, (CCC *)snd_c);
+					return CADD::__upstream_merging((CMUL *)fst_c, (CCC *)snd_c);
 
 				else {
 
 					CADD * snd_c = dynamic_cast<CADD *>(fst);
 					if (snd_c != 0)
-						return CADD::upstream_merging((CADD *)snd_c, (CMUL *)fst_c);
+						return CADD::__upstream_merging((CADD *)snd_c, (CMUL *)fst_c);
 
 					else {
 
 						CMUL * snd_c = dynamic_cast<CMUL *>(fst);
-						return CADD::upstream_merging((CMUL *)fst_c, (CMUL *)snd_c);
+						return CADD::__upstream_merging((CMUL *)fst_c, (CMUL *)snd_c);
 					}
 				}
 			}
