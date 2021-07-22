@@ -4,6 +4,8 @@
 #include "Context.h"
 #include "GlobalParams.h"
 #include "ArgClasses.h"
+#include "SecretKey.h"
+#include "Permutation.h"
 
 namespace certFHE {
 
@@ -39,7 +41,9 @@ namespace certFHE {
 
 		virtual CNODE * make_copy() = 0; // virtual copy constructor
 
-		virtual uint64_t decrypt((const SecretKey & sk) = 0;
+		virtual uint64_t decrypt(const SecretKey & sk) = 0;
+
+		virtual void permute_inplace(const Permutation & perm) = 0;
 
 		void try_delete();
 

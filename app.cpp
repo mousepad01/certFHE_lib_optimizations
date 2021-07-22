@@ -35,8 +35,6 @@ public:
 };
 
 /*
- * test to check if operations are implemented correctly
-*/
 void test_res_correct() {
 
 	certFHE::Library::initializeLibrary();
@@ -140,9 +138,7 @@ void test_res_correct() {
 	std::cout << "\nTESTS DONE\n\n";
 }
 
-/*
- * Relevant only for multithreading decryption testing
-*/
+
 void only_dec_test_time(const int test_count, const int C_MAX_LEN) {
 
 	Timervar t;
@@ -179,9 +175,7 @@ void only_dec_test_time(const int test_count, const int C_MAX_LEN) {
 	}
 }
 
-/*
- * Relevant for multithreading decryption, addition and multiplication testing
-*/
+
 void dec_mul_add_test_time(const int test_count, const int FIRST_LEN = 15, const int SECOND_LEN = 25,
 	const int THIRD_LEN = 2, const int ROUND_CNT = 5) {
 
@@ -273,9 +267,7 @@ void dec_mul_add_test_time(const int test_count, const int FIRST_LEN = 15, const
 	}
 }
 
-/*
- * Relevant only for permutation testing
-*/
+
 void only_perm_test_time(const int test_count, const int C_MAX_LEN) {
 
 	Timervar t;
@@ -314,9 +306,7 @@ void only_perm_test_time(const int test_count, const int C_MAX_LEN) {
 	}
 }
 
-/*
- * Relevant only for copying testing
-*/
+
 void only_cpy_test_time(const int test_count, const int C_MAX_LEN) {
 
 	std::fstream f;
@@ -354,9 +344,7 @@ void only_cpy_test_time(const int test_count, const int C_MAX_LEN) {
 	}
 }
 
-/*
- * Relevant for testing multithreading with threshold
-*/
+
 void conditional_multithreading_cpy_test_time(const int test_count, const int MAX_L) {
 
 	std::fstream f;
@@ -1192,6 +1180,7 @@ void shift_vs_mul_test_time(const int test_count) {
 	std::cout << "shift " << shift_cnt << " mul " << mul_cnt << '\n';
 	
 }
+*/
 
 int main2(){
 

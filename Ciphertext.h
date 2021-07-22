@@ -4,11 +4,10 @@
 #include "utils.h"
 #include "Context.h"
 #include "Permutation.h"
-#include "CCC.h"
-#include "CADD.h"
-#include "CMUL.h"
 
 namespace certFHE{
+
+	class CNODE;
 
     /**
      * Class used for storing a ciphertext
@@ -34,13 +33,6 @@ namespace certFHE{
 			* @return value: the result CNODE as a pointer
 		**/
 		static CNODE * multiply(CNODE * fst, CNODE * snd);
-
-		/**
-			* Method for decrypting current ciphertext
-			* @param[in] sk: key under which decryption takes place
-			* @return value: decrypted value as a Plaintext object
-		**/
-		Plaintext Ciphertext::decrypt(const SecretKey & sk) const;
 
 		/**
 			* Default private constructor
@@ -92,7 +84,7 @@ namespace certFHE{
 		/**
 			* Operators for addition of ciphertexts
 		**/
-		Ciphertext operator+(const Ciphertext& c) const;
+		Ciphertext operator + (const Ciphertext & c) const;
 		Ciphertext & operator+=(const Ciphertext& c);
 
 		/**
@@ -123,6 +115,13 @@ namespace certFHE{
 			* @return value : permuted ciphertext
 		**/
 		Ciphertext applyPermutation(const Permutation &permutation);
+
+		/**
+			* Method for decrypting current ciphertext
+			* @param[in] sk: key under which decryption takes place
+			* @return value: decrypted value as a plaintext object
+		**/
+		Plaintext decrypt(const SecretKey & sk) const;
 
 	};
 }

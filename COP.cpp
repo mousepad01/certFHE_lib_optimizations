@@ -53,6 +53,20 @@ namespace certFHE {
 
 		this->nodes = other.nodes;
 	}
+
+	void COP::permute_inplace(const Permutation & perm) {
+
+		CNODE_list * thisnodes = this->nodes->next;
+
+		if (thisnodes == 0 || thisnodes->current == 0)
+			return;
+
+		while (thisnodes != 0 && thisnodes->current != 0) {
+
+			thisnodes->current->permute_inplace(perm);
+			thisnodes = thisnodes->next;
+		}
+	}
 }
 
 

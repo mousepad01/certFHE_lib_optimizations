@@ -752,6 +752,117 @@ namespace certFHE {
 
 		return dec;
 	}
+
+	void CCC::permute_inplace(const Permutation & perm) {
+
+		CtxtInversion * invs = perm.getInversions();
+		uint64_t inv_cnt = perm.getInversionsCnt();
+
+		uint64_t deflen_cnt = this->deflen_count;
+		uint64_t deflen_to_u64 = this->context->getDefaultN();
+
+		uint64_t len = deflen_to_u64 * deflen_cnt;
+
+		if (deflen_cnt < MTValues::perm_m_threshold) {
+
+			for (uint64_t i = 0; i < deflen_cnt; i++) {
+
+				uint64_t * current_chunk = this->ctxt + i * deflen_to_u64;
+
+				for (uint64_t k = 0; k < inv_cnt; k++) {
+
+					uint64_t fst_u64_ch = invs[k].fst_u64_ch;
+					uint64_t snd_u64_ch = invs[k].snd_u64_ch;
+					uint64_t fst_u64_r = invs[k].fst_u64_r;
+					uint64_t snd_u64_r = invs[k].snd_u64_r;
+
+#if GPP_COMPILER_LOCAL_MACRO
+
+					unsigned char val_i = (current_chunk[fst_u64_ch] >> fst_u64_r) & 0x01;
+					unsigned char val_j = (current_chunk[snd_u64_ch] >> snd_u64_r) & 0x01;
+
+#elif MSVC_COMPILER_LOCAL_MACRO
+
+					unsigned char val_i = _bittest64((const __int64 *)current_chunk + fst_u64_ch, fst_u64_r);
+					unsigned char val_j = _bittest64((const __int64 *)current_chunk + snd_u64_ch, snd_u64_r);
+
+#endif
+
+					if (val_i)
+						current_chunk[snd_u64_ch] |= (uint64_t)1 << snd_u64_r;
+					else
+						current_chunk[snd_u64_ch] &= ~((uint64_t)1 << snd_u64_r);
+
+					if (val_j)
+						current_chunk[fst_u64_ch] |= (uint64_t)1 << fst_u64_r;
+					else
+						current_chunk[fst_u64_ch] &= ~((uint64_t)1 << fst_u64_r);
+				}
+			}
+		}
+		else {
+
+			Threadpool <Args *> * threadpool = Library::getThreadpool();
+			uint64_t thread_count = threadpool->THR_CNT;
+
+			uint64_t q;
+			uint64_t r;
+
+			uint64_t worker_cnt;
+
+			if (thread_count >= deflen_cnt) {
+
+				q = 1;
+				r = 0;
+
+				worker_cnt = deflen_cnt;
+			}
+			else {
+
+				q = deflen_cnt / thread_count;
+				r = deflen_cnt % thread_count;
+
+				worker_cnt = thread_count;
+			}
+
+			PermArgs * args = new PermArgs[worker_cnt];
+
+			uint64_t prevchnk = 0;
+
+			for (uint64_t thr = 0; thr < worker_cnt; thr++) {
+
+				args[thr].perm_invs = invs;
+				args[thr].inv_cnt = inv_cnt;
+
+				args[thr].ctxt = this->ctxt;
+
+				args[thr].fst_deflen_pos = prevchnk;
+				args[thr].snd_deflen_pos = prevchnk + q;
+
+				if (r > 0) {
+
+					args[thr].snd_deflen_pos += 1;
+					r -= 1;
+				}
+				prevchnk = args[thr].snd_deflen_pos;
+
+				args[thr].default_len = deflen_to_u64;
+
+				threadpool->add_task(&chunk_permute, args + thr);
+			}
+
+			for (uint64_t thr = 0; thr < worker_cnt; thr++) {
+
+				std::unique_lock <std::mutex> lock(args[thr].done_mutex);
+
+				args[thr].done.wait(lock, [thr, args] {
+					return args[thr].task_is_done;
+				});
+			}
+
+			delete[] args;
+		}
+	}
 }
 
 /*

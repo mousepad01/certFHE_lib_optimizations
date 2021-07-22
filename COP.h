@@ -7,9 +7,6 @@
 
 namespace certFHE {
 
-	class CADD;
-	class CMUL;
-
 	class COP : public CNODE {
 
 	protected:
@@ -41,6 +38,8 @@ namespace certFHE {
 		CNODE * make_copy() = 0;
 
 		virtual uint64_t decrypt(const SecretKey & sk) = 0;
+
+		void permute_inplace(const Permutation & perm);
 
 		// Other
 

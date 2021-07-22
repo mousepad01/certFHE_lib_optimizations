@@ -8,8 +8,8 @@
 #include "Helpers.h"
 #include "Permutation.h"
 
-namespace certFHE
-{
+namespace certFHE {
+
     /**
      * Class used for storing the secret key and to perform operations such as encrypt/decrypt
     **/
@@ -23,7 +23,7 @@ namespace certFHE
         uint64_t length;                 // length of the s vector, containing the secret posionts
 		uint64_t mask_length;		     // length of secret key as bitmask IN UINT64 CHUNKS
 
-        Context *certFHEContext;
+        Context * certFHEContext;
 
 		/**
 		 * Useful for decryption optimization
@@ -72,13 +72,6 @@ namespace certFHE
         **/
         Plaintext decrypt(Ciphertext & ciphertext);
 
-		/**
-		 * Decrypts a raw ciphertext
-		 * @param[in] raw_ctxt: ciphertext to be decrypted
-		 * @return value: decrypted plaintext
-		**/
-		Plaintext decrypt(uint64_t * raw_ctxt, uint64_t u64_len);
-
         /**
          * Apply the permutation on current secret key
          * @param[in] permutation: Permutation object
@@ -100,13 +93,13 @@ namespace certFHE
         /**
          * Friend class for operator<<
         **/
-        friend std::ostream & operator << (std::ostream &out, const SecretKey &c);
+        friend std::ostream & operator << (std::ostream & out, const SecretKey & c);
 
         /**
          * Assignment operator
          * @param[in] secKey: a constant copy of an secret key object
         **/
-        SecretKey & operator = (const SecretKey& secKey);
+        SecretKey & operator = (const SecretKey & secKey);
 
         /**
          * Destructor
@@ -133,25 +126,8 @@ namespace certFHE
 		**/
 		uint64_t* getMaskKey() const;
 
-		
-		/**
-		 * Setters
-		**/
-		void setKey(uint64_t*s, uint64_t len);
-		
-        /**
-         * Get the size in bytes of the secret key
-         * @return value: size in bytes
-        **/
-        uint64_t size();
-
     };
 
-
 }
-
-
-
-
 
 #endif

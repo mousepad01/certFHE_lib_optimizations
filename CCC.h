@@ -83,6 +83,11 @@ namespace certFHE {
 		**/
 		uint64_t decrypt(const SecretKey & sk);
 
+		/**
+		 * Inplace permutation function
+		**/
+		void permute_inplace(const Permutation & perm);
+
 		// Other
 
 		friend class Ciphertext;

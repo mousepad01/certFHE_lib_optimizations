@@ -5,6 +5,8 @@
 
 namespace certFHE {
 
+	class CADD;
+
 	class CMUL : public COP {
 
 	protected:
