@@ -9,7 +9,7 @@ namespace certFHE {
 
 	class CNODE {
 
-	protected:
+	public:
 
 		Context * context;
 		uint64_t deflen_count;
@@ -20,6 +20,10 @@ namespace certFHE {
 
 		CNODE(const CNODE & other);
 		CNODE(const CNODE && other);
+
+		Context getContext();
+
+		uint64_t getDeflenCnt();
 
 		virtual ~CNODE() {}
 

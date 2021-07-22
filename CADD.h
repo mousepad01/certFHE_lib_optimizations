@@ -41,6 +41,7 @@ namespace certFHE {
 		static CNODE * __upstream_merging(CMUL * fst, CCC * snd);
 
 		friend class CMUL;
+		friend class Ciphertext;
 	};
 }
 

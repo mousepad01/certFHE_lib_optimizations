@@ -7,13 +7,11 @@ namespace certFHE {
 
 	class CCC : public CNODE {
 
-	protected:
+	public:
 
 		uint64_t * ctxt;
 
-		virtual ~CCC() {}
-
-	public:
+		virtual ~CCC();
 
 		CCC() = delete;
 		CCC(Context * context, uint64_t * ctxt, uint64_t deflen_cnt);
@@ -28,8 +26,25 @@ namespace certFHE {
 
 		CNODE * make_copy();
 
+		/**
+			* Add two chunks of ciphertxts --- for multithreading only ---
+			* @param[in] args: input sent as a pointer to an AddArgs object
+			* @return value : nothing
+		**/
 		static void chunk_add(Args * raw_args);
+
+		/**
+			* Multiply two chunks of ciphertxts --- for multithreading only ---
+			* @param[in] args: input sent as a pointer to a MulArgs object
+			* @return value : nothing
+		**/
 		static void chunk_multiply(Args * raw_args);
+
+		/**
+			* Permute two chunks of ciphertxts --- for multithreading only ---
+			* @param[in] args: input sent as a pointer to a PermArgs object
+			* @return value : nothing
+		**/
 		static void chunk_permute(Args * raw_args);
 
 		/**

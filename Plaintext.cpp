@@ -6,16 +6,16 @@ namespace certFHE {
 
 #pragma region Operators
 
-    std::ostream& operator<<(std::ostream &out, const Plaintext &c)
-{
+	std::ostream& operator<<(std::ostream &out, const Plaintext &c)
+	{
    
-    char val = c.getValue();
-    val = val | 0x30;
-    out<<val;
-    out<<'\n';
-    return out;
+		char val = c.getValue();
+		val = val | 0x30;
+		out<<val;
+		out<<'\n';
+		return out;
 
-}
+	}
 
 #pragma endregion
 

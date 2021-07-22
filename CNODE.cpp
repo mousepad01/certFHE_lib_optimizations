@@ -28,5 +28,14 @@ namespace certFHE {
 			this->downstream_reference_count -= 1;
 	}
 
+	Context CNODE::getContext() {
+
+		return *(this->context);
+	}
+
+	uint64_t CNODE::getDeflenCnt() {
+
+		return this->deflen_count;
+	}
 }
 

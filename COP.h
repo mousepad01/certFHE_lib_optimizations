@@ -35,6 +35,7 @@ namespace certFHE {
 
 		friend class CMUL;
 		friend class CADD;
+		friend class Ciphertext;
 	};
 }
 

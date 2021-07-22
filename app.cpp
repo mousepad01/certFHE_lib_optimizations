@@ -970,7 +970,7 @@ void intrinsics_add_mul_cpy_test_time(const int test_count, const int FIRST_LEN 
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\add_mul_cpy\\release_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\release_stats.txt", std::fstream::out | std::fstream::app);
 
 	Library::initializeLibrary();
 	Context context(1247, 16);
@@ -1193,7 +1193,7 @@ void shift_vs_mul_test_time(const int test_count) {
 	
 }
 
-int main(){
+int main2(){
 
 	{
 		//only_mul_test_time(25, 3, 2, 22);

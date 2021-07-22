@@ -53,6 +53,14 @@ namespace certFHE {
 		this->ctxt = other.ctxt;
 	}
 
+	CCC::~CCC() {
+
+		if (this->ctxt != 0)
+			delete[] ctxt;
+		else
+			std::cout << "WARNIG: CCC ctxt pointer is null, should never be\n";
+	}
+
 	CNODE * CCC::make_copy() {
 
 		return new CCC(*this);

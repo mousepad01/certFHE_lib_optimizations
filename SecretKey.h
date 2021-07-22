@@ -25,16 +25,6 @@ namespace certFHE
 
         Context *certFHEContext;
 
-        /**
-         * Encrypts a bit 
-         * @param[in] bit: input from F2 space
-         * @param[in] n: N value from Context
-         * @param[in] d: D value from Context
-         * @param[in] s: the secret key 
-         * @return value : encryption of input bit
-        **/
-        uint64_t* encrypt(unsigned char bit, uint64_t n, uint64_t d, uint64_t*s);
-
 		/**
 		 * Useful for decryption optimization
 		 * Sets key mask according to the already existing s
@@ -47,7 +37,7 @@ namespace certFHE
          * @param[in] v: vector of size n bits
          * @return value: decrypted bit (F2 space)
         **/
-        uint64_t defaultN_decrypt(uint64_t* v);
+        uint64_t defaultN_decrypt(uint64_t * v);
 
         /**
          * Decrypts an encrypted value 
@@ -59,7 +49,7 @@ namespace certFHE
          * @param[in] s: secret key s
          * @return value: decrypted bit (F2 space)
         **/
-        uint64_t decrypt(uint64_t* v,uint64_t len, uint64_t defLen, uint64_t d);
+        uint64_t decrypt(uint64_t * v, uint64_t len, uint64_t defLen, uint64_t d);
 
     public:
 
@@ -72,40 +62,54 @@ namespace certFHE
          * Custom constructor. Generates a secret key based on the context.
          * @param[in] context: a const. reference to an context
         **/
-        SecretKey(const Context &context);
+        SecretKey(const Context & context);
 
         /**
          * Copy constructor
          * @param[in] secKey: SecretKey object 
         **/
-        SecretKey(const SecretKey& secKey);
+        SecretKey(const SecretKey & secKey);
 
         /**
          * Encrypts a plaintext
          * @param[in] plaintext: input to be encrypted ({0,1})
-         * @return value: resultint ciphertext
+         * @return value: raw ciphertext chunk
         **/
-        Ciphertext encrypt(Plaintext &plaintext);
+        uint64_t * encrypt(const Plaintext & plaintext) const;
+
+		/**
+		 * Encrypts the first bit from a memory address
+		 * @param[in] addr: the memory address
+		 * @return value: raw ciphertext chunk
+		**/
+		uint64_t * encrypt(const void * addr) const;
 
         /**
-         * Decrypts an ciphertxts
+         * Decrypts a ciphertext
          * @param[in] ciphertext: ciphertext to be decrypted 
          * @return value: decrypted plaintext
         **/
-        Plaintext decrypt(Ciphertext& ciphertext);
+        Plaintext decrypt(Ciphertext & ciphertext);
+
+		/**
+		 * Decrypts a raw ciphertext
+		 * @param[in] raw_ctxt: ciphertext to be decrypted
+		 * @return value: decrypted plaintext
+		**/
+		Plaintext decrypt(uint64_t * raw_ctxt, uint64_t u64_len);
 
         /**
          * Apply the permutation on current secret key
          * @param[in] permutation: Permutation object
         **/
-        void applyPermutation_inplace(const Permutation& permutation);
+        void applyPermutation_inplace(const Permutation & permutation);
 
         /**
          * Apply a permutation on the current secret key and return a new object
          * @param[in] permutation: permutation object to be applied
          * @return value: a permuted secret key object
         **/
-        SecretKey applyPermutation(const Permutation& permutation);
+        SecretKey applyPermutation(const Permutation & permutation);
 
 		/**
 		 * Decrypt in chunks -- only for multithreading --
@@ -115,13 +119,13 @@ namespace certFHE
         /**
          * Friend class for operator<<
         **/
-        friend std::ostream& operator<<(std::ostream &out, const SecretKey &c);
+        friend std::ostream & operator << (std::ostream &out, const SecretKey &c);
 
         /**
          * Assignment operator
          * @param[in] secKey: a constant copy of an secret key object
         **/
-        SecretKey& operator= (const SecretKey& secKey);
+        SecretKey & operator = (const SecretKey& secKey);
 
         /**
          * Destructor
@@ -132,6 +136,11 @@ namespace certFHE
          * Getters
         **/
         uint64_t getLength() const;
+
+		/**
+		* DO NOT DELETE THIS POINTER
+	   **/
+		Context * getContext() const;
 
         /**
          * DO NOT DELETE THIS POINTER
