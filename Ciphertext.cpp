@@ -232,6 +232,10 @@ namespace certFHE{
 		return mul_result;
 	}
 
+	Plaintext Ciphertext::decrypt(const SecretKey & sk) const {
+
+
+	}
 #pragma endregion
 
 #pragma region Operators

@@ -36,6 +36,13 @@ namespace certFHE{
 		static CNODE * multiply(CNODE * fst, CNODE * snd);
 
 		/**
+			* Method for decrypting current ciphertext
+			* @param[in] sk: key under which decryption takes place
+			* @return value: decrypted value as a Plaintext object
+		**/
+		Plaintext Ciphertext::decrypt(const SecretKey & sk) const;
+
+		/**
 			* Default private constructor
 		**/
 		Ciphertext();

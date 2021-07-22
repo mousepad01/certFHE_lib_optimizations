@@ -86,6 +86,23 @@ namespace certFHE {
 		}
 	}
 
+	uint64_t CADD::decrypt(const SecretKey & sk) {
+
+		CNODE_list * thisnodes = this->nodes->next;
+
+		if (thisnodes == 0 || thisnodes->current == 0)
+			return 0;
+
+		uint64_t rez = 0;
+		while (thisnodes != 0 && thisnodes->current != 0) {
+
+			rez ^= thisnodes->current->decrypt(sk);
+			thisnodes = thisnodes->next;
+		}
+
+		return rez;
+	}
+
 	CNODE * CADD::make_copy() {
 
 		return new CADD(*this);

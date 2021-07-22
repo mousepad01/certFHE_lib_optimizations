@@ -66,6 +66,96 @@ namespace certFHE {
 		return new CCC(*this);
 	}
 
+	void CCC::chunk_decrypt(Args * raw_args) {
+
+		DecArgs * args = (DecArgs *)raw_args;
+
+		uint64_t * to_decrypt = args->to_decrypt;
+		uint64_t * sk_mask = args->sk_mask;
+		uint64_t snd_deflen_pos = args->snd_deflen_pos;
+
+		uint64_t default_len = args->default_len;
+
+		uint64_t * decrypted = args->decrypted;
+
+		*decrypted = 0;
+
+#ifdef __AVX512F__
+
+		for (uint64_t i = args->fst_deflen_pos; i < snd_deflen_pos; i++) {
+
+			uint64_t * current_chunk = to_decrypt + i * default_len;
+			uint64_t current_decrypted = 0x01;
+
+			uint64_t u = 0;
+
+			for (; u + 8 <= default_len; u += 8) {
+
+				__m512i avx_aux = _mm512_loadu_si512((const void *)(current_chunk + u));
+				__m512i avx_mask = _mm512_loadu_si512((const void *)(sk_mask + u));
+
+				avx_aux = _mm512_and_si512(avx_aux, avx_mask);
+				avx_aux = _mm512_xor_si512(avx_aux, avx_mask);
+
+				__mmask8 is_zero_mask = _mm512_test_epi64_mask(avx_aux, avx_aux);
+				current_decrypted &= (is_zero_mask == 0);
+			}
+
+			for (u; u < default_len; u++)
+				current_decrypted &= ((current_chunk[u] & sk_mask[u]) ^ sk_mask[u]) == (uint64_t)0;
+
+			*decrypted ^= current_decrypted;
+		}
+
+#elif __AVX2__
+
+		for (uint64_t i = args->fst_deflen_pos; i < snd_deflen_pos; i++) {
+
+			uint64_t * current_chunk = to_decrypt + i * default_len;
+			uint64_t current_decrypted = 0x01;
+
+			uint64_t u = 0;
+
+			for (; u + 4 <= default_len; u += 4) {
+
+				__m256i avx_aux = _mm256_loadu_si256((const __m256i *)(current_chunk + u));
+				__m256i avx_mask = _mm256_loadu_si256((const __m256i *)(sk_mask + u));
+
+				avx_aux = _mm256_and_si256(avx_aux, avx_mask);
+				avx_aux = _mm256_xor_si256(avx_aux, avx_mask);
+
+				current_decrypted &= _mm256_testz_si256(avx_aux, avx_aux);
+			}
+
+			for (; u < default_len; u++)
+				current_decrypted &= ((current_chunk[u] & sk_mask[u]) ^ sk_mask[u]) == (uint64_t)0;
+
+			*decrypted ^= current_decrypted;
+		}
+
+#else
+
+		for (uint64_t i = args->fst_deflen_pos; i < snd_deflen_pos; i++) {
+
+			uint64_t * current_chunk = to_decrypt + i * default_len;
+			uint64_t current_decrypted = 0x01;
+
+			for (uint64_t u = 0; u < default_len; u++)
+				current_decrypted &= ((current_chunk[u] & sk_mask[u]) ^ sk_mask[u]) == (uint64_t)0;
+
+			*decrypted ^= current_decrypted;
+		}
+
+#endif
+
+		{
+			std::lock_guard <std::mutex> lock(args->done_mutex);
+
+			args->task_is_done = true;
+			args->done.notify_all();
+		}
+	}
+
 	void CCC::chunk_add(Args * raw_args) {
 
 		AddArgs * args = (AddArgs *)raw_args;
@@ -422,7 +512,7 @@ namespace certFHE {
 		return new CCC(fst->context, res, res_deflen_cnt);
 	}
 
-	CCC * CCC::permute(CCC * c, Permutation & perm) {
+	CCC * CCC::permute(CCC * c, const Permutation & perm) {
 
 		CtxtInversion * invs = perm.getInversions();
 		uint64_t inv_cnt = perm.getInversionsCnt();
@@ -431,6 +521,7 @@ namespace certFHE {
 		uint64_t deflen_cnt = c->deflen_count;
 
 		uint64_t * res = new uint64_t[deflen_cnt * deflen_to_u64];
+
 
 		if (deflen_cnt < MTValues::perm_m_threshold) {
 
@@ -538,6 +629,128 @@ namespace certFHE {
 		}
 
 		return new CCC(c->context, res, deflen_cnt);
+	}
+
+	uint64_t CCC::decrypt(const SecretKey & sk) {
+
+		uint64_t dec = 0;
+
+		uint64_t deflen_cnt = this->deflen_count;
+		uint64_t deflen_to_u64 = this->context->getDefaultN();
+
+		uint64_t * sk_mask = sk.getMaskKey();
+		uint64_t * ctxt = this->ctxt;
+
+		if (deflen_cnt < MTValues::dec_m_threshold) {
+
+#ifdef __AVX2__
+
+			for (uint64_t i = 0; i < deflen_cnt; i++) {
+
+				uint64_t * current_chunk = ctxt + i * deflen_to_u64;
+				uint64_t current_decrypted = 0x01;
+
+				uint64_t u = 0;
+
+				for (; u + 4 <= deflen_to_u64; u += 4) {
+
+					__m256i avx_aux = _mm256_loadu_si256((const __m256i *)(current_chunk + u));
+					__m256i avx_mask = _mm256_loadu_si256((const __m256i *)(sk_mask + u));
+
+					avx_aux = _mm256_and_si256(avx_aux, avx_mask);
+					avx_aux = _mm256_xor_si256(avx_aux, avx_mask);
+
+					current_decrypted &= _mm256_testz_si256(avx_aux, avx_aux);
+				}
+
+				for (; u < deflen_to_u64; u++)
+					current_decrypted &= ((current_chunk[u] & sk_mask[u]) ^ sk_mask[u]) == (uint64_t)0;
+
+				dec ^= current_decrypted;
+			}
+
+#else
+
+			for (uint64_t i = 0; i < deflen_cnt; i++) {
+
+				uint64_t * current_chunk = ctxt + i * deflen_to_u64;
+				uint64_t current_decrypted = 0x01;
+
+				for (uint64_t u = 0; u < deflen_to_u64; u++)
+					current_decrypted &= (((current_chunk[u] & sk_mask[u]) ^ sk_mask[u]) == (uint64_t)0);
+
+				dec ^= current_decrypted;
+			}
+
+#endif
+		}
+		else {
+
+			Threadpool <Args *> * threadpool = Library::getThreadpool();
+			uint64_t thread_count = threadpool->THR_CNT;
+
+			uint64_t q;
+			uint64_t r;
+
+			uint64_t worker_cnt;
+
+			if (thread_count >= deflen_cnt) {
+
+				q = 1;
+				r = 0;
+
+				worker_cnt = deflen_cnt;
+			}
+			else {
+
+				q = deflen_cnt / thread_count;
+				r = deflen_cnt % thread_count;
+
+				worker_cnt = thread_count;
+			}
+
+			DecArgs * args = new DecArgs[worker_cnt];
+
+			uint64_t prevchnk = 0;
+
+			for (uint64_t thr = 0; thr < worker_cnt; thr++) {
+
+				args[thr].to_decrypt = ctxt;
+				args[thr].sk_mask = sk_mask;
+
+				args[thr].default_len = deflen_to_u64;
+				args[thr].d = this->context->getD();
+
+				args[thr].fst_deflen_pos = prevchnk;
+				args[thr].snd_deflen_pos = prevchnk + q;
+
+				if (r > 0) {
+
+					args[thr].snd_deflen_pos += 1;
+					r -= 1;
+				}
+				prevchnk = args[thr].snd_deflen_pos;
+
+				args[thr].decrypted = new uint64_t;
+
+				threadpool->add_task(&chunk_decrypt, args + thr);
+			}
+
+			for (uint64_t thr = 0; thr < worker_cnt; thr++) {
+
+				std::unique_lock <std::mutex> lock(args[thr].done_mutex);
+
+				args[thr].done.wait(lock, [thr, args] {
+					return args[thr].task_is_done;
+				});
+
+				dec ^= *(args[thr].decrypted);
+			}
+
+			delete[] args;
+		}
+
+		return dec;
 	}
 }
 

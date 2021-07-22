@@ -94,6 +94,23 @@ namespace certFHE {
 		}
 	}
 
+	uint64_t CMUL::decrypt(const SecretKey & sk) {
+
+		CNODE_list * thisnodes = this->nodes->next;
+
+		if (thisnodes == 0 || thisnodes->current == 0)
+			return 0;
+
+		uint64_t rez = 1;
+		while (thisnodes != 0 && thisnodes->current != 0) {
+
+			rez *= thisnodes->current->decrypt(sk);
+			thisnodes = thisnodes->next;
+		}
+
+		return rez;
+	}
+
 	CNODE * CMUL::make_copy() {
 
 		return new CMUL(*this);

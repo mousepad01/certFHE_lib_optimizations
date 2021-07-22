@@ -32,25 +32,6 @@ namespace certFHE
 		**/
 		void set_mask_key();
 
-        /**
-         * Decryption function when the size of ciphertext is equal to context.N
-         * @param[in] v: vector of size n bits
-         * @return value: decrypted bit (F2 space)
-        **/
-        uint64_t defaultN_decrypt(uint64_t * v);
-
-        /**
-         * Decrypts an encrypted value 
-         * @param[in] v: vector of bits, size in multiple of n
-         * @param[in] len: size of vector v in chunks of 8 bytes
-         * @param[in] defLen: default length of N
-         * @param[in] n: n value from context
-         * @param[in] d: d value from context
-         * @param[in] s: secret key s
-         * @return value: decrypted bit (F2 space)
-        **/
-        uint64_t decrypt(uint64_t * v, uint64_t len, uint64_t defLen, uint64_t d);
-
     public:
 
         /**
