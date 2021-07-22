@@ -2,15 +2,10 @@
 #define GLOBAL_PARAMS_H
 
 #include "utils.h"
-#include "Plaintext.h"
-#include "Ciphertext.h"
-#include "SecretKey.h"
-#include "Context.h"
-#include "Permutation.h"
-#include "Helpers.h"
-#include "Timer.h"
 
 namespace certFHE {
+
+	class Context;
 
 	class OPValues {
 

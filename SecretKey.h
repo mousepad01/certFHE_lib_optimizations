@@ -2,13 +2,14 @@
 #define SECRET_KEY_H
 
 #include "utils.h"
-#include "Context.h"
-#include "Plaintext.h"
-#include "Ciphertext.h"
 #include "Helpers.h"
-#include "Permutation.h"
 
 namespace certFHE {
+
+	class Ciphertext;
+	class Plaintext;
+	class Permutation;
+	class Context;
 
     /**
      * Class used for storing the secret key and to perform operations such as encrypt/decrypt
@@ -31,6 +32,13 @@ namespace certFHE {
 		 * @return value : nothing
 		**/
 		void set_mask_key();
+
+		/**
+		 * Encrypts the first bit from a memory address
+		 * @param[in] addr: the memory address
+		 * @return value: raw ciphertext chunk
+		**/
+		uint64_t * encrypt_raw_bit(unsigned char bit) const;
 
     public:
 
@@ -56,14 +64,21 @@ namespace certFHE {
          * @param[in] plaintext: input to be encrypted ({0,1})
          * @return value: raw ciphertext chunk
         **/
-        uint64_t * encrypt(const Plaintext & plaintext) const;
+		uint64_t * encrypt_raw(const Plaintext & plaintext) const;
 
 		/**
 		 * Encrypts the first bit from a memory address
 		 * @param[in] addr: the memory address
 		 * @return value: raw ciphertext chunk
 		**/
-		uint64_t * encrypt(const void * addr) const;
+		uint64_t * encrypt_raw(const void * addr) const;
+
+		/**
+		 * Encrypts a plaintext
+		 * @param[in] plaintext: input to be encrypted ({0,1})
+		 * @return value: Ciphertext object
+		**/
+		Ciphertext encrypt(const Plaintext & plaintext) const;
 
         /**
          * Decrypts a ciphertext

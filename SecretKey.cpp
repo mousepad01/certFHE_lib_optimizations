@@ -1,5 +1,10 @@
 #include "SecretKey.h"
 #include "GlobalParams.h"
+#include "Ciphertext.h"
+#include "Plaintext.h"
+#include "Permutation.h"
+#include "Context.h"
+#include "CCC.h"
 
 namespace certFHE{
 
@@ -71,58 +76,7 @@ namespace certFHE{
 		std::cout << '\n';*/
 	}
 
-#pragma endregion
-
-#pragma region Public methods
-
-	uint64_t * SecretKey::encrypt(const Plaintext & plaintext) const {
-
-		uint64_t n = this->certFHEContext->getN();
-		uint64_t d = this->certFHEContext->getD();
-
-		uint64_t div = n / (sizeof(uint64_t) * 8);
-		uint64_t rem = n % (sizeof(uint64_t) * 8);
-		uint64_t len = div;
-		if (rem != 0)
-			len++;
-
-		unsigned char value = plaintext.getValue();
-		uint64_t * vect = this->encrypt((void *)&value);
-
-		uint64_t * _encValues = new uint64_t[len];
-
-		uint64_t uint64index = 0;
-		for (uint64_t step = 0; step < div; step++)
-		{
-			_encValues[uint64index] = 0x00;
-			for (uint64_t s = 0; s < 64; s++)
-			{
-				uint64_t inter = (vect[step * 64 + s] & 0x01) << (sizeof(uint64_t) * 8 - 1 - s);
-				_encValues[uint64index] = _encValues[uint64index] | inter;
-			}
-			uint64index++;
-		}
-
-		if (rem != 0)
-		{
-			_encValues[uint64index] = 0x00;
-			for (uint64_t r = 0; r < rem; r++)
-			{
-				uint64_t inter = (vect[div * 64 + r] & 0x01) << (sizeof(uint64_t) * 8 - 1 - r);
-				_encValues[uint64index] = (_encValues[uint64index]) | (inter);
-
-			}
-
-		}
-
-		delete[] vect;
-
-		return _encValues;
-	}
-
-	uint64_t * SecretKey::encrypt(const void * addr) const {
-
-		unsigned char bit = (*(unsigned char *)addr) & 0x01;
+	uint64_t * SecretKey::encrypt_raw_bit(unsigned char bit) const {
 
 		uint64_t n = this->certFHEContext->getN();
 		uint64_t d = this->certFHEContext->getD();
@@ -170,6 +124,105 @@ namespace certFHE{
 
 		}
 		return res;
+	}
+
+#pragma endregion
+
+#pragma region Public methods
+
+	uint64_t * SecretKey::encrypt_raw(const Plaintext & plaintext) const {
+
+		uint64_t n = this->certFHEContext->getN();
+		uint64_t d = this->certFHEContext->getD();
+
+		uint64_t div = n / (sizeof(uint64_t) * 8);
+		uint64_t rem = n % (sizeof(uint64_t) * 8);
+		uint64_t len = div;
+		if (rem != 0)
+			len++;
+
+		unsigned char value = plaintext.getValue();
+		uint64_t * vect = this->encrypt_raw_bit(value);
+
+		uint64_t * _encValues = new uint64_t[len];
+
+		uint64_t uint64index = 0;
+		for (uint64_t step = 0; step < div; step++)
+		{
+			_encValues[uint64index] = 0x00;
+			for (uint64_t s = 0; s < 64; s++)
+			{
+				uint64_t inter = (vect[step * 64 + s] & 0x01) << (sizeof(uint64_t) * 8 - 1 - s);
+				_encValues[uint64index] = _encValues[uint64index] | inter;
+			}
+			uint64index++;
+		}
+
+		if (rem != 0)
+		{
+			_encValues[uint64index] = 0x00;
+			for (uint64_t r = 0; r < rem; r++)
+			{
+				uint64_t inter = (vect[div * 64 + r] & 0x01) << (sizeof(uint64_t) * 8 - 1 - r);
+				_encValues[uint64index] = (_encValues[uint64index]) | (inter);
+
+			}
+
+		}
+
+		delete[] vect;
+
+		return _encValues;
+	}
+
+	uint64_t * SecretKey::encrypt_raw(const void * addr) const {
+
+		uint64_t n = this->certFHEContext->getN();
+		uint64_t d = this->certFHEContext->getD();
+
+		uint64_t div = n / (sizeof(uint64_t) * 8);
+		uint64_t rem = n % (sizeof(uint64_t) * 8);
+		uint64_t len = div;
+		if (rem != 0)
+			len++;
+
+		unsigned char value = (*(unsigned char *)addr) & 0x01;
+		uint64_t * vect = this->encrypt_raw_bit(value);
+
+		uint64_t * _encValues = new uint64_t[len];
+
+		uint64_t uint64index = 0;
+		for (uint64_t step = 0; step < div; step++)
+		{
+			_encValues[uint64index] = 0x00;
+			for (uint64_t s = 0; s < 64; s++)
+			{
+				uint64_t inter = (vect[step * 64 + s] & 0x01) << (sizeof(uint64_t) * 8 - 1 - s);
+				_encValues[uint64index] = _encValues[uint64index] | inter;
+			}
+			uint64index++;
+		}
+
+		if (rem != 0)
+		{
+			_encValues[uint64index] = 0x00;
+			for (uint64_t r = 0; r < rem; r++)
+			{
+				uint64_t inter = (vect[div * 64 + r] & 0x01) << (sizeof(uint64_t) * 8 - 1 - r);
+				_encValues[uint64index] = (_encValues[uint64index]) | (inter);
+
+			}
+
+		}
+
+		delete[] vect;
+
+		return _encValues;
+	}
+
+	Ciphertext SecretKey::encrypt(const Plaintext & plaintext) const {
+
+		return Ciphertext(plaintext, *this);
 	}
 
 	Plaintext SecretKey::decrypt(Ciphertext & ciphertext){   

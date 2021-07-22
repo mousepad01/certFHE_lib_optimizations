@@ -49,7 +49,7 @@ namespace certFHE{
         /**
          * Static function to validate if a vector contains a specific value
         **/
-        static bool exists(const uint64_t*v,const uint64_t len, const uint64_t value);
+        static bool exists(const uint64_t * v, const uint64_t len, const uint64_t value);
 
 		static void u64_chunk_cpy(Args * raw_args);
 

@@ -1,6 +1,10 @@
 #include "Ciphertext.h"
 #include "GlobalParams.h"
 #include "Threadpool.hpp"
+#include "SecretKey.h"
+#include "Permutation.h"
+#include "Plaintext.h"
+#include "Context.h"
 #include "CMUL.h"
 #include "CADD.h"
 
@@ -23,6 +27,11 @@ namespace certFHE{
 		/*Ciphertext newCiphertext(*this);
 		newCiphertext.applyPermutation_inplace(permutation);
 		return newCiphertext;*/
+	}
+
+	void Ciphertext::applyPermutation_inplace(const Permutation & permutation) {
+
+		this->node->permute_inplace(permutation);
 	}
 
 #pragma endregion
@@ -76,6 +85,7 @@ namespace certFHE{
 	std::ostream & operator << (std::ostream & out, const Ciphertext & c) {
 
 		out << "ciphertext ostream overload not yet implemented\n";
+		return out;
 	}
 
 	Ciphertext Ciphertext::operator + (const Ciphertext & c) const {
@@ -148,13 +158,13 @@ namespace certFHE{
 
 	Ciphertext::Ciphertext(const Plaintext & plaintext, const SecretKey & sk) {
 
-		uint64_t * raw_ctxt = sk.encrypt(plaintext);
+		uint64_t * raw_ctxt = sk.encrypt_raw(plaintext);
 		this->node = new CCC(sk.getContext(), raw_ctxt, 1);
 	}
 
 	Ciphertext::Ciphertext(const void * plaintext, const SecretKey & sk) {
 
-		uint64_t * raw_ctxt = sk.encrypt(plaintext);
+		uint64_t * raw_ctxt = sk.encrypt_raw(plaintext);
 		this->node = new CCC(sk.getContext(), raw_ctxt, 1);
 	}
 

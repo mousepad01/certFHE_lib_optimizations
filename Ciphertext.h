@@ -2,12 +2,14 @@
 #define CIPHERTEXT_H
 
 #include "utils.h"
-#include "Context.h"
-#include "Permutation.h"
 
 namespace certFHE{
 
 	class CNODE;
+	class Permutation;
+	class SecretKey;
+	class Context;
+	class Plaintext;
 
     /**
      * Class used for storing a ciphertext
@@ -85,7 +87,7 @@ namespace certFHE{
 			* Operators for addition of ciphertexts
 		**/
 		Ciphertext operator + (const Ciphertext & c) const;
-		Ciphertext & operator+=(const Ciphertext& c);
+		Ciphertext & operator += (const Ciphertext& c);
 
 		/**
 			* Operators for multiplication of ciphertexts
@@ -107,14 +109,14 @@ namespace certFHE{
 			* Apply a permutation on the current ciphertxt
 			* @param[in] permutation : permutation object to be applied
 		**/
-		void applyPermutation_inplace(const Permutation &permutation);
+		void applyPermutation_inplace(const Permutation & permutation);
 
 		/**
 			* Permute the current ciphertext and return a new object
 			* @param[in] permutation: constant reference to permutation object
 			* @return value : permuted ciphertext
 		**/
-		Ciphertext applyPermutation(const Permutation &permutation);
+		Ciphertext applyPermutation(const Permutation & permutation);
 
 		/**
 			* Method for decrypting current ciphertext

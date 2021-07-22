@@ -1,4 +1,10 @@
 #include "GlobalParams.h"
+#include "Context.h"
+#include "Ciphertext.h"
+#include "Timer.h"
+#include "SecretKey.h"
+#include "Plaintext.h"
+#include "Permutation.h"
 
 namespace certFHE{
 
