@@ -24,9 +24,6 @@ namespace certFHE{
 
 		std::cout << "permutation not yet implemented\n";
 		return *this;
-		/*Ciphertext newCiphertext(*this);
-		newCiphertext.applyPermutation_inplace(permutation);
-		return newCiphertext;*/
 	}
 
 	void Ciphertext::applyPermutation_inplace(const Permutation & permutation) {

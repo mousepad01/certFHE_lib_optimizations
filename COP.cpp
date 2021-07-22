@@ -19,9 +19,7 @@ namespace certFHE {
 			nodes = nodes->next;
 			while (nodes != 0 && nodes->current != 0) {
 
-				nodes->current->downstream_reference_count -= 1;
 				nodes->current->try_delete();
-
 				nodes = nodes->next;
 			}
 

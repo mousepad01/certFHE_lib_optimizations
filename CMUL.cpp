@@ -121,19 +121,19 @@ namespace certFHE {
 		CCC * fst_c = dynamic_cast<CCC *>(fst);
 		if (fst_c != 0) {
 
-			CCC * snd_c = dynamic_cast<CCC *>(fst);
+			CCC * snd_c = dynamic_cast<CCC *>(snd);
 			if (snd_c != 0)
 				return CMUL::__upstream_merging((CCC *)fst_c, (CCC *)snd_c);
 
 			else {
 
-				CADD * snd_c = dynamic_cast<CADD *>(fst);
+				CADD * snd_c = dynamic_cast<CADD *>(snd);
 				if (snd_c != 0)
 					return CMUL::__upstream_merging((CADD *)snd_c, (CCC *)fst_c);
 
 				else {
 
-					CMUL * snd_c = dynamic_cast<CMUL *>(fst);
+					CMUL * snd_c = dynamic_cast<CMUL *>(snd);
 					return CMUL::__upstream_merging((CMUL *)snd_c, (CCC *)fst_c);
 				}
 			}
@@ -143,19 +143,19 @@ namespace certFHE {
 			CADD * fst_c = dynamic_cast<CADD *>(fst);
 			if (fst_c != 0) {
 
-				CCC * snd_c = dynamic_cast<CCC *>(fst);
+				CCC * snd_c = dynamic_cast<CCC *>(snd);
 				if (snd_c != 0)
 					return CMUL::__upstream_merging((CADD *)fst_c, (CCC *)snd_c);
 
 				else {
 
-					CADD * snd_c = dynamic_cast<CADD *>(fst);
+					CADD * snd_c = dynamic_cast<CADD *>(snd);
 					if (snd_c != 0)
 						return CMUL::__upstream_merging((CADD *)fst_c, (CADD *)snd_c);
 
 					else {
 
-						CMUL * snd_c = dynamic_cast<CMUL *>(fst);
+						CMUL * snd_c = dynamic_cast<CMUL *>(snd);
 						return CMUL::__upstream_merging((CADD *)fst_c, (CMUL *)snd_c);
 					}
 				}
@@ -163,19 +163,19 @@ namespace certFHE {
 			else {
 
 				CMUL * fst_c = dynamic_cast<CMUL *>(fst);
-				CCC * snd_c = dynamic_cast<CCC *>(fst);
+				CCC * snd_c = dynamic_cast<CCC *>(snd);
 				if (snd_c != 0)
 					return CMUL::__upstream_merging((CMUL *)fst_c, (CCC *)snd_c);
 
 				else {
 
-					CADD * snd_c = dynamic_cast<CADD *>(fst);
+					CADD * snd_c = dynamic_cast<CADD *>(snd);
 					if (snd_c != 0)
 						return CMUL::__upstream_merging((CADD *)snd_c, (CMUL *)fst_c);
 
 					else {
 
-						CMUL * snd_c = dynamic_cast<CMUL *>(fst);
+						CMUL * snd_c = dynamic_cast<CMUL *>(snd);
 						return CMUL::__upstream_merging((CMUL *)fst_c, (CMUL *)snd_c);
 					}
 				}
