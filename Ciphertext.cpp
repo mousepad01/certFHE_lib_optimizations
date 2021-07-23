@@ -88,19 +88,21 @@ namespace certFHE{
 	Ciphertext Ciphertext::operator + (const Ciphertext & c) const {
 
 		CADD * addition_result = (CADD *)Ciphertext::add(this->node, c.node);
-		Ciphertext * add_result_c = new Ciphertext();
 
-		add_result_c->node = addition_result;
-		return *add_result_c;
+		Ciphertext add_result_c;
+		add_result_c.node = addition_result;
+
+		return add_result_c;
 	}
 
 	Ciphertext Ciphertext::operator * (const Ciphertext & c) const {
 		
 		CMUL * mul_result = (CMUL *)Ciphertext::multiply(this->node, c.node);
-		Ciphertext * mul_result_c = new Ciphertext();
 
-		mul_result_c->node = mul_result;
-		return *mul_result_c;
+		Ciphertext mul_result_c;
+		mul_result_c.node = mul_result;
+
+		return mul_result_c;
 	}
 
 	Ciphertext & Ciphertext::operator += (const Ciphertext & c) {
@@ -139,6 +141,7 @@ namespace certFHE{
 		if (this->node != 0)
 			this->node->try_delete();
 
+		c.node->downstream_reference_count += 1; // destructor will be called on the temporary object
 		this->node = c.node;
 
 		return *this;
@@ -173,6 +176,7 @@ namespace certFHE{
 
 	Ciphertext::Ciphertext(Ciphertext && ctxt) {
 
+		ctxt.node->downstream_reference_count += 1; // destructor will be called on the temporary object
 		this->node = ctxt.node;
 	}
 
