@@ -48,6 +48,30 @@ namespace certFHE {
 		this->nodes = other.nodes;
 	}
 
+	CNODE * COP::upstream_shortening() {
+
+		CNODE_list * thisnodes = this->nodes->next;
+
+		/**
+		 * Check to see whether this node has only one upstream reference or not
+		**/
+		if (thisnodes->next == 0 && thisnodes != 0 && thisnodes->current != 0) {
+
+			CNODE * shortened = thisnodes->current->upstream_shortening();
+
+			if (shortened != 0) {
+
+				thisnodes = thisnodes->pop_current_node(); // always becames NULL pointer
+				this->nodes->insert_next_element(shortened);
+			}
+
+			this->nodes->next->current->downstream_reference_count += 1;
+			return this->nodes->next->current;
+		}
+		else
+			return 0;
+	}
+
 	//TODO: check for multiple references, if true create new nodes
 	void COP::permute_inplace(const Permutation & perm) {
 

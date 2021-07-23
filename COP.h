@@ -35,6 +35,8 @@ namespace certFHE {
 
 		void upstream_merging() = 0;
 
+		CNODE * upstream_shortening();
+
 		CNODE * make_copy() = 0;
 
 		virtual uint64_t decrypt(const SecretKey & sk) = 0;

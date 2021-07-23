@@ -37,7 +37,18 @@ namespace certFHE {
 		Context getContext();
 		uint64_t getDeflenCnt();
 
+		/**
+		 * This function tries to merge as many nodes as possible
+		 * Starting from results and going up to the operands
+		**/
 		virtual void upstream_merging() = 0;
+
+		/**
+		 * This function tries to shorten de depth of some chains 
+		 * that formed (mostly) after upstream_merging calls
+		 * (when the node refers to a single upstream node and so on)
+		**/
+		virtual CNODE * upstream_shortening() = 0;
 
 		virtual CNODE * make_copy() = 0; // virtual copy constructor
 

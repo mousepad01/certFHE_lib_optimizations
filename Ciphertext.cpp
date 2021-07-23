@@ -52,6 +52,16 @@ namespace certFHE{
 
 		addition_result->upstream_merging();
 
+		/**
+		 * Shorten any chain of nodes formed during upstream merging
+		**/
+		CNODE * shortened = addition_result->upstream_shortening();
+		if (shortened != 0) {
+
+			addition_result->try_delete();
+			return shortened;
+		}
+
 		return addition_result;
 	}
 

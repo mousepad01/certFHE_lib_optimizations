@@ -28,7 +28,16 @@ namespace certFHE {
 
 		// Getters, setters and methods
 
+		/**
+		 * Nothing to merge, CCC nodes are always "leaves" (top of the chain) 
+		 * and DO NOT refer to anything upstream
+		**/
 		void upstream_merging() {}
+
+		/**
+		 * Nothing to shorten
+		**/
+		virtual CNODE * upstream_shortening() { return 0; }
 
 		CNODE * make_copy();
 
