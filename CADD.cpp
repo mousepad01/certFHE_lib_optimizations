@@ -110,6 +110,10 @@ namespace certFHE {
 
 	uint64_t CADD::decrypt(const SecretKey & sk) {
 
+		static int testv = 0;
+		testv += 1;
+		std::cout << "decrypt in CADD " << testv << '\n';
+
 		CNODE_list * thisnodes = this->nodes->next;
 
 		if (thisnodes == 0 || thisnodes->current == 0)

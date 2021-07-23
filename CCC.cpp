@@ -619,6 +619,10 @@ namespace certFHE {
 
 	uint64_t CCC::decrypt(const SecretKey & sk) {
 
+		static int testv = 0;
+		testv += 1;
+		std::cout << "decrypt in CCC " << testv << '\n';
+
 		uint64_t dec = 0;
 
 		uint64_t deflen_cnt = this->deflen_count;
