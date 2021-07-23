@@ -79,7 +79,7 @@ namespace certFHE{
 		uint64_t fst_deflen_pos;
 		uint64_t snd_deflen_pos;
 
-		uint64_t * decrypted;
+		uint64_t decrypted;
 
 		~DecArgs(){}
 	};

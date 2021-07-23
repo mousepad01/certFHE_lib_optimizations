@@ -65,9 +65,7 @@ namespace certFHE {
 
 		uint64_t default_len = args->default_len;
 
-		uint64_t * decrypted = args->decrypted;
-
-		*decrypted = 0;
+		uint64_t * decrypted = &(args->decrypted);
 
 #ifdef __AVX512F__
 
@@ -719,7 +717,7 @@ namespace certFHE {
 				}
 				prevchnk = args[thr].snd_deflen_pos;
 
-				args[thr].decrypted = new uint64_t;
+				args[thr].decrypted = 0;
 
 				threadpool->add_task(&chunk_decrypt, args + thr);
 			}
@@ -732,7 +730,7 @@ namespace certFHE {
 					return args[thr].task_is_done;
 				});
 
-				dec ^= *(args[thr].decrypted);
+				dec ^= args[thr].decrypted;
 			}
 
 			delete[] args;
