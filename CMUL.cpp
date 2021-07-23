@@ -240,7 +240,11 @@ namespace certFHE {
 				term_mul->upstream_merging();
 
 				distributed_mul->deflen_count *= term_mul->deflen_count;
+
+				snd_nodes = snd_nodes->next; // ?
 			}
+
+			fst_nodes = fst_nodes->next; // ?
 		}
 
 		return distributed_mul;
@@ -299,6 +303,8 @@ namespace certFHE {
 			term_mul->upstream_merging();
 
 			distributed_mul->deflen_count *= term_mul->deflen_count;
+
+			fst_nodes = fst_nodes->next; // ?
 		}
 
 		return distributed_mul;
@@ -377,7 +383,7 @@ namespace certFHE {
 					freq.insert(nodes_snd->current);
 				}
 
-				nodes_fst = nodes_fst->next;
+				nodes_snd = nodes_snd->next;
 			}
 		}
 		else {
@@ -401,7 +407,7 @@ namespace certFHE {
 				new_pointer_same_node->downstream_reference_count += 1;
 				merged->deflen_count *= new_pointer_same_node->deflen_count;
 
-				nodes_fst = nodes_fst->next;
+				nodes_snd = nodes_snd->next;
 			}
 		}
 
@@ -458,6 +464,8 @@ namespace certFHE {
 			term_mul->upstream_merging();
 
 			distributed_mul->deflen_count *= term_mul->deflen_count;
+
+			fst_nodes = fst_nodes->next;
 		}
 
 		return distributed_mul;

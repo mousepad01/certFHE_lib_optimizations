@@ -9,7 +9,7 @@ namespace certFHE {
 
 		if (thisnodes == 0 || thisnodes->current == 0)
 			return;
-
+		
 		/**
 		 * Iterating through all upstream referenced nodes and trying to merge as much as possible
 		**/
@@ -25,7 +25,18 @@ namespace certFHE {
 				if (OPValues::remove_duplicates_onadd && node_i != node_j && node_i->current == node_j->current) {
 
 					node_i = node_i->pop_current_node();
-					node_j = node_j->pop_current_node();
+
+					if (node_i == node_j) {
+
+						node_i = node_i->pop_current_node();
+
+						if (node_i == 0)
+							node_j = 0;
+						else
+							node_j = node_i->next;
+					}
+					else
+						node_j = node_j->pop_current_node();
 
 					continue;
 				}
@@ -49,7 +60,18 @@ namespace certFHE {
 				if (merged->deflen_count == 0) {
 
 					node_i = node_i->pop_current_node();
-					node_j = node_j->pop_current_node();
+
+					if (node_i == node_j) {
+
+						node_i = node_i->pop_current_node();
+
+						if (node_i == 0)
+							node_j = 0;
+						else
+							node_j = node_i->next;
+					}
+					else
+						node_j = node_j->pop_current_node();
 
 					continue;
 				}
@@ -265,7 +287,7 @@ namespace certFHE {
 					freq[nodes_snd->current] = 0;
 				}
 
-				nodes_fst = nodes_fst->next;
+				nodes_snd = nodes_snd->next;
 			}
 		}
 		else {
