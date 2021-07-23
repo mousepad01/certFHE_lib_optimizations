@@ -24,6 +24,12 @@ namespace certFHE {
 		CNODE_list & operator = (const CNODE_list & other) = delete;
 		CNODE_list & operator = (const CNODE_list && other) = delete;
 
+		/**
+		 * DOES NOT DELETE THE ENTIRE LIST
+		 * the list of elements must be manually deleted
+		 * to distinguish between the deletion of current node
+		 * and the deletion of all chained nodes with the current one
+		**/
 		~CNODE_list() {}
 
 		/**

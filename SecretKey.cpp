@@ -83,7 +83,7 @@ namespace certFHE{
 		uint64_t * s = this->s;
 
 		//@TODO: generate only a random of size n-d instead of n-d randoms()
-		uint64_t* res = new uint64_t[n];
+		uint64_t * res = new uint64_t[n];
 
 		if (bit == 0x01)
 		{

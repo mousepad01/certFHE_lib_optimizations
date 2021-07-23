@@ -14,16 +14,10 @@ namespace certFHE {
 
 		try {
 
-			CNODE_list * original_list = nodes;
+			nodes->current = 0; // dummy current node set to 0
+			while (nodes != 0) 
+				nodes = nodes->pop_current_node();
 
-			nodes = nodes->next;
-			while (nodes != 0 && nodes->current != 0) {
-
-				nodes->current->try_delete();
-				nodes = nodes->next;
-			}
-
-			delete original_list;
 		}
 		catch (std::exception e) {
 
