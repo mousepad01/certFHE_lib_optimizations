@@ -44,6 +44,8 @@ namespace certFHE {
 
 			this->nodes->insert_next_element(othernodes->current);
 			othernodes->current->downstream_reference_count += 1;
+
+			othernodes = othernodes->next;
 		}
 	}
 
@@ -52,6 +54,7 @@ namespace certFHE {
 		this->nodes = other.nodes;
 	}
 
+	//TODO: check for multiple references, if true create new nodes
 	void COP::permute_inplace(const Permutation & perm) {
 
 		CNODE_list * thisnodes = this->nodes->next;

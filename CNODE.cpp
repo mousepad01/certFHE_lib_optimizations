@@ -13,7 +13,7 @@ namespace certFHE {
 
 		this->deflen_count = other.deflen_count;
 		this->context = other.context;
-		this->downstream_reference_count = other.downstream_reference_count;
+		this->downstream_reference_count = 1; // ??? other.downstream_reference_count;
 	}
 
 	void CNODE::try_delete() {
