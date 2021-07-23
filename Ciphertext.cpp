@@ -141,8 +141,8 @@ namespace certFHE{
 		if (this->node != 0)
 			this->node->try_delete();
 
-		c.node->downstream_reference_count += 1; // destructor will be called on the temporary object
 		this->node = c.node;
+		c.node = 0;
 
 		return *this;
 	}
@@ -176,13 +176,14 @@ namespace certFHE{
 
 	Ciphertext::Ciphertext(Ciphertext && ctxt) {
 
-		ctxt.node->downstream_reference_count += 1; // destructor will be called on the temporary object
 		this->node = ctxt.node;
+		ctxt.node = 0;
 	}
 
 	Ciphertext::~Ciphertext() {
 
-		this->node->try_delete();
+		if(this->node != 0)
+			this->node->try_delete();
 	}
 
 #pragma endregion
