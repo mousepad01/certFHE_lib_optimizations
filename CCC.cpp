@@ -619,9 +619,9 @@ namespace certFHE {
 
 	uint64_t CCC::decrypt(const SecretKey & sk) {
 
-		static int testv = 0;
+		/*static int testv = 0;
 		testv += 1;
-		std::cout << "decrypt in CCC " << testv << '\n';
+		std::cout << "decrypt in CCC " << testv << '\n';*/
 
 		uint64_t dec = 0;
 
@@ -852,6 +852,13 @@ namespace certFHE {
 
 			delete[] args;
 		}
+	}
+
+	std::ostream & operator << (std::ostream & out, const CCC & ccc) {
+
+		out << "CCC\n" << static_cast <const CNODE &>(ccc);
+
+		return out;
 	}
 }
 

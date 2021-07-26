@@ -116,6 +116,12 @@ namespace certFHE {
 		return new CMUL(*this);
 	}
 
+	std::ostream & operator << (std::ostream & out, const CMUL & cmul) {
+
+		out << "CADD\n" << static_cast <const COP &> (cmul) << '\n';
+		return out;
+	}
+
 	CNODE * CMUL::upstream_merging(CNODE * fst, CNODE * snd) {
 
 		CCC * fst_c = dynamic_cast<CCC *>(fst);

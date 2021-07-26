@@ -110,9 +110,9 @@ namespace certFHE {
 
 	uint64_t CADD::decrypt(const SecretKey & sk) {
 
-		static int testv = 0;
+		/*static int testv = 0;
 		testv += 1;
-		std::cout << "decrypt in CADD " << testv << '\n';
+		std::cout << "decrypt in CADD " << testv << '\n';*/
 
 		CNODE_list * thisnodes = this->nodes->next;
 
@@ -127,6 +127,12 @@ namespace certFHE {
 		}
 
 		return rez;
+	}
+
+	std::ostream & operator << (std::ostream & out, const CADD & cadd) {
+
+		out << "CADD\n" << static_cast <const COP &> (cadd) << '\n';
+		return out;
 	}
 
 	CNODE * CADD::make_copy() {

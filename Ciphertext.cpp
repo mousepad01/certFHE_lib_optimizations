@@ -82,6 +82,16 @@ namespace certFHE{
 
 		mul_result->upstream_merging();
 
+		/**
+		 * Shorten any chain of nodes formed during upstream merging
+		**/
+		/*CNODE * shortened = mul_result->upstream_shortening();
+		if (shortened != 0) {
+
+			mul_result->try_delete();
+			return shortened;
+		}*/
+
 		return mul_result;
 	}
 
@@ -91,7 +101,17 @@ namespace certFHE{
 
 	std::ostream & operator << (std::ostream & out, const Ciphertext & c) {
 
-		out << "ciphertext ostream overload not yet implemented\n";
+		CCC * ccc_node = dynamic_cast <CCC *> (c.node);
+		if (ccc_node != 0) 
+			out << *ccc_node << '\n';
+		
+		else {
+
+			COP * cop_node = dynamic_cast <COP *> (c.node);
+			if (cop_node != 0)
+				out << *cop_node << '\n';
+		}
+
 		return out;
 	}
 

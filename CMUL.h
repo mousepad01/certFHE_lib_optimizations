@@ -26,6 +26,8 @@ namespace certFHE {
 		CMUL & operator = (const CMUL & other) = delete;
 		CMUL & operator = (const CMUL && other) = delete;
 
+		friend std::ostream & operator << (std::ostream & out, const CMUL & cmul);
+
 		// Getters, setters and methods
 
 		void upstream_merging();

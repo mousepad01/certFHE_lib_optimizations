@@ -31,6 +31,8 @@ namespace certFHE {
 		COP & operator = (const COP & other) = delete;
 		COP & operator = (const COP && other) = delete;
 
+		friend std::ostream & operator << (std::ostream & out, const COP & cop);
+
 		// Getters, setters and methods
 
 		void upstream_merging() = 0;

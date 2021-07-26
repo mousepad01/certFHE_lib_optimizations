@@ -26,6 +26,8 @@ namespace certFHE {
 		CCC & operator = (const CCC & other) = delete;
 		CCC & operator = (const CCC && other) = delete;
 
+		friend std::ostream & operator << (std::ostream & out, const CCC & ccc);
+
 		// Getters, setters and methods
 
 		/**

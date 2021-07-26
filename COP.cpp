@@ -48,6 +48,30 @@ namespace certFHE {
 		this->nodes = other.nodes;
 	}
 
+	std::ostream & operator << (std::ostream & out, const COP & cop) {
+
+		out << "COP\n" << static_cast <const CNODE &> (cop);
+		out << "***NODES LIST:***\n";
+
+		CNODE_list * copnodes = cop.nodes->next;
+		while (copnodes != 0 && copnodes->current != 0) {
+
+			CCC * ccc_current = dynamic_cast <CCC *> (copnodes->current);
+			if (ccc_current != 0) 
+				out << *ccc_current << "----------\n";
+			
+			else {
+
+				COP * cop_current = dynamic_cast <COP *> (copnodes->current);
+				out << *cop_current << "----------\n";
+			}
+
+			copnodes = copnodes->next;
+		}
+
+		return out;
+	}
+
 	CNODE * COP::upstream_shortening() {
 
 		CNODE_list * thisnodes = this->nodes->next;

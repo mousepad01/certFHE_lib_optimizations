@@ -37,5 +37,12 @@ namespace certFHE {
 
 		return this->deflen_count;
 	}
+
+	std::ostream & operator << (std::ostream & out, const CNODE & cnode) {
+
+		out << "deflen_count=" << cnode.deflen_count << " " << "ref_cnt=" << cnode.downstream_reference_count << '\n';
+
+		return out;
+	}
 }
 

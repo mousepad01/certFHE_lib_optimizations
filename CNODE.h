@@ -32,6 +32,8 @@ namespace certFHE {
 		CNODE & operator = (const CNODE & other) = delete;
 		CNODE & operator = (const CNODE && other) = delete;
 
+		friend std::ostream & operator << (std::ostream & out, const CNODE & cnode);
+
 		// Getters, setters and methods
 
 		Context getContext();

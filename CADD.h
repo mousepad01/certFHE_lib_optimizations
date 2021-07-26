@@ -11,16 +11,24 @@ namespace certFHE {
 
 	protected:
 
+		// Constructors & destructor
+
 		CADD() = delete;
 		CADD(Context * context): COP(context) {}
 
 		CADD(const CADD & other): COP(other) {}
 		CADD(const CADD && other): COP(other) {}
 
+		virtual ~CADD() {}
+
+		// Operators
+
 		CADD & operator = (const CADD & other) = delete;
 		CADD & operator = (const CADD && other) = delete;
 
-		virtual ~CADD() {}
+		friend std::ostream & operator << (std::ostream & out, const CADD & cadd);
+
+		// Getters, setters and methods
 
 		/**
 		 * This function tries to merge as many operations as possible
@@ -43,6 +51,8 @@ namespace certFHE {
 		static CNODE * __upstream_merging(CADD * fst, CCC * snd);
 		static CNODE * __upstream_merging(CCC * fst, CCC * snd);
 		static CNODE * __upstream_merging(CMUL * fst, CCC * snd);
+
+		// Others
 
 		friend class CMUL;
 		friend class Ciphertext;
