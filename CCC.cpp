@@ -371,7 +371,7 @@ namespace certFHE {
 
 		if (fst->deflen_count == 1 && snd->deflen_count == 1) {
 
-			uint64_t* res = new uint64_t[deflen_to_u64];
+			uint64_t * res = new uint64_t[deflen_to_u64];
 
 			for (uint64_t i = 0; i < deflen_to_u64; i++)
 				res[i] = fst_c[i] & snd_c[i];
@@ -380,11 +380,33 @@ namespace certFHE {
 		}
 
 		uint64_t res_u64_cnt = (fst->deflen_count * snd->deflen_count) * deflen_to_u64;
-		uint64_t * res = new uint64_t[res_u64_cnt];
-
 		uint64_t fst_deflen_cnt = fst->deflen_count;
 		uint64_t snd_deflen_cnt = snd->deflen_count;
 		uint64_t res_deflen_cnt = fst_deflen_cnt * snd_deflen_cnt;
+
+		uint64_t * res;
+		CCC * mul_result;
+
+		if (fst->deflen_count == 1 && fst->downstream_reference_count == 1){
+
+			fst->downstream_reference_count += 1;
+
+			mul_result = fst;
+			res = fst_c;
+		}
+		else if (snd->deflen_count == 1 && snd->downstream_reference_count == 1) {
+
+			snd->downstream_reference_count += 1;
+
+			mul_result = snd;
+			res = snd_c;
+		}
+		else {
+
+			res = new uint64_t[res_u64_cnt];
+
+			mul_result = new CCC(fst->context, res, fst->deflen_count * snd->deflen_count);
+		}
 
 		if (res_u64_cnt < MTValues::mul_m_threshold) {
 
@@ -496,125 +518,7 @@ namespace certFHE {
 			delete[] args;
 		}
 
-		return new CCC(fst->context, res, res_deflen_cnt);
-	}
-
-	CCC * CCC::permute(CCC * c, const Permutation & perm) {
-
-		CtxtInversion * invs = perm.getInversions();
-		uint64_t inv_cnt = perm.getInversionsCnt();
-
-		uint64_t deflen_to_u64 = c->context->getDefaultN();
-		uint64_t deflen_cnt = c->deflen_count;
-
-		uint64_t * res = new uint64_t[deflen_cnt * deflen_to_u64];
-
-		if (deflen_cnt < MTValues::perm_m_threshold) {
-
-			for (uint64_t i = 0; i < deflen_cnt; i++) {
-
-				uint64_t * current_chunk = c->ctxt + i * deflen_to_u64;
-				uint64_t * current_chunk_res = res + i * deflen_to_u64;
-
-				for (uint64_t k = 0; k < inv_cnt; k++) {
-
-					uint64_t fst_u64_ch = invs[k].fst_u64_ch;
-					uint64_t snd_u64_ch = invs[k].snd_u64_ch;
-					uint64_t fst_u64_r = invs[k].fst_u64_r;
-					uint64_t snd_u64_r = invs[k].snd_u64_r;
-
-#if MSVC_COMPILER_LOCAL_MACRO
-
-					//unsigned char val_i = _bittest64((const __int64 *)current_chunk + fst_u64_ch, fst_u64_r);
-					//unsigned char val_j = _bittest64((const __int64 *)current_chunk + snd_u64_ch, snd_u64_r);
-
-					unsigned char val_i = (current_chunk[fst_u64_ch] >> fst_u64_r) & 0x01;
-					unsigned char val_j = (current_chunk[snd_u64_ch] >> snd_u64_r) & 0x01;
-
-#else
-
-					unsigned char val_i = (current_chunk[fst_u64_ch] >> fst_u64_r) & 0x01;
-					unsigned char val_j = (current_chunk[snd_u64_ch] >> snd_u64_r) & 0x01;
-
-#endif
-
-					if (val_i)
-						current_chunk_res[snd_u64_ch] |= (uint64_t)1 << snd_u64_r;
-					else
-						current_chunk_res[snd_u64_ch] &= ~((uint64_t)1 << snd_u64_r);
-
-					if (val_j)
-						current_chunk_res[fst_u64_ch] |= (uint64_t)1 << fst_u64_r;
-					else
-						current_chunk_res[fst_u64_ch] &= ~((uint64_t)1 << fst_u64_r);
-				}
-			}
-		}
-		else {
-
-			Threadpool <Args *> * threadpool = Library::getThreadpool();
-			uint64_t thread_count = threadpool->THR_CNT;
-
-			uint64_t q;
-			uint64_t r;
-
-			uint64_t worker_cnt;
-
-			if (thread_count >= deflen_cnt) {
-
-				q = 1;
-				r = 0;
-
-				worker_cnt = deflen_cnt;
-			}
-			else {
-
-				q = deflen_cnt / thread_count;
-				r = deflen_cnt % thread_count;
-
-				worker_cnt = thread_count;
-			}
-
-			PermArgs * args = new PermArgs[worker_cnt];
-
-			uint64_t prevchnk = 0;
-
-			for (uint64_t thr = 0; thr < worker_cnt; thr++) {
-
-				args[thr].perm_invs = invs;
-				args[thr].inv_cnt = inv_cnt;
-
-				args[thr].ctxt = c->ctxt;
-				args[thr].res = res;
-
-				args[thr].fst_deflen_pos = prevchnk;
-				args[thr].snd_deflen_pos = prevchnk + q;
-
-				if (r > 0) {
-
-					args[thr].snd_deflen_pos += 1;
-					r -= 1;
-				}
-				prevchnk = args[thr].snd_deflen_pos;
-
-				args[thr].default_len = deflen_to_u64;
-
-				threadpool->add_task(&chunk_permute, args + thr);
-			}
-
-			for (uint64_t thr = 0; thr < worker_cnt; thr++) {
-
-				std::unique_lock <std::mutex> lock(args[thr].done_mutex);
-
-				args[thr].done.wait(lock, [thr, args] {
-					return args[thr].task_is_done;
-				});
-			}
-
-			delete[] args;
-		}
-
-		return new CCC(c->context, res, deflen_cnt);
+		return mul_result;
 	}
 
 	uint64_t CCC::decrypt(const SecretKey & sk) {

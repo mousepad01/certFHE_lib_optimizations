@@ -37,9 +37,9 @@ public:
 
 void test_res_correct() {
 
-	certFHE::Library::initializeLibrary();
-	certFHE::Context context(1247, 16);
-	certFHE::SecretKey sk(context);
+	Library::initializeLibrary();
+	Context context(1247, 16);
+	SecretKey sk(context);
 
 	MTValues::m_threshold_autoselect(context, false);
 
@@ -1430,7 +1430,7 @@ void test_res_correct_noperm() {
 	std::cout << "\nTESTS DONE " << t.stop_timer() << "\n\n";
 }
 
-int main2(){
+int main(){
 
 	{
 		//only_mul_test_time(25, 3, 2, 22);
@@ -1483,7 +1483,9 @@ int main2(){
 
 		//test_res_correct_noperm();
 
-		dec_mul_add_test_time(100, 15, 25, 2, 15);
+		//dec_mul_add_test_time(100, 15, 25, 2, 15);
+
+		test_res_correct();
 	}
 
     return 0;

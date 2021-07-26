@@ -74,20 +74,17 @@ namespace certFHE {
 		/**
 		 * It will add WITHOUT ANY CHECK
 		 * Proper checks are expected to be managed by the caller function
+		 * It will create a new CCC object everytime
 		**/
 		static CCC * add(CCC * fst, CCC * snd);
 
 		/**
 		 * It will multiply WITHOUT ANY CHECK
 		 * Proper checks are expected to be managed by the caller function
+		 * It will NOT create a new CCC object if fst deflen or snd deflen == 1
+		 * and if ref count == 1
 		**/
 		static CCC * multiply(CCC * fst, CCC * snd);
-
-		/**
-		 * It will permute WITHOUT ANY CHECK
-		 * Proper checks are expected to be managed by the caller function
-		**/
-		static CCC * permute(CCC * c, const Permutation & perm);
 
 		/**
 		 * Decryption function
