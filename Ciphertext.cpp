@@ -20,15 +20,24 @@ namespace certFHE{
 		return Plaintext(dec);
 	}
 
-	Ciphertext Ciphertext::applyPermutation(const Permutation& permutation) {
+	Ciphertext Ciphertext::applyPermutation(const Permutation & permutation, bool force_deep_copy) {
 
-		std::cout << "permutation not yet implemented\n";
-		return *this;
+		CNODE * permuted = this->node->permute(permutation, force_deep_copy);
+
+		Ciphertext * permuted_ciphertext = new Ciphertext(*this);
+
+		permuted_ciphertext->node->try_delete();
+		permuted_ciphertext->node = permuted;
+
+		return *permuted_ciphertext;
 	}
 
 	void Ciphertext::applyPermutation_inplace(const Permutation & permutation) {
 
-		this->node->permute_inplace(permutation);
+		CNODE * permuted = this->node->permute(permutation, false);
+		
+		this->node->try_delete();
+		this->node = permuted;
 	}
 
 #pragma endregion

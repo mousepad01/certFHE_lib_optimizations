@@ -106,7 +106,7 @@ namespace certFHE{
 		Ciphertext & operator = (Ciphertext && c);
 
 		/**
-			* Apply a permutation on the current ciphertxt
+			* Apply a permutation on the current ciphertxt 
 			* @param[in] permutation : permutation object to be applied
 		**/
 		void applyPermutation_inplace(const Permutation & permutation);
@@ -115,8 +115,9 @@ namespace certFHE{
 			* Permute the current ciphertext and return a new object
 			* @param[in] permutation: constant reference to permutation object
 			* @return value : permuted ciphertext
+			* NOTE: for performance reasons, set force_deep_copy to true only in a multithreading context
 		**/
-		Ciphertext applyPermutation(const Permutation & permutation);
+		Ciphertext applyPermutation(const Permutation & permutation, bool force_deep_copy = false);
 
 		/**
 			* Method for decrypting current ciphertext

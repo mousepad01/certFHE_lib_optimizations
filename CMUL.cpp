@@ -122,6 +122,33 @@ namespace certFHE {
 		return out;
 	}
 
+	CNODE * CMUL::permute(const Permutation & perm, bool force_deep_copy) {
+
+		CMUL * to_permute;
+		if (this->downstream_reference_count == 1 && !force_deep_copy) {
+
+			to_permute = this;
+			this->downstream_reference_count += 1; // the caller function will see the returned result as a different node
+		}
+		else
+			to_permute = new CMUL(*this);
+
+		CNODE_list * topermute_nodes = to_permute->nodes->next;
+
+		if (topermute_nodes == 0 || topermute_nodes->current == 0)
+			return to_permute;
+
+		while (topermute_nodes != 0 && topermute_nodes->current != 0) {
+
+			CNODE * current_permuted = topermute_nodes->current->permute(perm, force_deep_copy);
+
+			topermute_nodes->insert_next_element(current_permuted);
+			topermute_nodes = topermute_nodes->pop_current_node()->next;
+		}
+
+		return to_permute;
+	}
+
 	CNODE * CMUL::upstream_merging(CNODE * fst, CNODE * snd) {
 
 		CCC * fst_c = dynamic_cast<CCC *>(fst);

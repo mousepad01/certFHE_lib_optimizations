@@ -34,6 +34,8 @@ namespace certFHE {
 
 		uint64_t decrypt(const SecretKey & sk);
 
+		CNODE * permute(const Permutation & perm, bool force_deep_copy);
+
 		CNODE * make_copy();
 
 		static CNODE * upstream_merging(CNODE * fst, CNODE * snd);

@@ -95,22 +95,6 @@ namespace certFHE {
 		else
 			return 0;
 	}
-
-	//TODO: check for multiple references, if true create new nodes
-	void COP::permute_inplace(const Permutation & perm) {
-
-		CNODE_list * thisnodes = this->nodes->next;
-
-		if (thisnodes == 0 || thisnodes->current == 0)
-			return;
-
-		while (thisnodes != 0 && thisnodes->current != 0) {
-
-			thisnodes->current->permute_inplace(perm);
-			thisnodes = thisnodes->next;
-		}
-	}
-
 }
 
 

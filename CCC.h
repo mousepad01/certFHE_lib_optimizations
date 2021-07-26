@@ -39,7 +39,7 @@ namespace certFHE {
 		/**
 		 * Nothing to shorten
 		**/
-		virtual CNODE * upstream_shortening() { return 0; }
+		CNODE * upstream_shortening() { return 0; }
 
 		CNODE * make_copy();
 
@@ -95,9 +95,10 @@ namespace certFHE {
 		uint64_t decrypt(const SecretKey & sk);
 
 		/**
-		 * Inplace permutation function
+		 * It will create a copy and permute it if the ref count is > 1
+		 * And permute inplace only if ref count == 1
 		**/
-		void permute_inplace(const Permutation & perm);
+		CNODE * permute(const Permutation & perm, bool force_deep_copy);
 
 		// Other
 

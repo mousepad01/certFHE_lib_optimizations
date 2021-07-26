@@ -743,7 +743,7 @@ namespace certFHE {
 		return dec;
 	}
 
-	void CCC::permute_inplace(const Permutation & perm) {
+	CNODE * CCC::permute(const Permutation & perm, bool force_deep_copy) {
 
 		CtxtInversion * invs = perm.getInversions();
 		uint64_t inv_cnt = perm.getInversionsCnt();
@@ -753,11 +753,20 @@ namespace certFHE {
 
 		uint64_t len = deflen_to_u64 * deflen_cnt;
 
+		CCC * to_permute;
+		if (this->downstream_reference_count == 1 && !force_deep_copy) {
+
+			to_permute = this;
+			this->downstream_reference_count += 1;
+		}
+		else
+			to_permute = new CCC(*this);
+
 		if (deflen_cnt < MTValues::perm_m_threshold) {
 
 			for (uint64_t i = 0; i < deflen_cnt; i++) {
 
-				uint64_t * current_chunk = this->ctxt + i * deflen_to_u64;
+				uint64_t * current_chunk = to_permute->ctxt + i * deflen_to_u64;
 
 				for (uint64_t k = 0; k < inv_cnt; k++) {
 
@@ -766,15 +775,18 @@ namespace certFHE {
 					uint64_t fst_u64_r = invs[k].fst_u64_r;
 					uint64_t snd_u64_r = invs[k].snd_u64_r;
 
-#if GPP_COMPILER_LOCAL_MACRO
+#if MSVC_COMPILER_LOCAL_MACRO
+
+					//unsigned char val_i = _bittest64((const __int64 *)current_chunk + fst_u64_ch, fst_u64_r);
+					//unsigned char val_j = _bittest64((const __int64 *)current_chunk + snd_u64_ch, snd_u64_r);
 
 					unsigned char val_i = (current_chunk[fst_u64_ch] >> fst_u64_r) & 0x01;
 					unsigned char val_j = (current_chunk[snd_u64_ch] >> snd_u64_r) & 0x01;
 
-#elif MSVC_COMPILER_LOCAL_MACRO
+#else
 
-					unsigned char val_i = _bittest64((const __int64 *)current_chunk + fst_u64_ch, fst_u64_r);
-					unsigned char val_j = _bittest64((const __int64 *)current_chunk + snd_u64_ch, snd_u64_r);
+					unsigned char val_i = (current_chunk[fst_u64_ch] >> fst_u64_r) & 0x01;
+					unsigned char val_j = (current_chunk[snd_u64_ch] >> snd_u64_r) & 0x01;
 
 #endif
 
@@ -824,7 +836,7 @@ namespace certFHE {
 				args[thr].perm_invs = invs;
 				args[thr].inv_cnt = inv_cnt;
 
-				args[thr].ctxt = this->ctxt;
+				args[thr].ctxt = to_permute->ctxt;
 
 				args[thr].fst_deflen_pos = prevchnk;
 				args[thr].snd_deflen_pos = prevchnk + q;
@@ -852,6 +864,8 @@ namespace certFHE {
 
 			delete[] args;
 		}
+
+		return to_permute;
 	}
 
 	std::ostream & operator << (std::ostream & out, const CCC & ccc) {
