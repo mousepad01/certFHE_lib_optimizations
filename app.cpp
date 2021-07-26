@@ -182,13 +182,13 @@ void dec_mul_add_test_time(const int test_count, const int FIRST_LEN = 15, const
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\DAG_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\degenerate_DAG_stats.txt", std::fstream::out | std::fstream::app);
 
-	certFHE::Library::initializeLibrary();
-	certFHE::Context context(1247, 16);
-	certFHE::SecretKey seckey(context);
+	Library::initializeLibrary();
+	Context context(1247, 16);
+	SecretKey seckey(context);
 
-	MTValues::m_threshold_autoselect(context);
+	int ptxt1, ptxt2, ptxt3;
 
 	for (int ts = 0; ts < test_count; ts++) {
 
@@ -204,47 +204,62 @@ void dec_mul_add_test_time(const int test_count, const int FIRST_LEN = 15, const
 		f << "TEST\n";
 		t.stop_timer();
 
-		Plaintext p1(rand() % 2);
+		ptxt1 = rand() % 2;
+		ptxt2 = rand() % 2;
+		ptxt3 = rand() % 2;
+
+		Plaintext p1(ptxt1);
 		Ciphertext ctxt1 = seckey.encrypt(p1);
 
-		Plaintext p2(rand() % 2);
+		Plaintext p2(ptxt2);
 		Ciphertext ctxt2 = seckey.encrypt(p2);
 
-		Plaintext p3(rand() % 2);
+		Plaintext p3(ptxt3);
 		Ciphertext ctxt3 = seckey.encrypt(p3);
 
 		for (int i = 1; i < first_len_cpy; i++) {
 
-			Plaintext p(rand() % 2);
+			int ptxt = rand() % 2;
+
+			Plaintext p(ptxt);
 			Ciphertext c = seckey.encrypt(p);
 
 			ctxt1 += c;
+			ptxt1 ^= ptxt;
 		}
-		
+
 		for (int i = 1; i < snd_len_cpy; i++) {
 
-			Plaintext p(rand() % 2);
+			int ptxt = rand() % 2;
+
+			Plaintext p(ptxt);
 			Ciphertext c = seckey.encrypt(p);
 
 			ctxt2 += c;
+			ptxt2 ^= ptxt;
 		}
 
 		for (int i = 1; i < trd_len_cpy; i++) {
 
-			Plaintext p(rand() % 2);
+			int ptxt = rand() % 2;
+
+			Plaintext p(ptxt);
 			Ciphertext c = seckey.encrypt(p);
 
 			ctxt3 += c;
+			ptxt3 ^= ptxt;
 		}
 
 		t.stop_timer();
-		
+
 		for (int i = 0; i < ROUND_CNT; i++) {
 
-			ctxt1 *= ctxt3;
-			//ctxt2 *= ctxt3;
+			t.stop_timer();
 
-			//ctxt1 += ctxt2;
+			ctxt1 *= ctxt3;
+			ctxt2 *= ctxt3;
+
+			ctxt1 += ctxt2;
 
 			uint64_t ti = t.stop_timer();
 			f << "round with len1=" << first_len_cpy << " len2=" << snd_len_cpy << " len3="
@@ -256,17 +271,33 @@ void dec_mul_add_test_time(const int test_count, const int FIRST_LEN = 15, const
 
 			first_len_cpy += snd_len_cpy;
 
+			ptxt1 &= ptxt3;
+			ptxt2 &= ptxt3;
+			ptxt1 ^= ptxt2;
+
 			t.stop_timer();
-			seckey.decrypt(ctxt1);
+
+			Plaintext ptxtd1 = seckey.decrypt(ctxt1);
+			Plaintext ptxtd2 = seckey.decrypt(ctxt2);
+			Plaintext ptxtd3 = seckey.decrypt(ctxt3);
 
 			ti = t.stop_timer();
+
+			if ((ptxtd1.getValue() & 0x01) != ptxt1)
+				std::cout << (ptxtd1.getValue() & 0x01) << " " << ptxt1 << " " << ts << " " << i << '\n';
+
+			if ((ptxtd2.getValue() & 0x01) != ptxt2)
+				std::cout << (ptxtd1.getValue() & 0x01) << " " << ptxt2 << " " << ts << " " << i << '\n';
+
+			if ((ptxtd3.getValue() & 0x01) != ptxt3)
+				std::cout << (ptxtd1.getValue() & 0x01) << " " << ptxt3 << " " << ts << " " << i << '\n';
+
 			f << "decrypting len=" << first_len_cpy << " in time_cost=" << ti << " miliseconds\n";
 		}
 
 		f.flush();
 	}
 }
-
 
 void only_perm_test_time(const int test_count, const int C_MAX_LEN) {
 
@@ -1365,8 +1396,7 @@ void test_res_correct_noperm() {
 		for (int i = 0; i < 1000; i++) {
 
 			int r = rand() % 2;
-			c00 += r;
-			c00 %= 2;
+			c00 ^= r;
 
 			Plaintext p(r);
 			Ciphertext c = sk.encrypt(p);
@@ -1377,8 +1407,7 @@ void test_res_correct_noperm() {
 		for (int i = 0; i < 17; i++) {
 
 			int r = rand() % 2;
-			c11 += r;
-			c11 %= 2;
+			c11 ^= r;
 
 			Plaintext p(r);
 			Ciphertext c = sk.encrypt(p);
@@ -1387,9 +1416,12 @@ void test_res_correct_noperm() {
 		}
 
 		c1 *= c0;
-		c11 *= c00;
+		c11 &= c00;
 
-		if ((((sk.decrypt(c0).getValue() & 0x01) == c00) && ((sk.decrypt(c1).getValue() & 0x01) == c11)) == false)
+		std::cout << (sk.decrypt(c0).getValue() & 0x01) << c00 << '\n';
+		std::cout << (sk.decrypt(c1).getValue() & 0x01) << c11 << '\n';
+
+		if (((sk.decrypt(c0).getValue() & 0x01) != c00) || ((sk.decrypt(c1).getValue() & 0x01) != c11))
 			std::cout << "ADDITION / MULTIPLICATION FAIL \n";
 		//else
 			//std::cout << "OK\n";
@@ -1398,7 +1430,7 @@ void test_res_correct_noperm() {
 	std::cout << "\nTESTS DONE " << t.stop_timer() << "\n\n";
 }
 
-int main2(){
+int main(){
 
 	{
 		//only_mul_test_time(25, 3, 2, 22);
@@ -1448,9 +1480,10 @@ int main2(){
 
 	{
 		//test_dag_implem_time(200, 400);
+
 		//test_res_correct_noperm();
 
-		//dec_mul_add_test_time(10, 15, 25, 2, 14);
+		dec_mul_add_test_time(100, 15, 25, 2, 10);
 	}
 
     return 0;
