@@ -11,7 +11,7 @@
 #include "certFHE.h"
 #include "Threadpool.hpp"
 
-static std::string STATS_PATH = "";
+static std::string STATS_PATH = "C:\\Users\\intern.andreis\\Desktop\\certfhe_stats\\DAG_implementation";
 
 using namespace certFHE;
 
@@ -34,7 +34,7 @@ public:
     }
 };
 
-/*
+
 void test_res_correct() {
 
 	certFHE::Library::initializeLibrary();
@@ -182,11 +182,13 @@ void dec_mul_add_test_time(const int test_count, const int FIRST_LEN = 15, const
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\no_bitlen_all_multithreading_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\DAG_stats.txt", std::fstream::out | std::fstream::app);
 
 	certFHE::Library::initializeLibrary();
 	certFHE::Context context(1247, 16);
 	certFHE::SecretKey seckey(context);
+
+	MTValues::m_threshold_autoselect(context);
 
 	for (int ts = 0; ts < test_count; ts++) {
 
@@ -202,49 +204,47 @@ void dec_mul_add_test_time(const int test_count, const int FIRST_LEN = 15, const
 		f << "TEST\n";
 		t.stop_timer();
 
-		Ciphertext ctxt1, ctxt2, ctxt3;
+		Plaintext p1(rand() % 2);
+		Ciphertext ctxt1 = seckey.encrypt(p1);
 
-		for (int i = 0; i < first_len_cpy; i++) {
+		Plaintext p2(rand() % 2);
+		Ciphertext ctxt2 = seckey.encrypt(p2);
+
+		Plaintext p3(rand() % 2);
+		Ciphertext ctxt3 = seckey.encrypt(p3);
+
+		for (int i = 1; i < first_len_cpy; i++) {
 
 			Plaintext p(rand() % 2);
 			Ciphertext c = seckey.encrypt(p);
 
-			if (i == 0)
-				ctxt1 = c;
-			else
-				ctxt1 += c;
+			ctxt1 += c;
+		}
+		
+		for (int i = 1; i < snd_len_cpy; i++) {
+
+			Plaintext p(rand() % 2);
+			Ciphertext c = seckey.encrypt(p);
+
+			ctxt2 += c;
 		}
 
-		for (int i = 0; i < snd_len_cpy; i++) {
+		for (int i = 1; i < trd_len_cpy; i++) {
 
 			Plaintext p(rand() % 2);
 			Ciphertext c = seckey.encrypt(p);
 
-			if (i == 0)
-				ctxt2 = c;
-			else
-				ctxt2 += c;
-		}
-
-		for (int i = 0; i < trd_len_cpy; i++) {
-
-			Plaintext p(rand() % 2);
-			Ciphertext c = seckey.encrypt(p);
-
-			if (i == 0)
-				ctxt3 = c;
-			else
-				ctxt3 += c;
+			ctxt3 += c;
 		}
 
 		t.stop_timer();
-
+		
 		for (int i = 0; i < ROUND_CNT; i++) {
 
 			ctxt1 *= ctxt3;
-			ctxt2 *= ctxt3;
+			//ctxt2 *= ctxt3;
 
-			ctxt1 += ctxt2;
+			//ctxt1 += ctxt2;
 
 			uint64_t ti = t.stop_timer();
 			f << "round with len1=" << first_len_cpy << " len2=" << snd_len_cpy << " len3="
@@ -1180,7 +1180,223 @@ void shift_vs_mul_test_time(const int test_count) {
 	std::cout << "shift " << shift_cnt << " mul " << mul_cnt << '\n';
 	
 }
-*/
+
+void test_dag_implem_time(const int TEST_COUNT = 20, const int ROUND_CNT = 100) {
+
+	Library::initializeLibrary();
+	Context context(1247, 16);
+	SecretKey sk(context);
+
+	Timervar t;
+	t.start_timer();
+
+	std::fstream f;
+	f.open(STATS_PATH + "\\DAG_implementation\\with_shortening_when_merging_stats.txt", std::fstream::out | std::fstream::app);
+
+	Plaintext p0(0);
+	Plaintext p1(1);
+
+	int med_acc = 0;
+
+	for (int ts = 0; ts < TEST_COUNT; ts++) {
+
+		//f << "TEST\n";
+
+		uint64_t acc = 0;
+
+		Ciphertext c1(p1, sk);
+		Ciphertext c0(p0, sk);
+
+		int realval1 = 1;
+		int realval0 = 0;
+
+		int rndcnt = ROUND_CNT;
+		for (int r = 0; r < rndcnt; r++) {
+
+			Ciphertext caux1 = sk.encrypt(p1);
+
+			t.stop_timer();
+
+			c1 += caux1;
+
+			int a = t.stop_timer();
+			acc += a;
+
+			realval1 ^= 1;
+		}
+		for (int r = 0; r < rndcnt; r++) {
+
+			int opc = rand() % 3;
+
+			if (opc == 0) {
+
+				Ciphertext caux1(p1, sk);
+				Ciphertext caux0(p0, sk);
+
+				int realval0aux = 0;
+				int jj = rand() % 4;
+
+				for (int j = 0; j < jj; j++) {
+
+					t.stop_timer();
+
+					caux0 = caux0 + caux1;
+
+					int a = t.stop_timer();
+					acc += a;
+
+					realval0aux ^= 1;
+				}
+
+				c1 += caux0;
+				realval1 ^= realval0aux;
+			}
+			else if (opc == 1) {
+
+				t.stop_timer();
+
+				c0 += c1;
+
+				int a = t.stop_timer();
+				acc += a;
+
+				realval0 ^= realval1;
+			}
+			else if (opc == 2) {
+
+				Ciphertext caux1 = sk.encrypt(p1);
+
+				t.stop_timer();
+
+				c1 += caux1;
+				c0 += caux1;
+
+				int a = t.stop_timer();
+				acc += a;
+
+				realval1 ^= 1;
+				realval0 ^= 1;
+			}
+		}
+
+		//f << "time=" << acc << '\n';
+		//f.flush();
+
+		med_acc += acc;
+
+		if (realval1 != (sk.decrypt(c1).getValue() && 0x01))
+			std::cout << realval1 << " " << (sk.decrypt(c1).getValue() && 0x01) << '\n';
+
+		if (realval0 != (sk.decrypt(c0).getValue() && 0x01))
+			std::cout << realval0 << " " << (sk.decrypt(c0).getValue() && 0x01) << '\n';
+
+		//std::cout << "\nTEST " << ts << " DONE\n\n";
+	}
+
+	f << "MED TEST\ntime=" << med_acc / TEST_COUNT;
+
+	std::cout << "\nTESTS DONE\n\n";
+}
+
+void test_res_correct_noperm() {
+
+	Timervar t;
+
+	Library::initializeLibrary();
+	Context context(1247, 16);
+	SecretKey sk(context);
+
+	MTValues::m_threshold_autoselect(context);
+
+	const int TEST_COUNT = 100; // sansa fals pozitiv: 2^(-TEST_COUNT)
+
+	t.start_timer();
+
+	for (int tst = 0; tst < TEST_COUNT; tst++) {  // decriptare deflen
+
+		int r = rand() % 2;
+		Plaintext p(r);
+
+		Ciphertext c = sk.encrypt(p);
+
+		if (r != (sk.decrypt(c).getValue() & 0x01))
+			std::cout << "DEFLEN DECRYPTION FAIL " << r << " " << (sk.decrypt(c).getValue() & 0x01) << '\n';
+	}
+
+	for (int tst = 0; tst < TEST_COUNT; tst++) {  // copiere lungime > deflen, adunare, decriptare
+
+		Plaintext paux(1);
+		int pauxn = 1;
+		Ciphertext caux = sk.encrypt(paux);
+
+		for (int i = 0; i < 100; i++) {
+
+			int r = rand() % 2;
+			Plaintext p(r);
+
+			Ciphertext c = sk.encrypt(p);
+			caux += c;
+
+			pauxn ^= r;
+		}
+
+		Ciphertext caux_c = caux;
+
+		Ciphertext caux_c2(caux);
+
+		if (((sk.decrypt(caux).getValue() & 0x01) != pauxn) ||
+			((sk.decrypt(caux_c).getValue() & 0x01) != pauxn) ||
+			((sk.decrypt(caux_c2).getValue() & 0x01) != pauxn))
+
+			std::cout << "COPY FAIL\n";
+	}
+
+	for (int tst = 0; tst < TEST_COUNT; tst++) { // adunare, inmultire, permutare, decriptare
+
+		Plaintext p0(0);
+		Plaintext p1(1);
+
+		Ciphertext c0 = sk.encrypt(p0);
+		Ciphertext c1 = sk.encrypt(p1);
+
+		int c00 = 0;
+		int c11 = 1;
+
+		for (int i = 0; i < 1000; i++) {
+
+			int r = rand() % 2;
+			c00 += r;
+			c00 %= 2;
+
+			Plaintext p(r);
+			Ciphertext c = sk.encrypt(p);
+
+			c0 += c;
+		}
+
+		for (int i = 0; i < 17; i++) {
+
+			int r = rand() % 2;
+			c11 += r;
+			c11 %= 2;
+
+			Plaintext p(r);
+			Ciphertext c = sk.encrypt(p);
+
+			c1 += c;
+		}
+
+		c1 *= c0;
+		c11 *= c00;
+
+		if ((((sk.decrypt(c0).getValue() & 0x01) == c00) && ((sk.decrypt(c1).getValue() & 0x01) == c11)) == false)
+			std::cout << "ADDITION / MULTIPLICATION FAIL \n";
+		//else
+			//std::cout << "OK\n";
+
+	}
+	std::cout << "\nTESTS DONE " << t.stop_timer() << "\n\n";
+}
 
 int main2(){
 
@@ -1229,6 +1445,13 @@ int main2(){
 	}
 
 	//shift_vs_mul_test_time(100000);
+
+	{
+		//test_dag_implem_time(200, 400);
+		//test_res_correct_noperm();
+
+		//dec_mul_add_test_time(10, 15, 25, 2, 14);
+	}
 
     return 0;
 }

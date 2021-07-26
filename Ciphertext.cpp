@@ -50,6 +50,8 @@ namespace certFHE{
 		addition_result->nodes->insert_next_element(fst);
 		addition_result->nodes->insert_next_element(snd);
 
+		addition_result->deflen_count = fst->deflen_count + snd->deflen_count;
+
 		addition_result->upstream_merging();
 
 		/**
@@ -80,17 +82,19 @@ namespace certFHE{
 		mul_result->nodes->insert_next_element(fst);
 		mul_result->nodes->insert_next_element(snd);
 
+		mul_result->deflen_count = fst->deflen_count * snd->deflen_count;
+
 		mul_result->upstream_merging();
 
 		/**
 		 * Shorten any chain of nodes formed during upstream merging
 		**/
-		/*CNODE * shortened = mul_result->upstream_shortening();
+		CNODE * shortened = mul_result->upstream_shortening();
 		if (shortened != 0) {
 
 			mul_result->try_delete();
 			return shortened;
-		}*/
+		}
 
 		return mul_result;
 	}
@@ -137,7 +141,7 @@ namespace certFHE{
 
 	Ciphertext & Ciphertext::operator += (const Ciphertext & c) {
 		
-		CADD * addition_result = (CADD *)Ciphertext::add(this->node, c.node);
+		CNODE * addition_result = Ciphertext::add(this->node, c.node);
 		
 		this->node->try_delete();
 		this->node = addition_result;
@@ -147,7 +151,7 @@ namespace certFHE{
 
 	Ciphertext & Ciphertext::operator *= (const Ciphertext & c) {
 		
-		CMUL * mul_result = (CMUL *)Ciphertext::multiply(this->node, c.node);
+		CNODE * mul_result = Ciphertext::multiply(this->node, c.node);
 
 		this->node->try_delete();
 		this->node = mul_result;

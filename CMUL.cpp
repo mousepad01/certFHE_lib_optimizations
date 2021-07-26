@@ -88,7 +88,7 @@ namespace certFHE {
 			
 			while (thisnodes != 0 && thisnodes->current != 0) {
 
-				this->deflen_count *= thisnodes->current->deflen_count;  // =+ instead of =* 
+				this->deflen_count *= thisnodes->current->deflen_count;  
 				thisnodes = thisnodes->next;
 			}
 		}

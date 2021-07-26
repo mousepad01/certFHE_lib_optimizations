@@ -379,7 +379,7 @@ namespace certFHE {
 			return new CCC(fst->context, res, 1);
 		}
 
-		uint64_t res_u64_cnt = (fst->deflen_count + snd->deflen_count) * deflen_to_u64;
+		uint64_t res_u64_cnt = (fst->deflen_count * snd->deflen_count) * deflen_to_u64;
 		uint64_t * res = new uint64_t[res_u64_cnt];
 
 		uint64_t fst_deflen_cnt = fst->deflen_count;

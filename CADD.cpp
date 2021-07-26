@@ -328,7 +328,14 @@ namespace certFHE {
 		/**
 		 * Recursive call that stops when max_merge_size < merging size
 		**/
-		merged->upstream_merging();
+		/*merged->upstream_merging();
+
+		CNODE * shortened = merged->upstream_shortening();
+		if (shortened != 0) {
+
+			merged->try_delete();
+			return shortened;
+		}*/
 
 		return merged;
 	}
@@ -383,6 +390,13 @@ namespace certFHE {
 
 		merged->upstream_merging();
 
+		/*CNODE * shortened = merged->upstream_shortening();
+		if (shortened != 0) {
+
+			merged->try_delete();
+			return shortened;
+		}*/
+
 		return merged;
 
 	}
@@ -428,6 +442,13 @@ namespace certFHE {
 		}
 
 		merged->upstream_merging();
+
+		/*CNODE * shortened = merged->upstream_shortening();
+		if (shortened != 0) {
+
+			merged->try_delete();
+			return shortened;
+		}*/
 
 		return merged;
 	}
