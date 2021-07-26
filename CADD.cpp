@@ -325,17 +325,17 @@ namespace certFHE {
 			}
 		}
 
-		/**
-		 * Recursive call that stops when max_merge_size < merging size
-		**/
-		/*merged->upstream_merging();
+		if (OPValues::shorten_on_recursive_cadd_merging) {
 
-		CNODE * shortened = merged->upstream_shortening();
-		if (shortened != 0) {
+			merged->upstream_merging();
 
-			merged->try_delete();
-			return shortened;
-		}*/
+			CNODE * shortened = merged->upstream_shortening();
+			if (shortened != 0) {
+
+				merged->try_delete();
+				return shortened;
+			}
+		}
 
 		return merged;
 	}
@@ -390,12 +390,17 @@ namespace certFHE {
 
 		merged->upstream_merging();
 
-		/*CNODE * shortened = merged->upstream_shortening();
-		if (shortened != 0) {
+		if (OPValues::shorten_on_recursive_cadd_merging) {
 
-			merged->try_delete();
-			return shortened;
-		}*/
+			merged->upstream_merging();
+
+			CNODE * shortened = merged->upstream_shortening();
+			if (shortened != 0) {
+
+				merged->try_delete();
+				return shortened;
+			}
+		}
 
 		return merged;
 
@@ -443,12 +448,17 @@ namespace certFHE {
 
 		merged->upstream_merging();
 
-		/*CNODE * shortened = merged->upstream_shortening();
-		if (shortened != 0) {
+		if (OPValues::shorten_on_recursive_cadd_merging) {
 
-			merged->try_delete();
-			return shortened;
-		}*/
+			merged->upstream_merging();
+
+			CNODE * shortened = merged->upstream_shortening();
+			if (shortened != 0) {
+
+				merged->try_delete();
+				return shortened;
+			}
+		}
 
 		return merged;
 	}

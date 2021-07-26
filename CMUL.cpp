@@ -253,6 +253,18 @@ namespace certFHE {
 			fst_nodes = fst_nodes->next; // ?
 		}
 
+		if (OPValues::shorten_on_recursive_cmul_merging) {
+
+			distributed_mul->upstream_merging();
+
+			CNODE * shortened = distributed_mul->upstream_shortening();
+			if (shortened != 0) {
+
+				distributed_mul->try_delete();
+				return shortened;
+			}
+		}
+
 		return distributed_mul;
 	}
 
@@ -311,6 +323,18 @@ namespace certFHE {
 			distributed_mul->deflen_count *= term_mul->deflen_count;
 
 			fst_nodes = fst_nodes->next; // ?
+		}
+
+		if (OPValues::shorten_on_recursive_cmul_merging) {
+
+			distributed_mul->upstream_merging();
+
+			CNODE * shortened = distributed_mul->upstream_shortening();
+			if (shortened != 0) {
+
+				distributed_mul->try_delete();
+				return shortened;
+			}
 		}
 
 		return distributed_mul;
@@ -422,6 +446,18 @@ namespace certFHE {
 		**/
 		merged->upstream_merging();
 
+		if (OPValues::shorten_on_recursive_cmul_merging) {
+
+			merged->upstream_merging();
+
+			CNODE * shortened = merged->upstream_shortening();
+			if (shortened != 0) {
+
+				merged->try_delete();
+				return shortened;
+			}
+		}
+
 		return merged;
 	}
 
@@ -472,6 +508,18 @@ namespace certFHE {
 			distributed_mul->deflen_count *= term_mul->deflen_count;
 
 			fst_nodes = fst_nodes->next;
+		}
+
+		if (OPValues::shorten_on_recursive_cmul_merging) {
+
+			distributed_mul->upstream_merging();
+
+			CNODE * shortened = distributed_mul->upstream_shortening();
+			if (shortened != 0) {
+
+				distributed_mul->try_delete();
+				return shortened;
+			}
 		}
 
 		return distributed_mul;
@@ -526,6 +574,18 @@ namespace certFHE {
 		}
 
 		merged->upstream_merging();
+
+		if (OPValues::shorten_on_recursive_cmul_merging) {
+
+			merged->upstream_merging();
+
+			CNODE * shortened = merged->upstream_shortening();
+			if (shortened != 0) {
+
+				merged->try_delete();
+				return shortened;
+			}
+		}
 
 		return merged;
 	}

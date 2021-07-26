@@ -182,7 +182,7 @@ void dec_mul_add_test_time(const int test_count, const int FIRST_LEN = 15, const
 	Timervar t;
 
 	std::fstream f;
-	f.open(STATS_PATH + "\\degenerate_DAG_stats.txt", std::fstream::out | std::fstream::app);
+	f.open(STATS_PATH + "\\release_DAG_stats_big.txt", std::fstream::out | std::fstream::app);
 
 	Library::initializeLibrary();
 	Context context(1247, 16);
@@ -1430,7 +1430,7 @@ void test_res_correct_noperm() {
 	std::cout << "\nTESTS DONE " << t.stop_timer() << "\n\n";
 }
 
-int main(){
+int main2(){
 
 	{
 		//only_mul_test_time(25, 3, 2, 22);
@@ -1483,7 +1483,7 @@ int main(){
 
 		//test_res_correct_noperm();
 
-		dec_mul_add_test_time(100, 15, 25, 2, 10);
+		dec_mul_add_test_time(100, 15, 25, 2, 15);
 	}
 
     return 0;
