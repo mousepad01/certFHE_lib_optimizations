@@ -1429,14 +1429,56 @@ void test_res_correct_noperm() {
 	std::cout << "\nTESTS DONE " << t.stop_timer() << "\n\n";
 }
 
-void average_test() {
+void average_test(const int TEST_COUNT = 100, const int CONTEXT_N = 1247, const int CONTEXT_D = 16) {
 
-	// addition, multiplication, decryption
+	// addition, multiplication
 	// permutation, copying, permutation inplace
-	// creation of new objects
-	// deletion of existing objects
 	// reference count test
+	// at the end, decryption
 
+	Library::initializeLibrary();
+	Context context(CONTEXT_N, CONTEXT_D);
+	SecretKey sk(context);
+
+	MTValues::m_threshold_autoselect(context, false);
+
+	Ciphertext cs[10];
+	int val[10];
+
+	for (int i = 0; i < 10; i++) {
+
+		val[i] = rand() % 2;
+
+		Plaintext p(val[i]);
+		cs[i] = sk.encrypt(p);
+	}
+
+	for (int ts = 0; ts < TEST_COUNT; ts++) {
+
+		int opc = rand() % 8;
+		switch (opc) {
+
+		case(0):
+
+
+
+			break;
+		case(1):
+			break;
+		case(2):
+			break;
+		case(3):
+			break;
+		case(4):
+			break;
+		case(5):
+			break;
+		case(6):
+			break;
+		case(7):
+			break;
+		}
+	}
 }
 
 int main(){
@@ -1494,7 +1536,9 @@ int main(){
 
 		//dec_mul_add_test_time(100, 15, 25, 2, 15);
 
-		test_res_correct();
+		//test_res_correct();
+
+		average_test();
 	}
 
     return 0;

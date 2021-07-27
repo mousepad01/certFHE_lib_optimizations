@@ -75,11 +75,11 @@ namespace certFHE {
 	CNODE * COP::upstream_shortening() {
 
 		CNODE_list * thisnodes = this->nodes->next;
-
+		
 		/**
 		 * Check to see whether this node has only one upstream reference or not
 		**/
-		if (thisnodes->next == 0 && thisnodes != 0 && thisnodes->current != 0) {
+		if (thisnodes != 0 && thisnodes->next == 0 && thisnodes->current != 0) {
 
 			CNODE * shortened = thisnodes->current->upstream_shortening();
 

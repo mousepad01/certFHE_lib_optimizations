@@ -25,6 +25,10 @@ namespace certFHE{
 			* @param[in] fst: node corresponding to the first ciphertext
 			* @param[in] snd: node corresponding to the second ciphertext
 			* @return value: the result CNODE as a pointer
+			*
+			* NOTE: this function treats the nodes as being different
+			*		so the caller should manually increase the reference count (and then decrease it?)
+			*		when calling this function with the same pointer in both arguments
 		**/
 		static CNODE * add(CNODE * fst, CNODE * snd);
 
@@ -33,6 +37,10 @@ namespace certFHE{
 			* @param[in] fst: node corresponding to the first ciphertext
 			* @param[in] snd: node corresponding to the second ciphertext
 			* @return value: the result CNODE as a pointer
+			*
+			* NOTE: this function treats the nodes as being different
+			*		so the caller should manually increase the reference count (and then decrease it?)
+			*		when calling this function with the same pointer in both arguments
 		**/
 		static CNODE * multiply(CNODE * fst, CNODE * snd);
 
@@ -81,13 +89,13 @@ namespace certFHE{
 		/**
 			* Friend class for operator<<
 		**/
-		friend std::ostream & operator << (std::ostream &out, const Ciphertext &c);
+		friend std::ostream & operator << (std::ostream & out, const Ciphertext & c);
         
 		/**
 			* Operators for addition of ciphertexts
 		**/
 		Ciphertext operator + (const Ciphertext & c) const;
-		Ciphertext & operator += (const Ciphertext& c);
+		Ciphertext & operator += (const Ciphertext & c);
 
 		/**
 			* Operators for multiplication of ciphertexts

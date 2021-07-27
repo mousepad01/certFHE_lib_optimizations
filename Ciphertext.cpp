@@ -136,7 +136,17 @@ namespace certFHE{
 		if (c.node == 0 || this->node == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
 
+		/**
+		 * The called method will treat arguments as different nodes
+		 * So the reference count temporarily increases
+		**/
+		if (this->node == c.node)
+			this->node->downstream_reference_count += 1;
+
 		CADD * addition_result = (CADD *)Ciphertext::add(this->node, c.node);
+
+		if (this->node == c.node)
+			this->node->downstream_reference_count -= 1;
 
 		Ciphertext add_result_c;
 		add_result_c.node = addition_result;
@@ -148,8 +158,18 @@ namespace certFHE{
 
 		if (c.node == 0 || this->node == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
+
+		/**
+		 * The called method will treat arguments as different nodes
+		 * So the reference count temporarily increases
+		**/
+		if (this->node == c.node)
+			this->node->downstream_reference_count += 1;
 		
 		CMUL * mul_result = (CMUL *)Ciphertext::multiply(this->node, c.node);
+
+		if (this->node == c.node)
+			this->node->downstream_reference_count -= 1;
 
 		Ciphertext mul_result_c;
 		mul_result_c.node = mul_result;
@@ -161,8 +181,14 @@ namespace certFHE{
 
 		if (c.node == 0 || this->node == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
+
+		if (this->node == c.node)
+			this->node->downstream_reference_count += 1;
 		
 		CNODE * addition_result = Ciphertext::add(this->node, c.node);
+
+		if (this->node == c.node)
+			this->node->downstream_reference_count -= 1;
 		
 		this->node->try_delete();
 		this->node = addition_result;
@@ -174,8 +200,14 @@ namespace certFHE{
 
 		if (c.node == 0 || this->node == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
+
+		if (this->node == c.node)
+			this->node->downstream_reference_count += 1;
 		
 		CNODE * mul_result = Ciphertext::multiply(this->node, c.node);
+
+		if (this->node == c.node)
+			this->node->downstream_reference_count -= 1;
 
 		this->node->try_delete();
 		this->node = mul_result;
