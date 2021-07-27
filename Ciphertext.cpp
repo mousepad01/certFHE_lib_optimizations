@@ -22,14 +22,14 @@ namespace certFHE{
 
 	Ciphertext Ciphertext::applyPermutation(const Permutation & permutation) {
 
-		Ciphertext * permuted_ciphertext = new Ciphertext(*this);
+		Ciphertext permuted_ciphertext(*this);
 
-		CNODE * permuted = permuted_ciphertext->node->permute(permutation, true);
+		CNODE * permuted = permuted_ciphertext.node->permute(permutation, true);
 
-		permuted_ciphertext->node->try_delete();
-		permuted_ciphertext->node = permuted;
+		permuted_ciphertext.node->try_delete();
+		permuted_ciphertext.node = permuted;
 
-		return *permuted_ciphertext;
+		return permuted_ciphertext;
 	}
 
 	void Ciphertext::applyPermutation_inplace(const Permutation & permutation) {

@@ -5,32 +5,31 @@ namespace certFHE{
 
 #pragma region Public methods
 
-	Permutation Permutation::getInverse()
-{
-    uint64_t *p = new uint64_t[length];
+	Permutation Permutation::getInverse() {
 
-	for (uint64_t i = 0; i <length; i++)
-	{
-		for (uint64_t j = 0; j <length; j++)
-		{
-			if (permutation[j] == i)
-			{
-				p[i] = j; 
-				break;
+		uint64_t * p = new uint64_t[length];
+
+		for (uint64_t i = 0; i < length; i++) {
+			for (uint64_t j = 0; j < length; j++) {
+				
+				if (permutation[j] == i) {
+
+					p[i] = j; 
+					break;
+				}
 			}
 		}
-	}
     
-	Permutation invP (p,length);
-    delete[] p;
-    return invP;
-}
+		Permutation invP(p, length);
+		delete[] p;
+		return invP;
+	}
 
 #pragma endregion
 
 #pragma region Operators
 
-	std::ostream& operator<<(std::ostream &out, const Permutation &p)
+	std::ostream & operator << (std::ostream & out, const Permutation & p)
 	{
 		uint64_t* _p = p.getPermutation();
 		uint64_t l = p.getLength();

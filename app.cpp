@@ -34,14 +34,13 @@ public:
     }
 };
 
-
 void test_res_correct() {
 
 	Library::initializeLibrary();
 	Context context(1247, 16);
 	SecretKey sk(context);
 
-	MTValues::m_threshold_autoselect(context, false);
+	MTValues::m_threshold_autoselect(context);
 
 	const int TEST_COUNT = 100; // sansa fals pozitiv: 2^(-TEST_COUNT)
 
@@ -134,10 +133,11 @@ void test_res_correct() {
 		//else
 			//std::cout << "OK\n";
 
+		std::cout << "TEST " << tst << " DONE\n";
+
 	}
 	std::cout << "\nTESTS DONE\n\n";
 }
-
 
 void only_dec_test_time(const int test_count, const int C_MAX_LEN) {
 
@@ -174,7 +174,6 @@ void only_dec_test_time(const int test_count, const int C_MAX_LEN) {
 		}
 	}
 }
-
 
 void dec_mul_add_test_time(const int test_count, const int FIRST_LEN = 15, const int SECOND_LEN = 25,
 	const int THIRD_LEN = 2, const int ROUND_CNT = 5) {
@@ -1430,109 +1429,6 @@ void test_res_correct_noperm() {
 	std::cout << "\nTESTS DONE " << t.stop_timer() << "\n\n";
 }
 
-void test_res_correct2() {
-
-	Library::initializeLibrary();
-	Context context(1247, 16);
-	SecretKey sk(context);
-
-	MTValues::m_threshold_autoselect(context);
-
-	const int TEST_COUNT = 100; // sansa fals pozitiv: 2^(-TEST_COUNT)
-
-	for (int tst = 0; tst < TEST_COUNT; tst++) {  // decriptare deflen
-
-		int r = rand() % 2;
-		Plaintext p(r);
-
-		Ciphertext c = sk.encrypt(p);
-
-		if (r != (sk.decrypt(c).getValue() & 0x01))
-			std::cout << "DEFLEN DECRYPTION FAIL " << r << " " << (sk.decrypt(c).getValue() & 0x01) << '\n';
-	}
-
-	for (int tst = 0; tst < TEST_COUNT; tst++) {  // copiere lungime > deflen, adunare, decriptare
-
-		Plaintext paux(1);
-		int pauxn = 1;
-		Ciphertext caux = sk.encrypt(paux);
-
-		for (int i = 0; i < 100; i++) {
-
-			int r = rand() % 2;
-			Plaintext p(r);
-
-			Ciphertext c = sk.encrypt(p);
-			caux += c;
-
-			pauxn ^= r;
-		}
-
-		Ciphertext caux_c;
-		caux_c = caux;
-
-		Ciphertext caux_c2(caux);
-
-		if (((sk.decrypt(caux).getValue() & 0x01) != pauxn) ||
-			((sk.decrypt(caux_c).getValue() & 0x01) != pauxn) ||
-			((sk.decrypt(caux_c2).getValue() & 0x01) != pauxn))
-
-			std::cout << "COPY FAIL\n";
-	}
-
-	for (int tst = 0; tst < TEST_COUNT; tst++) { // adunare, inmultire, permutare, decriptare
-
-		Plaintext p0(0);
-		Plaintext p1(1);
-
-		Ciphertext c0 = sk.encrypt(p0);
-		Ciphertext c1 = sk.encrypt(p1);
-
-		int c00 = 0;
-		int c11 = 1;
-
-		for (int i = 0; i < 1000; i++) {
-
-			int r = rand() % 2;
-			c00 += r;
-			c00 %= 2;
-
-			Plaintext p(r);
-			Ciphertext c = sk.encrypt(p);
-
-			c0 += c;
-		}
-
-		for (int i = 0; i < 17; i++) {
-
-			int r = rand() % 2;
-			c11 += r;
-			c11 %= 2;
-
-			Plaintext p(r);
-			Ciphertext c = sk.encrypt(p);
-
-			c1 += c;
-		}
-
-		c1 *= c0;
-		c11 *= c00;
-
-		Permutation perm(context);
-		SecretKey psk = sk.applyPermutation(perm);
-
-		Ciphertext pc0 = c0.applyPermutation(perm);
-		Ciphertext pc1 = c1.applyPermutation(perm);
-
-		if ((((sk.decrypt(c0).getValue() & 0x01) == c00) && ((sk.decrypt(c1).getValue() & 0x01) == c11)) == false)
-			std::cout << "ADDITION / MULTIPLICATION / PERMUTATION FAIL \n";
-		//else
-			//std::cout << "OK\n";
-
-	}
-	std::cout << "\nTESTS DONE\n\n";
-}
-
 int main(){
 
 	{
@@ -1588,7 +1484,7 @@ int main(){
 
 		//dec_mul_add_test_time(100, 15, 25, 2, 15);
 
-		test_res_correct2();
+		test_res_correct();
 	}
 
     return 0;
