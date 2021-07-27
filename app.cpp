@@ -1429,6 +1429,8 @@ void test_res_correct_noperm() {
 	std::cout << "\nTESTS DONE " << t.stop_timer() << "\n\n";
 }
 
+//TODO: FIX WHEN EXECUTING OPERATIONS ON THE SAME CIPHERTEXTS
+
 void average_test(const std::vector <int> randoms, 
 					const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 					const int CONTEXT_N = 1247, const int CONTEXT_D = 16, 
@@ -1472,9 +1474,6 @@ void average_test(const std::vector <int> randoms,
 	out << timer.stop() << " " << TIME_MEASURE_UNIT << "\n";
 	timer.reset();
 
-	out << "Initializing starting values...";
-	out.flush();
-
 	/****** TEST CODE SHOULD BE CHANGED IF THIS CONSTANT IS CHANGED ******/
 	const int CS_CNT = 20;
 
@@ -1482,20 +1481,6 @@ void average_test(const std::vector <int> randoms,
 
 	int val[CS_CNT];
 	Ciphertext cs[CS_CNT];
-
-	timer.start();
-
-	for (int i = 0; i < CS_CNT; i++) {
-
-		val[i] = randoms[randindex] % 2;
-		randindex += 1;
-
-		Plaintext p(val[i]);
-		cs[i] = sk.encrypt(p);
-	}
-
-	out << timer.stop() << " " << TIME_MEASURE_UNIT << "\n";
-	timer.reset();
 
 	out << "Starting tests:\n\n";
 	out.flush();
@@ -1506,6 +1491,23 @@ void average_test(const std::vector <int> randoms,
 
 			out << "TEST " << ts << ":\n";
 			out.flush();
+
+			out << "Initializing starting values...";
+			out.flush();
+
+			timer.start();
+
+			for (int i = 0; i < CS_CNT; i++) {
+
+				val[i] = randoms[randindex] % 2;
+				randindex += 1;
+
+				Plaintext p(val[i]);
+				cs[i] = sk.encrypt(p);
+			}
+
+			out << timer.stop() << " " << TIME_MEASURE_UNIT << "\n";
+			timer.reset();
 
 			int max_index = CS_CNT - 1;
 
@@ -1533,7 +1535,7 @@ void average_test(const std::vector <int> randoms,
 
 						timer.start();
 
-						cs[k] += cs[i] * cs[j];
+						cs[k] += cs[i] *cs[j];
 
 						t = timer.stop();
 						timer.reset();
@@ -1547,8 +1549,8 @@ void average_test(const std::vector <int> randoms,
 					case(1): // + between two random ctxt, *= in the third
 
 						i = randoms[randindex] % (max_index + 1);
-						j = randoms[randindex] % (max_index + 1);
-						k = randoms[randindex] % (max_index + 1);
+						j = randoms[randindex + 1] % (max_index + 1);
+						k = randoms[randindex + 2] % (max_index + 1);
 
 						randindex += 3;
 
@@ -1586,6 +1588,9 @@ void average_test(const std::vector <int> randoms,
 						break;
 					}
 				}
+
+				out << "Decrypting...\n";
+				out.flush();
 
 				double t_acc_dec = 0;
 				double t_dec;
@@ -1677,7 +1682,7 @@ void average_test(std::string randoms_file_source,
 		out);
 }
 
-int main(){
+int main2(){
 
 	{
 		//only_mul_test_time(25, 3, 2, 22);
