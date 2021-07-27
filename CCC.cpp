@@ -665,9 +665,9 @@ namespace certFHE {
 		}
 		else
 			to_permute = new CCC(*this);
-
+		MTValues::perm_m_threshold = 10;
 		if (deflen_cnt < MTValues::perm_m_threshold) {
-
+			
 			for (uint64_t i = 0; i < deflen_cnt; i++) {
 
 				uint64_t * current_chunk = to_permute->ctxt + i * deflen_to_u64;
@@ -741,6 +741,7 @@ namespace certFHE {
 				args[thr].inv_cnt = inv_cnt;
 
 				args[thr].ctxt = to_permute->ctxt;
+				args[thr].res = to_permute->ctxt;
 
 				args[thr].fst_deflen_pos = prevchnk;
 				args[thr].snd_deflen_pos = prevchnk + q;

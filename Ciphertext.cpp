@@ -20,11 +20,11 @@ namespace certFHE{
 		return Plaintext(dec);
 	}
 
-	Ciphertext Ciphertext::applyPermutation(const Permutation & permutation, bool force_deep_copy) {
-
-		CNODE * permuted = this->node->permute(permutation, force_deep_copy);
+	Ciphertext Ciphertext::applyPermutation(const Permutation & permutation) {
 
 		Ciphertext * permuted_ciphertext = new Ciphertext(*this);
+
+		CNODE * permuted = permuted_ciphertext->node->permute(permutation, true);
 
 		permuted_ciphertext->node->try_delete();
 		permuted_ciphertext->node = permuted;

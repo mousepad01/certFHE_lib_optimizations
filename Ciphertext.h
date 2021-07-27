@@ -115,9 +115,8 @@ namespace certFHE{
 			* Permute the current ciphertext and return a new object
 			* @param[in] permutation: constant reference to permutation object
 			* @return value : permuted ciphertext
-			* NOTE: for performance reasons, set force_deep_copy to true only in a multithreading context
 		**/
-		Ciphertext applyPermutation(const Permutation & permutation, bool force_deep_copy = false);
+		Ciphertext applyPermutation(const Permutation & permutation);
 
 		/**
 			* Method for decrypting current ciphertext
