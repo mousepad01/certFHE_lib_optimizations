@@ -114,6 +114,9 @@ namespace certFHE{
 
 	std::ostream & operator << (std::ostream & out, const Ciphertext & c) {
 
+		if (c.node == 0)
+			out << "EMPTY CIPHERTEXT";
+
 		CCC * ccc_node = dynamic_cast <CCC *> (c.node);
 		if (ccc_node != 0) 
 			out << *ccc_node << '\n';
@@ -130,6 +133,9 @@ namespace certFHE{
 
 	Ciphertext Ciphertext::operator + (const Ciphertext & c) const {
 
+		if (c.node == 0 || this->node == 0)
+			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
+
 		CADD * addition_result = (CADD *)Ciphertext::add(this->node, c.node);
 
 		Ciphertext add_result_c;
@@ -139,6 +145,9 @@ namespace certFHE{
 	}
 
 	Ciphertext Ciphertext::operator * (const Ciphertext & c) const {
+
+		if (c.node == 0 || this->node == 0)
+			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
 		
 		CMUL * mul_result = (CMUL *)Ciphertext::multiply(this->node, c.node);
 
@@ -149,6 +158,9 @@ namespace certFHE{
 	}
 
 	Ciphertext & Ciphertext::operator += (const Ciphertext & c) {
+
+		if (c.node == 0 || this->node == 0)
+			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
 		
 		CNODE * addition_result = Ciphertext::add(this->node, c.node);
 		
@@ -159,6 +171,9 @@ namespace certFHE{
 	}
 
 	Ciphertext & Ciphertext::operator *= (const Ciphertext & c) {
+
+		if (c.node == 0 || this->node == 0)
+			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
 		
 		CNODE * mul_result = Ciphertext::multiply(this->node, c.node);
 
@@ -173,7 +188,9 @@ namespace certFHE{
 		if (this->node != 0)
 			this->node->try_delete();
 
-		c.node->downstream_reference_count += 1;
+		if(c.node != 0)
+			c.node->downstream_reference_count += 1;
+
 		this->node = c.node;
 		
 		return *this;
@@ -194,10 +211,7 @@ namespace certFHE{
 
 #pragma region Constructors and destructor
 
-	Ciphertext::Ciphertext() {
-
-		this->node = 0;
-	}
+	Ciphertext::Ciphertext() : node(0) {}
 
 	Ciphertext::Ciphertext(const Plaintext & plaintext, const SecretKey & sk) {
 
@@ -213,7 +227,9 @@ namespace certFHE{
 
 	Ciphertext::Ciphertext(const Ciphertext & ctxt) {
 
-		ctxt.node->downstream_reference_count += 1;
+		if(ctxt.node != 0)
+			ctxt.node->downstream_reference_count += 1;
+
 		this->node = ctxt.node;
 	}
 
@@ -235,10 +251,16 @@ namespace certFHE{
 
 	uint64_t Ciphertext::getLen() const {
 
+		if (this->node == 0)
+			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
+
 		return this->node->getDeflenCnt();
 	}
 
 	Context Ciphertext::getContext() const {
+
+		if (this->node == 0)
+			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
 
 		return this->node->getContext();
 	}

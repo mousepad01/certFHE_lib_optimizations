@@ -36,12 +36,12 @@ namespace certFHE{
 		**/
 		static CNODE * multiply(CNODE * fst, CNODE * snd);
 
+	public:
+
 		/**
-			* Default private constructor
+			* Default constructor
 		**/
 		Ciphertext();
-
-	public:
 
 		/**
 			* Custom constructor

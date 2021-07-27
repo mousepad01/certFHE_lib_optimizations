@@ -1429,6 +1429,16 @@ void test_res_correct_noperm() {
 	std::cout << "\nTESTS DONE " << t.stop_timer() << "\n\n";
 }
 
+void average_test() {
+
+	// addition, multiplication, decryption
+	// permutation, copying, permutation inplace
+	// creation of new objects
+	// deletion of existing objects
+	// reference count test
+
+}
+
 int main(){
 
 	{
