@@ -42,7 +42,7 @@ namespace certFHE
       **/
 
       /**
-       * Stop and returm the timer
+       * Stop and return the timer
        * @return value: the measured time in miliseconds
       **/
       double stop();

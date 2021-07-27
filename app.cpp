@@ -1429,56 +1429,252 @@ void test_res_correct_noperm() {
 	std::cout << "\nTESTS DONE " << t.stop_timer() << "\n\n";
 }
 
-void average_test(const int TEST_COUNT = 100, const int CONTEXT_N = 1247, const int CONTEXT_D = 16) {
+void average_test(const std::vector <int> randoms, 
+					const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
+					const int CONTEXT_N = 1247, const int CONTEXT_D = 16, 
+					std::ostream & out = std::cout) {
 
-	// addition, multiplication
-	// permutation, copying, permutation inplace
-	// reference count test
-	// at the end, decryption
+	// addition (+, +=), multiplication (*, *=), permutation inplace (only!)
+	// 5 rounds of deletion, so that reference count is tested
+	// decryption time measured only at the end of every epoch (3 times per test)
+
+	Timer timer;
+	int randindex = 0; // for randoms
+
+	const char * TIME_MEASURE_UNIT = "miliseconds";
+
+	out << "Starting...";
+	out.flush();
+
+	timer.start();
 
 	Library::initializeLibrary();
 	Context context(CONTEXT_N, CONTEXT_D);
 	SecretKey sk(context);
 
+	Permutation perm(context);
+	SecretKey psk = sk.applyPermutation(perm);
+
+	// declared here to force compiler to use it and not remove it
+	// when doing optimisations
+	Ciphertext temp; 
+
+	out << timer.stop() << " " << TIME_MEASURE_UNIT << "\n";
+	timer.reset();
+
+	out << "Multithreading thresholds autoselection...";
+	out.flush();
+
+	timer.start();
+
 	MTValues::m_threshold_autoselect(context, false);
 
-	Ciphertext cs[10];
-	int val[10];
+	out << timer.stop() << " " << TIME_MEASURE_UNIT << "\n";
+	timer.reset();
+
+	out << "Initializing starting values...";
+	out.flush();
+
+	/****** TEST CODE SHOULD BE CHANGED IF THIS CONSTANT IS CHANGED ******/
+	const int CS_CNT = 20;
+
+	const int rounds_per_epoch[3] = { ROUNDS_PER_TEST / 2, ROUNDS_PER_TEST / 3, ROUNDS_PER_TEST / 6 };
+
+	int val[CS_CNT];
+	Ciphertext cs[CS_CNT];
+
+	timer.start();
 
 	for (int i = 0; i < 10; i++) {
 
-		val[i] = rand() % 2;
+		val[i] = randoms[randindex] % 2;
+		randindex += 1;
 
 		Plaintext p(val[i]);
 		cs[i] = sk.encrypt(p);
 	}
 
+	out << timer.stop() << " " << TIME_MEASURE_UNIT << "\n";
+	timer.reset();
+
+	out << "Starting tests:\n\n";
+	out.flush();
+
 	for (int ts = 0; ts < TEST_COUNT; ts++) {
 
-		int opc = rand() % 8;
-		switch (opc) {
+		try {
 
-		case(0):
+			out << "TEST " << ts << ":\n";
+			out.flush();
 
+			int max_index = CS_CNT - 1;
 
+			for (int epoch = 0; epoch < 3; epoch++) {
 
-			break;
-		case(1):
-			break;
-		case(2):
-			break;
-		case(3):
-			break;
-		case(4):
-			break;
-		case(5):
-			break;
-		case(6):
-			break;
-		case(7):
-			break;
+				double t_acc = 0;
+				double t;
+
+				int i, j, k;
+
+				for (int rnd = 0; rnd < rounds_per_epoch[epoch]; rnd++) {
+
+					int opc = randoms[randindex] % 3;
+					randindex += 1;
+
+					switch (opc) {
+
+					case(0): // * between two random ctxt, += in the third
+
+						i = randoms[randindex] % (max_index + 1);
+						j = randoms[randindex + 1] % (max_index + 1);
+						k = randoms[randindex + 2] % (max_index + 1);
+
+						randindex += 3;
+
+						timer.start();
+
+						cs[k] += cs[i] * cs[j];
+
+						t = timer.stop();
+						timer.reset();
+
+						t_acc += t;
+
+						val[k] ^= (val[i] & val[j]);
+
+						break;
+
+					case(1): // + between two random ctxt, *= in the third
+
+						i = randoms[randindex] % (max_index + 1);
+						j = randoms[randindex] % (max_index + 1);
+						k = randoms[randindex] % (max_index + 1);
+
+						randindex += 3;
+
+						timer.start();
+
+						cs[k] *= cs[i] + cs[j];
+
+						t = timer.stop();
+						timer.reset();
+
+						t_acc += t;
+
+						val[k] &= (val[i] ^ val[j]);
+
+						break;
+
+					case(2): // permutation on a random ctxt
+
+						i = randoms[randindex] % (max_index + 1);
+
+						randindex += 1;
+
+						timer.start();
+
+						temp = cs[i].applyPermutation(perm);
+
+						t = timer.stop();
+						timer.reset();
+
+						t_acc += t;
+
+						break;
+
+					default:
+						break;
+					}
+				}
+
+				double t_acc_dec = 0;
+				double t_dec;
+
+				for (int pos = 0; pos < max_index; pos++) {
+
+					timer.start();
+
+					uint64_t p = sk.decrypt(cs[pos]).getValue() & 0x01;
+
+					t_dec = timer.stop();
+					timer.reset();
+
+					t_acc_dec += t_dec;
+
+					if (p != val[pos]) {
+
+						out << "WRONG decryption; should be " << val[pos] << ", decrypted " << p << '\n';
+						out.flush();
+					}
+				}
+
+				timer.start();
+
+				if (cs[max_index].node != 0)
+					cs[max_index].node->try_delete();
+
+				if (cs[max_index - 1].node != 0)
+					cs[max_index - 1].node->try_delete();
+
+				if (cs[max_index - 2].node != 0)
+					cs[max_index - 2].node->try_delete();
+
+				t = timer.stop();
+				timer.reset();
+
+				t_acc += t;
+
+				max_index -= 3;
+
+				out << "Epoch 1: operations=" << t_acc << " " << TIME_MEASURE_UNIT
+					<< ", decryption=" << t_acc_dec << " " << TIME_MEASURE_UNIT << "\n";
+				out.flush();
+			}
+
+			out << "TEST " << ts << " DONE\n\n";
+			out.flush();
+
+		}
+		catch (std::exception e) {
+
+			out << "ERROR: " << e.what() << '\n';
 		}
 	}
+}
+
+void average_test(std::string randoms_file_source,
+					const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
+					const int CONTEXT_N = 1247, const int CONTEXT_D = 16,
+					std::ostream & out = std::cout) {
+
+	std::vector <int> randoms;
+
+	if (randoms_file_source == "") 
+
+		for (int i = 0; i < TEST_COUNT * ROUNDS_PER_TEST * 10 + 100; i++) 
+			randoms.push_back(rand());
+	
+	else {
+
+		std::fstream randsource(randoms_file_source, std::ios::in | std::ios::binary);
+
+		if (!randsource.is_open())
+			throw std::invalid_argument("Cannot open source file");
+
+		int tmp;
+		randsource.read((char *)&tmp, sizeof(int));
+
+		while (tmp) {
+
+			randoms.push_back(tmp);
+			randsource.read((char *)&tmp, sizeof(int));
+		}
+	}
+
+	average_test(randoms,
+		TEST_COUNT, ROUNDS_PER_TEST,
+		CONTEXT_N, CONTEXT_D,
+		out);
 }
 
 int main(){
@@ -1538,7 +1734,7 @@ int main(){
 
 		//test_res_correct();
 
-		average_test();
+		average_test("");
 	}
 
     return 0;
