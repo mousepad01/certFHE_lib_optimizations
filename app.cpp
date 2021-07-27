@@ -1485,7 +1485,7 @@ void average_test(const std::vector <int> randoms,
 
 	timer.start();
 
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < CS_CNT; i++) {
 
 		val[i] = randoms[randindex] % 2;
 		randindex += 1;
@@ -1626,7 +1626,7 @@ void average_test(const std::vector <int> randoms,
 
 				max_index -= 3;
 
-				out << "Epoch 1: operations=" << t_acc << " " << TIME_MEASURE_UNIT
+				out << "Epoch " << epoch << ": operations=" << t_acc << " " << TIME_MEASURE_UNIT
 					<< ", decryption=" << t_acc_dec << " " << TIME_MEASURE_UNIT << "\n";
 				out.flush();
 			}
