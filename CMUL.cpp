@@ -288,7 +288,7 @@ namespace certFHE {
 
 		if (OPValues::shorten_on_recursive_cmul_merging) {
 
-			distributed_mul->upstream_merging();
+			distributed_mul->upstream_merging(); // ???
 
 			CNODE * shortened = distributed_mul->upstream_shortening();
 			if (shortened != 0) {
@@ -364,7 +364,7 @@ namespace certFHE {
 
 		if (OPValues::shorten_on_recursive_cmul_merging) {
 
-			distributed_mul->upstream_merging();
+			distributed_mul->upstream_merging(); // ???
 
 			CNODE * shortened = distributed_mul->upstream_shortening();
 			if (shortened != 0) {
@@ -489,8 +489,6 @@ namespace certFHE {
 		merged->upstream_merging();
 
 		if (OPValues::shorten_on_recursive_cmul_merging) {
-
-			merged->upstream_merging();
 
 			CNODE * shortened = merged->upstream_shortening();
 			if (shortened != 0) {
@@ -636,8 +634,6 @@ namespace certFHE {
 		merged->upstream_merging();
 
 		if (OPValues::shorten_on_recursive_cmul_merging) {
-
-			merged->upstream_merging();
 
 			CNODE * shortened = merged->upstream_shortening();
 			if (shortened != 0) {
