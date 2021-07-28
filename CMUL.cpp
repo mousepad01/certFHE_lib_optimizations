@@ -275,10 +275,10 @@ namespace certFHE {
 
 				distributed_mul->deflen_count *= term_mul->deflen_count;
 
-				snd_nodes = snd_nodes->next; // ?
+				snd_nodes = snd_nodes->next; 
 			}
 
-			fst_nodes = fst_nodes->next; // ?
+			fst_nodes = fst_nodes->next; 
 		}
 
 		if (OPValues::shorten_on_recursive_cmul_merging) {
@@ -325,14 +325,13 @@ namespace certFHE {
 			return snd;
 		}
 
-		CNODE_list * fst_nodes = fst->nodes->next;
-
 		/**
 		 * Distributing multiplication with snd node to each sum term from fst
 		**/
 		CADD * distributed_mul = new CADD(fst->context);
 		distributed_mul->deflen_count = 1;
 
+		CNODE_list * fst_nodes = fst->nodes->next;
 		while (fst_nodes != 0 && fst_nodes->current != 0) {
 
 			CMUL * term_mul = new CMUL(fst->context);
@@ -346,11 +345,13 @@ namespace certFHE {
 			term_mul->nodes->insert_next_element(new_pointer_same_node);
 			term_mul->nodes->insert_next_element(snd);
 
+			term_mul->deflen_count = new_pointer_same_node->deflen_count * snd->deflen_count;
+
 			term_mul->upstream_merging();
 
 			distributed_mul->deflen_count *= term_mul->deflen_count;
 
-			fst_nodes = fst_nodes->next; // ?
+			fst_nodes = fst_nodes->next; 
 		}
 
 		if (OPValues::shorten_on_recursive_cmul_merging) {
