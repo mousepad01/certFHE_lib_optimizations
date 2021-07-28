@@ -1431,10 +1431,10 @@ void test_res_correct_noperm() {
 
 //TODO: FIX WHEN EXECUTING OPERATIONS ON THE SAME CIPHERTEXTS
 
-void average_test(const std::vector <int> randoms, 
-					const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
-					const int CONTEXT_N = 1247, const int CONTEXT_D = 16, 
-					std::ostream & out = std::cout) {
+void average_test(const std::vector <int> randoms,
+	const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
+	const int CONTEXT_N = 1247, const int CONTEXT_D = 16,
+	std::ostream & out = std::cout) {
 
 	// addition (+, +=), multiplication (*, *=), permutation inplace (only!)
 	// 5 rounds of deletion, so that reference count is tested
@@ -1459,7 +1459,7 @@ void average_test(const std::vector <int> randoms,
 
 	// declared here to force compiler to use it and not remove it
 	// when doing optimisations
-	Ciphertext temp; 
+	Ciphertext temp;
 
 	out << timer.stop() << " " << TIME_MEASURE_UNIT << "\n";
 	timer.reset();
@@ -1480,7 +1480,8 @@ void average_test(const std::vector <int> randoms,
 	const int rounds_per_epoch[3] = { ROUNDS_PER_TEST / 2, ROUNDS_PER_TEST / 3, ROUNDS_PER_TEST / 6 };
 
 	int val[CS_CNT];
-	Ciphertext cs[CS_CNT];
+	Ciphertext ** cs;
+	cs = new Ciphertext * [CS_CNT];
 
 	out << "Starting tests:\n\n";
 	out.flush();
@@ -1502,8 +1503,10 @@ void average_test(const std::vector <int> randoms,
 				val[i] = randoms[randindex] % 2;
 				randindex += 1;
 
+				cs[i] = new Ciphertext();
+
 				Plaintext p(val[i]);
-				cs[i] = sk.encrypt(p);
+				*cs[i] = sk.encrypt(p);
 			}
 
 			out << timer.stop() << " " << TIME_MEASURE_UNIT << "\n";
@@ -1535,7 +1538,7 @@ void average_test(const std::vector <int> randoms,
 
 						timer.start();
 
-						cs[k] += cs[i] *cs[j];
+						*cs[k] += *cs[i] * *cs[j];
 
 						t = timer.stop();
 						timer.reset();
@@ -1556,7 +1559,7 @@ void average_test(const std::vector <int> randoms,
 
 						timer.start();
 
-						cs[k] *= cs[i] + cs[j];
+						*cs[k] *= *cs[i] + *cs[j];
 
 						t = timer.stop();
 						timer.reset();
@@ -1575,7 +1578,7 @@ void average_test(const std::vector <int> randoms,
 
 						timer.start();
 
-						temp = cs[i].applyPermutation(perm);
+						temp = cs[i]->applyPermutation(perm);
 
 						t = timer.stop();
 						timer.reset();
@@ -1599,7 +1602,7 @@ void average_test(const std::vector <int> randoms,
 
 					timer.start();
 
-					uint64_t p = sk.decrypt(cs[pos]).getValue() & 0x01;
+					uint64_t p = sk.decrypt(*cs[pos]).getValue() & 0x01;
 
 					t_dec = timer.stop();
 					timer.reset();
@@ -1615,14 +1618,9 @@ void average_test(const std::vector <int> randoms,
 
 				timer.start();
 
-				if (cs[max_index].node != 0)
-					cs[max_index].node->try_delete();
-
-				if (cs[max_index - 1].node != 0)
-					cs[max_index - 1].node->try_delete();
-
-				if (cs[max_index - 2].node != 0)
-					cs[max_index - 2].node->try_delete();
+				delete cs[max_index];
+				delete cs[max_index - 1];
+				delete cs[max_index - 2];
 
 				t = timer.stop();
 				timer.reset();
@@ -1636,6 +1634,9 @@ void average_test(const std::vector <int> randoms,
 				out.flush();
 			}
 
+			for (int c_left = 0; c_left <= max_index; c_left++) 
+				delete cs[c_left];
+
 			out << "TEST " << ts << " DONE\n\n";
 			out.flush();
 
@@ -1648,31 +1649,46 @@ void average_test(const std::vector <int> randoms,
 }
 
 void average_test(std::string randoms_file_source,
-					const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
-					const int CONTEXT_N = 1247, const int CONTEXT_D = 16,
-					std::ostream & out = std::cout) {
+	const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
+	const int CONTEXT_N = 1247, const int CONTEXT_D = 16,
+	std::ostream & out = std::cout) {
 
 	std::vector <int> randoms;
 
-	if (randoms_file_source == "") 
+	if (randoms_file_source == "")
 
-		for (int i = 0; i < TEST_COUNT * ROUNDS_PER_TEST * 10 + 100; i++) 
+		for (int i = 0; i < TEST_COUNT * ROUNDS_PER_TEST * 10 + 100; i++)
 			randoms.push_back(rand());
-	
+
 	else {
 
 		std::fstream randsource(randoms_file_source, std::ios::in | std::ios::binary);
 
-		if (!randsource.is_open())
-			throw std::invalid_argument("Cannot open source file");
+		if (!randsource.is_open()) {
 
-		int tmp;
-		randsource.read((char *)&tmp, sizeof(int));
+			std::fstream new_randsource(randoms_file_source, std::ios::out | std::ios::binary);
 
-		while (tmp) {
+			int tmp;
+			for (int i = 0; i < TEST_COUNT * ROUNDS_PER_TEST * 10 + 100; i++) {
 
-			randoms.push_back(tmp);
-			randsource.read((char *)&tmp, sizeof(int));
+				tmp = rand();
+
+				randoms.push_back(tmp);
+				new_randsource.write((char *)&tmp, sizeof(int));
+			}
+
+			new_randsource.close();
+		}
+		else {
+
+			int tmp;
+			for (int i = 0; i < TEST_COUNT * ROUNDS_PER_TEST * 10 + 100; i++) {
+
+				randsource.read((char *)&tmp, sizeof(int));
+				randoms.push_back(tmp);
+			}
+
+			randsource.close();
 		}
 	}
 
@@ -1715,6 +1731,8 @@ int main2(){
 	}
 
 	{	
+		//shift_vs_mul_test_time(100000);
+
 		//only_mul_test_time(10, 3, 2, 18);
 
 		//only_add_test_time(10, 5, 23);
@@ -1728,8 +1746,6 @@ int main2(){
 		//only_perm_intrinsics_test_time(6, 5000);
 	}
 
-	//shift_vs_mul_test_time(100000);
-
 	{
 		//test_dag_implem_time(200, 400);
 
@@ -1739,7 +1755,7 @@ int main2(){
 
 		//test_res_correct();
 
-		average_test("");
+		average_test("avgtestops.bin", 10, 50);
 	}
 
     return 0;

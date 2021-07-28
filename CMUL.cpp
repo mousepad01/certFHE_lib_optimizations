@@ -104,7 +104,7 @@ namespace certFHE {
 		uint64_t rez = 1;
 		while (thisnodes != 0 && thisnodes->current != 0) {
 
-			rez *= thisnodes->current->decrypt(sk);
+			rez &= thisnodes->current->decrypt(sk);
 			thisnodes = thisnodes->next;
 		}
 
@@ -262,7 +262,7 @@ namespace certFHE {
 				distributed_mul->nodes->insert_next_element(term_mul);
 
 				CNODE * new_pointer_same_fst_node = fst_nodes->current;
-				CNODE * new_pointer_same_snd_node = fst_nodes->current;
+				CNODE * new_pointer_same_snd_node = snd_nodes->current; // fst_nodes->current ????
 
 				new_pointer_same_fst_node->downstream_reference_count += 1;
 				new_pointer_same_snd_node->downstream_reference_count += 1;

@@ -348,7 +348,7 @@ namespace certFHE {
 				new_pointer_same_node->downstream_reference_count += 1;
 				merged->deflen_count += new_pointer_same_node->deflen_count;
 
-				nodes_fst = nodes_fst->next;
+				nodes_snd = nodes_snd->next;
 			}
 		}
 
