@@ -609,7 +609,7 @@ namespace certFHE {
 
 			snd->downstream_reference_count += 1;
 			fst->nodes->insert_next_element(snd);
-			fst->deflen_count += snd->deflen_count;
+			fst->deflen_count *= snd->deflen_count;
 
 			merged = fst;
 		}
@@ -619,7 +619,7 @@ namespace certFHE {
 
 			snd->downstream_reference_count += 1;
 			merged->nodes->insert_next_element(snd);
-			merged->deflen_count += snd->deflen_count;
+			merged->deflen_count *= snd->deflen_count;
 		}
 
 		merged->upstream_merging();
