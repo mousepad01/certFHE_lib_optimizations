@@ -516,6 +516,12 @@ namespace certFHE {
 			return fst;
 		}
 
+		/**
+		 * snd is not tested to be 0
+		 * because in current implementation
+		 * it is guaranteed it cannot be 0
+		**/ 
+
 		CNODE_list * fst_nodes = fst->nodes->next;
 
 		/**
@@ -580,11 +586,20 @@ namespace certFHE {
 			)
 			return 0;
 
+		/**
+		 * a * 0 = 0
+		**/
 		if (fst->nodes->next == 0 || fst->nodes->next->current == 0) {
 
-			snd->downstream_reference_count += 1;
-			return snd;
+			fst->downstream_reference_count += 1;
+			return fst;
 		}
+
+		/**
+		 * snd is not tested to be 0
+		 * because in current implementation
+		 * it is guaranteed it cannot be 0
+		**/
 
 		CMUL * merged;
 
