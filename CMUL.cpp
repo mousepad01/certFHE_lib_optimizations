@@ -262,6 +262,9 @@ namespace certFHE {
 				CMUL * term_mul = new CMUL(fst->context);
 				distributed_mul->nodes->insert_next_element(term_mul);
 
+				if (distributed_mul->nodes->next->current != term_mul)
+					std::cout << "NOT0!\n";
+
 				CNODE * new_pointer_same_fst_node = fst_nodes->current;
 				CNODE * new_pointer_same_snd_node = snd_nodes->current; // fst_nodes->current ????
 
@@ -271,12 +274,18 @@ namespace certFHE {
 				term_mul->nodes->insert_next_element(new_pointer_same_fst_node);
 				term_mul->nodes->insert_next_element(new_pointer_same_snd_node);
 
+				if (distributed_mul->nodes->next->current != term_mul)
+					std::cout << "NOT1!\n";
+
 				term_mul->deflen_count = new_pointer_same_fst_node->deflen_count * new_pointer_same_snd_node->deflen_count;
 
 				term_mul->upstream_merging();
 
+				if (distributed_mul->nodes->next->current != term_mul)
+					std::cout << "NOT!\n";
+
 				if (term_mul->deflen_count == 0)
-					distributed_mul->nodes->pop_current_node();
+					distributed_mul->nodes->next->pop_current_node();
 				else
 					distributed_mul->deflen_count += term_mul->deflen_count;
 
@@ -355,7 +364,7 @@ namespace certFHE {
 			term_mul->upstream_merging();
 
 			if (term_mul->deflen_count == 0)
-				distributed_mul->nodes->pop_current_node();
+				distributed_mul->nodes->next->pop_current_node();
 			else
 				distributed_mul->deflen_count += term_mul->deflen_count;
 
@@ -552,7 +561,7 @@ namespace certFHE {
 			term_mul->upstream_merging();
 
 			if (term_mul->deflen_count == 0)
-				distributed_mul->nodes->pop_current_node();
+				distributed_mul->nodes->next->pop_current_node();
 			else
 				distributed_mul->deflen_count += term_mul->deflen_count;
 
