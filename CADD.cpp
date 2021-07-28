@@ -95,7 +95,7 @@ namespace certFHE {
 		 * If at least one of the options is activated, size of any node can shrink when merging 
 		 * So the recalculation of deflen_cnt is necessary
 		**/
-		if (OPValues::remove_duplicates_onadd || OPValues::remove_duplicates_onmul) {
+		//if (OPValues::remove_duplicates_onadd || OPValues::remove_duplicates_onmul) {
 
 			this->deflen_count = 0;
 
@@ -105,7 +105,7 @@ namespace certFHE {
 				this->deflen_count += thisnodes->current->deflen_count;
 				thisnodes = thisnodes->next;
 			}
-		}
+		//}
 	}
 
 	uint64_t CADD::decrypt(const SecretKey & sk) {

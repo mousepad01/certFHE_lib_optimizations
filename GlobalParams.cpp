@@ -16,8 +16,8 @@ namespace certFHE{
 
 	bool OPValues::always_default_multiplication = true;
 
-	bool OPValues::remove_duplicates_onadd = false;
-	bool OPValues::remove_duplicates_onmul = false;
+	bool OPValues::remove_duplicates_onadd = true;
+	bool OPValues::remove_duplicates_onmul = true;
 
 	bool OPValues::shorten_on_recursive_cadd_merging = true;
 	bool OPValues::shorten_on_recursive_cmul_merging = true;

@@ -78,7 +78,7 @@ namespace certFHE {
 		 * If at least one of the options is activated, size of any node can shrink when merging
 		 * So the recalculation of deflen_cnt is necessary
 		**/
-		if (OPValues::remove_duplicates_onadd || OPValues::remove_duplicates_onmul) {
+		//if (OPValues::remove_duplicates_onadd || OPValues::remove_duplicates_onmul) {
 
 			thisnodes = this->nodes->next;
 
@@ -91,7 +91,7 @@ namespace certFHE {
 				this->deflen_count *= thisnodes->current->deflen_count;  
 				thisnodes = thisnodes->next;
 			}
-		}
+		//}
 	}
 
 	uint64_t CMUL::decrypt(const SecretKey & sk) {
@@ -245,17 +245,16 @@ namespace certFHE {
 			return snd;
 		}
 
-		CNODE_list * fst_nodes = fst->nodes->next;
-		CNODE_list * snd_nodes = snd->nodes->next;
-
 		/**
 		 * Distributing multiplication with snd node to each sum term from fst
 		**/
 		CADD * distributed_mul = new CADD(fst->context);
 		distributed_mul->deflen_count = 1;
 
+		CNODE_list * fst_nodes = fst->nodes->next;
 		while (fst_nodes != 0 && fst_nodes->current != 0) {
 
+			CNODE_list * snd_nodes = snd->nodes->next;
 			while (snd_nodes != 0 && snd_nodes->current != 0) {
 
 				CMUL * term_mul = new CMUL(fst->context);
@@ -269,6 +268,8 @@ namespace certFHE {
 
 				term_mul->nodes->insert_next_element(new_pointer_same_fst_node);
 				term_mul->nodes->insert_next_element(new_pointer_same_snd_node);
+
+				term_mul->deflen_count = new_pointer_same_fst_node->deflen_count * new_pointer_same_snd_node->deflen_count;
 
 				term_mul->upstream_merging();
 
