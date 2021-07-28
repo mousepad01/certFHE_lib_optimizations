@@ -48,13 +48,15 @@ namespace certFHE {
 
 					this->deflen_count = 0;
 
-					/**
-					 * CCC can never have null deflen count,
-					 * so it is a COP node 
-					**/
-					COP * merged_cop = dynamic_cast<COP *>(merged);
-					while (merged_cop->nodes->next != 0) 
-						merged_cop->nodes->next->pop_current_node();
+					CNODE_list * thisnodes_aux = this->nodes->next;
+					while (thisnodes_aux != 0)
+						thisnodes_aux = thisnodes_aux->pop_current_node();
+					
+					/*
+					COP * merged_cop = dynamic_cast<COP *>(merged);  // useless ?
+					while (merged_cop->nodes->next != 0) // useless ?
+						merged_cop->nodes->next->pop_current_node(); // useless ?
+					*/
 
 					return;
 				}
@@ -273,7 +275,10 @@ namespace certFHE {
 
 				term_mul->upstream_merging();
 
-				distributed_mul->deflen_count *= term_mul->deflen_count;
+				if (term_mul->deflen_count == 0)
+					distributed_mul->nodes->pop_current_node();
+				else
+					distributed_mul->deflen_count += term_mul->deflen_count;
 
 				snd_nodes = snd_nodes->next; 
 			}
@@ -349,7 +354,10 @@ namespace certFHE {
 
 			term_mul->upstream_merging();
 
-			distributed_mul->deflen_count *= term_mul->deflen_count;
+			if (term_mul->deflen_count == 0)
+				distributed_mul->nodes->pop_current_node();
+			else
+				distributed_mul->deflen_count += term_mul->deflen_count;
 
 			fst_nodes = fst_nodes->next; 
 		}
@@ -545,7 +553,10 @@ namespace certFHE {
 
 			term_mul->upstream_merging();
 
-			distributed_mul->deflen_count *= term_mul->deflen_count;
+			if (term_mul->deflen_count == 0)
+				distributed_mul->nodes->pop_current_node();
+			else
+				distributed_mul->deflen_count += term_mul->deflen_count;
 
 			fst_nodes = fst_nodes->next;
 		}
