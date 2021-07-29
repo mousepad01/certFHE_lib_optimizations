@@ -465,7 +465,7 @@ namespace certFHE {
 		 * If one of them has no upstream reference, 
 		 * its value is 0, so the multiplication result is also 0
 		**/ 
-		if (nodes_fst != 0 || nodes_fst->current != 0 || nodes_snd != 0 || nodes_snd->current != 0)
+		if (nodes_fst == 0 || nodes_fst->current == 0 || nodes_snd == 0 || nodes_snd->current == 0)
 			return merged;
 
 		merged->deflen_count = 1;
