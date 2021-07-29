@@ -1481,6 +1481,8 @@ void average_test(const std::vector <int> randoms,
 	Ciphertext ** cs;
 	cs = new Ciphertext *[CS_CNT];
 
+	uint64_t pp;
+
 	out << "Starting tests:\n\n";
 	out.flush();
 
@@ -1582,6 +1584,14 @@ void average_test(const std::vector <int> randoms,
 						timer.reset();
 
 						t_acc += t;
+
+						pp = sk.decrypt(*cs[i]).getValue() & 0x01;
+
+						if(val[i] != pp) {
+
+							out << "WRONG decryption on permuted ctxt; should be " << val[i] << ", decrypted " << pp << '\n';
+							out.flush();
+						}
 
 						break;
 
