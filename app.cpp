@@ -1429,8 +1429,6 @@ void test_res_correct_noperm() {
 	std::cout << "\nTESTS DONE " << t.stop_timer() << "\n\n";
 }
 
-//TODO: FIX WHEN EXECUTING OPERATIONS ON THE SAME CIPHERTEXTS
-
 void average_test(const std::vector <int> randoms,
 	const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 	const int CONTEXT_N = 1247, const int CONTEXT_D = 16,
@@ -1481,7 +1479,7 @@ void average_test(const std::vector <int> randoms,
 
 	int val[CS_CNT];
 	Ciphertext ** cs;
-	cs = new Ciphertext * [CS_CNT];
+	cs = new Ciphertext *[CS_CNT];
 
 	out << "Starting tests:\n\n";
 	out.flush();
@@ -1634,7 +1632,7 @@ void average_test(const std::vector <int> randoms,
 				out.flush();
 			}
 
-			for (int c_left = 0; c_left <= max_index; c_left++) 
+			for (int c_left = 0; c_left <= max_index; c_left++)
 				delete cs[c_left];
 
 			out << "TEST " << ts << " DONE\n\n";
@@ -1698,7 +1696,16 @@ void average_test(std::string randoms_file_source,
 		out);
 }
 
-int main2(){
+void average_predefined_test() {
+
+	std::fstream log(STATS_PATH + "\\average_test\\DAG_stats.txt", std::ios::out);
+
+	average_test("avgtestops.bin", 1000, 50, 1247, 16, log);
+
+	log.close();
+}
+
+int main(){
 
 	{
 		//only_mul_test_time(25, 3, 2, 22);
@@ -1755,7 +1762,7 @@ int main2(){
 
 		//test_res_correct();
 
-		average_test("avgtestops.bin", 10, 50);
+		average_predefined_test();
 	}
 
     return 0;
