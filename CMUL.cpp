@@ -251,7 +251,7 @@ namespace certFHE {
 		 * Distributing multiplication with snd node to each sum term from fst
 		**/
 		CADD * distributed_mul = new CADD(fst->context);
-		distributed_mul->deflen_count = 1;
+		//distributed_mul->deflen_count = 1; ?
 
 		CNODE_list * fst_nodes = fst->nodes->next;
 		while (fst_nodes != 0 && fst_nodes->current != 0) {
@@ -260,10 +260,6 @@ namespace certFHE {
 			while (snd_nodes != 0 && snd_nodes->current != 0) {
 
 				CMUL * term_mul = new CMUL(fst->context);
-				distributed_mul->nodes->insert_next_element(term_mul);
-
-				if (distributed_mul->nodes->next->current != term_mul)
-					std::cout << "NOT0!\n";
 
 				CNODE * new_pointer_same_fst_node = fst_nodes->current;
 				CNODE * new_pointer_same_snd_node = snd_nodes->current; // fst_nodes->current ????
@@ -274,20 +270,33 @@ namespace certFHE {
 				term_mul->nodes->insert_next_element(new_pointer_same_fst_node);
 				term_mul->nodes->insert_next_element(new_pointer_same_snd_node);
 
-				if (distributed_mul->nodes->next->current != term_mul)
-					std::cout << "NOT1!\n";
-
 				term_mul->deflen_count = new_pointer_same_fst_node->deflen_count * new_pointer_same_snd_node->deflen_count;
 
 				term_mul->upstream_merging();
 
-				if (distributed_mul->nodes->next->current != term_mul)
-					std::cout << "NOT!\n";
+				CNODE * final_term_mul;
 
-				if (term_mul->deflen_count == 0)
-					distributed_mul->nodes->next->pop_current_node();
+				if (OPValues::shorten_on_recursive_cmul_merging) {
+
+					CNODE * shortened = term_mul->upstream_shortening();
+					if (shortened != 0) {
+
+						term_mul->try_delete();
+						final_term_mul = shortened;
+					}
+					else
+						final_term_mul = term_mul;
+				}
 				else
-					distributed_mul->deflen_count += term_mul->deflen_count;
+					final_term_mul = term_mul;
+
+				if (final_term_mul->deflen_count != 0) {
+
+					distributed_mul->nodes->insert_next_element(final_term_mul);
+					distributed_mul->deflen_count += final_term_mul->deflen_count;
+				}
+				else // ?
+					final_term_mul->try_delete();
 
 				snd_nodes = snd_nodes->next; 
 			}
@@ -297,7 +306,13 @@ namespace certFHE {
 
 		if (OPValues::shorten_on_recursive_cmul_merging) {
 
-			distributed_mul->upstream_merging(); // ???
+			/**
+			 * if shorten on rec is deactivated, 
+			 * all the direct upstream nodes will be CMUL (all the term_mul)
+			 * but distributed_mul is always CADD so there will be no merging anyways
+			 * so the upstream merging call should remain here and not outside the if
+			**/
+			distributed_mul->upstream_merging(); 
 
 			CNODE * shortened = distributed_mul->upstream_shortening();
 			if (shortened != 0) {
@@ -343,13 +358,12 @@ namespace certFHE {
 		 * Distributing multiplication with snd node to each sum term from fst
 		**/
 		CADD * distributed_mul = new CADD(fst->context);
-		distributed_mul->deflen_count = 1;
+		//distributed_mul->deflen_count = 1; ???
 
 		CNODE_list * fst_nodes = fst->nodes->next;
 		while (fst_nodes != 0 && fst_nodes->current != 0) {
 
 			CMUL * term_mul = new CMUL(fst->context);
-			distributed_mul->nodes->insert_next_element(term_mul);
 
 			CNODE * new_pointer_same_node = fst_nodes->current;
 
@@ -363,17 +377,42 @@ namespace certFHE {
 
 			term_mul->upstream_merging();
 
-			if (term_mul->deflen_count == 0)
-				distributed_mul->nodes->next->pop_current_node();
+			CNODE * final_term_mul;
+
+			if (OPValues::shorten_on_recursive_cmul_merging) {
+
+				CNODE * shortened = term_mul->upstream_shortening();
+				if (shortened != 0) {
+
+					term_mul->try_delete();
+					final_term_mul = shortened;
+				}
+				else
+					final_term_mul = term_mul;
+			}
 			else
-				distributed_mul->deflen_count += term_mul->deflen_count;
+				final_term_mul = term_mul;
+
+			if (final_term_mul->deflen_count != 0) {
+
+				distributed_mul->nodes->insert_next_element(final_term_mul);
+				distributed_mul->deflen_count += final_term_mul->deflen_count;
+			}
+			else // ?
+				final_term_mul->try_delete();
 
 			fst_nodes = fst_nodes->next; 
 		}
 
 		if (OPValues::shorten_on_recursive_cmul_merging) {
 
-			distributed_mul->upstream_merging(); // ???
+			/**
+			 * if shorten on rec is deactivated,
+			 * all the direct upstream nodes will be CMUL (all the term_mul)
+			 * but distributed_mul is always CADD so there will be no merging anyways
+			 * so the upstream merging call should remain here and not outside the if
+			**/
+			distributed_mul->upstream_merging(); 
 
 			CNODE * shortened = distributed_mul->upstream_shortening();
 			if (shortened != 0) {
@@ -543,12 +582,11 @@ namespace certFHE {
 		 * Distributing multiplication with snd node to each sum term from fst
 		**/
 		CADD * distributed_mul = new CADD(fst->context);
-		distributed_mul->deflen_count = 1;
+		//distributed_mul->deflen_count = 1; ???
 
 		while (fst_nodes != 0 && fst_nodes->current != 0) {
 
 			CMUL * term_mul = new CMUL(fst->context);
-			distributed_mul->nodes->insert_next_element(term_mul);
 
 			CNODE * new_pointer_same_node = fst_nodes->current;
 
@@ -560,10 +598,29 @@ namespace certFHE {
 
 			term_mul->upstream_merging();
 
-			if (term_mul->deflen_count == 0)
-				distributed_mul->nodes->next->pop_current_node();
+			CNODE * final_term_mul;
+
+			if (OPValues::shorten_on_recursive_cmul_merging) {
+
+				CNODE * shortened = term_mul->upstream_shortening();
+				if (shortened != 0) {
+
+					term_mul->try_delete();
+					final_term_mul = shortened;
+				}
+				else
+					final_term_mul = term_mul;
+			}
 			else
-				distributed_mul->deflen_count += term_mul->deflen_count;
+				final_term_mul = term_mul;
+
+			if (final_term_mul->deflen_count != 0) {
+
+				distributed_mul->nodes->insert_next_element(final_term_mul);
+				distributed_mul->deflen_count += final_term_mul->deflen_count;
+			}
+			else // ?
+				final_term_mul->try_delete();
 
 			fst_nodes = fst_nodes->next;
 		}
