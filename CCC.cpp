@@ -386,27 +386,10 @@ namespace certFHE {
 
 		uint64_t * res;
 		CCC * mul_result;
-		//TODO: fix the first 2 branches
-		if (false && fst->deflen_count == 1 && snd->downstream_reference_count == 1){
-			
-			snd->downstream_reference_count += 1;
+		
+		res = new uint64_t[res_u64_cnt];
 
-			mul_result = snd;
-			res = snd_c;
-		}
-		else if (false && snd->deflen_count == 1 && fst->downstream_reference_count == 1) {
-			
-			fst->downstream_reference_count += 1;
-
-			mul_result = fst;
-			res = fst_c;
-		}
-		else {
-
-			res = new uint64_t[res_u64_cnt];
-
-			mul_result = new CCC(fst->context, res, fst->deflen_count * snd->deflen_count);
-		}
+		mul_result = new CCC(fst->context, res, fst->deflen_count * snd->deflen_count);
 
 		if (res_u64_cnt < MTValues::mul_m_threshold) {
 

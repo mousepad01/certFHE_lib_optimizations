@@ -81,8 +81,7 @@ namespace certFHE {
 		/**
 		 * It will multiply WITHOUT ANY CHECK
 		 * Proper checks are expected to be managed by the caller function
-		 * It will NOT create a new CCC object if fst deflen or snd deflen == 1
-		 * and if ref count == 1
+		 * It will create a new CCC object everytime
 		**/
 		static CCC * multiply(CCC * fst, CCC * snd);
 
