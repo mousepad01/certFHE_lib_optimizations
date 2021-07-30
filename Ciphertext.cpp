@@ -144,10 +144,10 @@ namespace certFHE{
 		/**
 		 * When two ctxt refer to a CCC, operations are performed directly
 		**/
-		if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size) 
+		if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
 
 			addition_result = CCC::add(ccc_thisnode, ccc_othernode);
-		
+
 		else {
 
 			/**
@@ -183,7 +183,7 @@ namespace certFHE{
 		if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
 
 			mul_result = CCC::multiply(ccc_thisnode, ccc_othernode);
-	
+
 		else {
 
 			/**
@@ -219,7 +219,7 @@ namespace certFHE{
 		/**
 		 * When two ctxt refer to a CCC, operations are performed directly
 		**/
-		if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size) 
+		if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
 
 			addition_result = CCC::add(ccc_thisnode, ccc_othernode);
 
@@ -238,7 +238,7 @@ namespace certFHE{
 			if (this->node == c.node)
 				this->node->downstream_reference_count -= 1;
 		}
-		
+
 		this->node->try_delete();
 		this->node = addition_result;
 
@@ -255,7 +255,7 @@ namespace certFHE{
 		/**
 		 * When two ctxt refer to a CCC, operations are performed directly
 		**/
-		if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size) 
+		if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
 
 			mul_result = CCC::multiply(ccc_thisnode, ccc_othernode);
 

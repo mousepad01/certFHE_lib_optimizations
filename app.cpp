@@ -1926,7 +1926,7 @@ void array_ctxt_test(std::string randoms_file_source,
 
 void array_ctxt_predefined_test() {
 
-	std::fstream log(STATS_PATH + "\\array_ctxt_test\\release_DAG_stats_2.txt", std::ios::out);
+	std::fstream log(STATS_PATH + "\\array_ctxt_test\\debug_DAG_stats_ccc_opt.txt", std::ios::out);
 
 	array_ctxt_test("arrctxttestops.bin", 5, 1000, 1247, 16, log);
 
@@ -1990,7 +1990,7 @@ int main(){
 
 		//test_res_correct();
 
-		//average_predefined_test();
+		average_predefined_test();
 
 		//array_ctxt_predefined_test();
 	}

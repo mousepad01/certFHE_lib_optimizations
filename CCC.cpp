@@ -386,20 +386,20 @@ namespace certFHE {
 
 		uint64_t * res;
 		CCC * mul_result;
-
-		if (fst->deflen_count == 1 && fst->downstream_reference_count == 1){
-
-			fst->downstream_reference_count += 1;
-
-			mul_result = fst;
-			res = fst_c;
-		}
-		else if (snd->deflen_count == 1 && snd->downstream_reference_count == 1) {
-
+		//TODO: fix the first 2 branches
+		if (false && fst->deflen_count == 1 && snd->downstream_reference_count == 1){
+			
 			snd->downstream_reference_count += 1;
 
 			mul_result = snd;
 			res = snd_c;
+		}
+		else if (false && snd->deflen_count == 1 && fst->downstream_reference_count == 1) {
+			
+			fst->downstream_reference_count += 1;
+
+			mul_result = fst;
+			res = fst_c;
 		}
 		else {
 
