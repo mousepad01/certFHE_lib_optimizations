@@ -138,16 +138,16 @@ namespace certFHE{
 
 		CNODE * addition_result;
 
+		CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+		CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
 		/**
 		 * When two ctxt refer to a CCC, operations are performed directly
 		**/
-		if (typeid(this->node) == typeid(CCC *) && typeid(this->node) == typeid(c.node) && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size) {
-
-			CCC * ccc_thisnode = static_cast <CCC *> (this->node);
-			CCC * ccc_othernode = static_cast <CCC *> (c.node);
+		if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size) 
 
 			addition_result = CCC::add(ccc_thisnode, ccc_othernode);
-		}
+		
 		else {
 
 			/**
@@ -174,16 +174,16 @@ namespace certFHE{
 
 		CNODE * mul_result;
 
+		CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+		CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
 		/**
 		 * When two ctxt refer to a CCC, operations are performed directly
 		**/
-		if (typeid(this->node) == typeid(CCC *) && typeid(this->node) == typeid(c.node) && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size) {
-
-			CCC * ccc_thisnode = static_cast <CCC *> (this->node);
-			CCC * ccc_othernode = static_cast <CCC *> (c.node);
+		if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
 
 			mul_result = CCC::multiply(ccc_thisnode, ccc_othernode);
-		}
+	
 		else {
 
 			/**
@@ -213,16 +213,16 @@ namespace certFHE{
 
 		CNODE * addition_result;
 
+		CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+		CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
 		/**
 		 * When two ctxt refer to a CCC, operations are performed directly
 		**/
-		if (typeid(this->node) == typeid(CCC *) && typeid(this->node) == typeid(c.node) && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size) {
-
-			CCC * ccc_thisnode = static_cast <CCC *> (this->node);
-			CCC * ccc_othernode = static_cast <CCC *> (c.node);
+		if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size) 
 
 			addition_result = CCC::add(ccc_thisnode, ccc_othernode);
-		}
+
 		else {
 
 			/**
@@ -249,16 +249,16 @@ namespace certFHE{
 
 		CNODE * mul_result;
 
+		CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+		CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
 		/**
 		 * When two ctxt refer to a CCC, operations are performed directly
 		**/
-		if (typeid(this->node) == typeid(CCC *) && typeid(this->node) == typeid(c.node) && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size) {
-
-			CCC * ccc_thisnode = static_cast <CCC *> (this->node);
-			CCC * ccc_othernode = static_cast <CCC *> (c.node);
+		if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size) 
 
 			mul_result = CCC::multiply(ccc_thisnode, ccc_othernode);
-		}
+
 		else {
 
 			/**

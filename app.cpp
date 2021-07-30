@@ -1821,24 +1821,17 @@ void array_ctxt_test(const std::vector <int> randoms,
 				double t_acc = 0;
 				double t;
 
-				timer.start();
-
 				for (int rnd = 0; rnd < rounds_per_epoch[epoch] / 2; rnd++) {
 
-					
+					timer.start();
 
 					temp = *cs[0] + *cs[1];
 
-					//smth random to simulate other nearby instructions
-					val[0] += val[1];
+					t = timer.stop();
+					timer.reset();
 
-					
+					t_acc += t;
 				}
-
-				t = timer.stop();
-				timer.reset();
-
-				t_acc += t;
 
 				out << "Addition average time " << t_acc / (rounds_per_epoch[epoch] / 2) << TIME_MEASURE_UNIT
 					<< " for both ctxt of len " << ctxt_starting_sizes[epoch] << '\n';
@@ -1847,24 +1840,17 @@ void array_ctxt_test(const std::vector <int> randoms,
 				t_acc = 0;
 				t;
 
-				timer.start();
-
 				for (int rnd = 0; rnd < rounds_per_epoch[epoch] / 2; rnd++) {
 
-					
+					timer.start();
 
 					temp = *cs[0] * *cs[1];
-
-					//smth random to simulate other nearby instructions
-					val[0] += val[1];
-
 					
+					t = timer.stop();
+					timer.reset();
+
+					t_acc += t;
 				}
-
-				t = timer.stop();
-				timer.reset();
-
-				t_acc += t;
 
 				out << "Multiplication average time " << t_acc / (rounds_per_epoch[epoch] / 2) << TIME_MEASURE_UNIT
 					<< " for both ctxt of len " << ctxt_starting_sizes[epoch] << '\n';
@@ -1940,7 +1926,7 @@ void array_ctxt_test(std::string randoms_file_source,
 
 void array_ctxt_predefined_test() {
 
-	std::fstream log(STATS_PATH + "\\array_ctxt_test\\debug_DAG_stats_insidefor_2.txt", std::ios::out);
+	std::fstream log(STATS_PATH + "\\array_ctxt_test\\release_DAG_stats_2.txt", std::ios::out);
 
 	array_ctxt_test("arrctxttestops.bin", 5, 1000, 1247, 16, log);
 
@@ -2002,7 +1988,7 @@ int main(){
 
 		//dec_mul_add_test_time(100, 15, 25, 2, 15);
 
-		test_res_correct();
+		//test_res_correct();
 
 		//average_predefined_test();
 
