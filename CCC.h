@@ -43,6 +43,8 @@ namespace certFHE {
 
 		CNODE * make_copy();
 
+		//int getclass() { return 0; }
+
 		/**
 			* Add two chunks of ciphertxts --- for multithreading only ---
 			* @param[in] args: input sent as a pointer to an AddArgs object

@@ -58,6 +58,15 @@ namespace certFHE {
 
 		virtual CNODE * permute(const Permutation & perm, bool force_deep_copy) = 0;
 
+		/**
+		 * UNUSED
+		 * Replacement for dynamic_cast; 
+		 * 0 - CCC
+		 * 1 - CADD
+		 * 2 - CMUL
+		**/
+		//virtual int getclass() = 0;
+
 		void try_delete();
 
 		// Other

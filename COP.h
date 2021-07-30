@@ -47,6 +47,8 @@ namespace certFHE {
 
 		void create_permuted_copy(const Permutation & perm) {}
 
+		//int getclass() = 0;
+
 		// Other
 
 		friend class CMUL;
