@@ -1429,13 +1429,15 @@ void test_res_correct_noperm() {
 	std::cout << "\nTESTS DONE " << t.stop_timer() << "\n\n";
 }
 
+//----
+
 void average_test(const std::vector <int> randoms,
 	const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 	const int CONTEXT_N = 1247, const int CONTEXT_D = 16,
 	std::ostream & out = std::cout) {
 
 	// addition (+, +=), multiplication (*, *=), permutation inplace (only!)
-	// 5 rounds of deletion, so that reference count is tested
+	// 3 rounds of deletion, so that reference count is tested
 	// decryption time measured only at the end of every epoch (3 times per test)
 
 	Timer timer;
@@ -1708,9 +1710,225 @@ void average_test(std::string randoms_file_source,
 
 void average_predefined_test() {
 
-	std::fstream log(STATS_PATH + "\\average_test\\DAG_stats.txt", std::ios::out);
+	std::fstream log(STATS_PATH + "\\average_test\\release_DAG_stats_ccc_opt.txt", std::ios::out);
 
 	average_test("avgtestops.bin", 1000, 50, 1247, 16, log);
+
+	log.close();
+}
+
+void array_ctxt_test(const std::vector <int> randoms,
+	const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
+	const int CONTEXT_N = 1247, const int CONTEXT_D = 16,
+	std::ostream & out = std::cout) {
+
+	/**
+	 * Addition and multiplication applied to ctxts of different sizes
+	 * All of them being single CCC objects
+	**/
+
+	Timer timer;
+	int randindex = 0; // for randoms
+
+	const char * TIME_MEASURE_UNIT = " miliseconds";
+
+	out << "Starting...";
+	out.flush();
+
+	timer.start();
+
+	Library::initializeLibrary();
+	Context context(CONTEXT_N, CONTEXT_D);
+	SecretKey sk(context);
+
+	Permutation perm(context);
+	SecretKey psk = sk.applyPermutation(perm);
+
+	// declared here to force compiler to use it and not remove it
+	// when doing optimisations
+	Ciphertext temp;
+
+	out << timer.stop() << " " << TIME_MEASURE_UNIT << "\n";
+	timer.reset();
+
+	out << "Multithreading thresholds autoselection...";
+	out.flush();
+
+	timer.start();
+
+	MTValues::m_threshold_autoselect(context, false);
+
+	out << timer.stop() << " " << TIME_MEASURE_UNIT << "\n";
+	timer.reset();
+
+	/****** TEST CODE SHOULD BE CHANGED IF THOSE CONSTANT ARE CHANGED ******/
+	const int S_CNT = 8;
+	const int CS_CNT = 2;
+
+	const int ctxt_starting_sizes[S_CNT] = { 1, 5, 10, 50, 100, 200, 500, 1000 };
+	const int rounds_per_epoch[S_CNT] = { ROUNDS_PER_TEST / 10, ROUNDS_PER_TEST / 6, ROUNDS_PER_TEST / 6,
+											ROUNDS_PER_TEST / 6, ROUNDS_PER_TEST / 10, ROUNDS_PER_TEST / 10,
+											ROUNDS_PER_TEST / 10, ROUNDS_PER_TEST / 10 };
+
+	bool old_remove_duplicates_onadd = OPValues::remove_duplicates_onadd;
+	bool old_remove_duplicates_onmul = OPValues::remove_duplicates_onmul;
+
+	OPValues::remove_duplicates_onadd = false;
+	OPValues::remove_duplicates_onmul = false;
+
+	int val[CS_CNT];
+	Ciphertext ** cs;
+	cs = new Ciphertext *[CS_CNT];
+
+	out << "Starting tests:\n\n";
+	out.flush();
+
+	for (int ts = 0; ts < TEST_COUNT; ts++) {
+
+		try {
+
+			out << "TEST " << ts << ":\n";
+			out.flush();
+
+			for (int epoch = 0; epoch < S_CNT; epoch++) {
+
+				for (int i = 0; i < CS_CNT; i++) {
+
+					int r = randoms[randindex];
+					randindex += 1;
+
+					Plaintext p(r);
+					val[i] = r;
+
+					cs[i] = new Ciphertext();
+					*cs[i] = sk.encrypt(p);
+
+					// even though there are already performed addition operations
+					// they are not measured
+					for (int s = 1; s < ctxt_starting_sizes[epoch]; s++) {
+
+						int r = randoms[randindex];
+						randindex += 1;
+
+						Plaintext p(r);
+						val[i] ^= r;
+
+						*cs[i] += sk.encrypt(p);
+					}
+				}
+
+				double average_time = 0;
+				double t_acc = 0;
+				double t;
+
+				for (int rnd = 0; rnd < rounds_per_epoch[epoch] / 2; rnd++) {
+
+					timer.start();
+
+					temp = *cs[0] + *cs[1];
+
+					t = timer.stop();
+					timer.reset();
+
+					t_acc += t;
+				}
+
+				out << "Addition average time " << t_acc / (rounds_per_epoch[epoch] / 2) << TIME_MEASURE_UNIT
+					<< " for both ctxt of len " << ctxt_starting_sizes[epoch] << '\n';
+
+				average_time = 0;
+				t_acc = 0;
+				t;
+
+				for (int rnd = 0; rnd < rounds_per_epoch[epoch] / 2; rnd++) {
+
+					timer.start();
+
+					temp = *cs[0] * *cs[1];
+
+					t = timer.stop();
+					timer.reset();
+
+					t_acc += t;
+				}
+
+				out << "Multiplication average time " << t_acc / (rounds_per_epoch[epoch] / 2) << TIME_MEASURE_UNIT
+					<< " for both ctxt of len " << ctxt_starting_sizes[epoch] << '\n';
+				out << '\n';
+			}
+
+			for (int c = 0; c < CS_CNT; c++)
+				delete cs[c];
+
+			out << "TEST " << ts << " DONE\n\n";
+			out.flush();
+		}
+		catch (std::exception e) {
+
+			out << "ERROR: " << e.what() << '\n';
+		}
+
+	}
+
+	OPValues::remove_duplicates_onadd = old_remove_duplicates_onadd;
+	OPValues::remove_duplicates_onmul = old_remove_duplicates_onmul;
+}
+
+void array_ctxt_test(std::string randoms_file_source,
+	const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
+	const int CONTEXT_N = 1247, const int CONTEXT_D = 16,
+	std::ostream & out = std::cout) {
+
+	std::vector <int> randoms;
+
+	if (randoms_file_source == "")
+
+		for (int i = 0; i < TEST_COUNT * ROUNDS_PER_TEST * 10 + 100; i++)
+			randoms.push_back(rand());
+
+	else {
+
+		std::fstream randsource(randoms_file_source, std::ios::in | std::ios::binary);
+
+		if (!randsource.is_open()) {
+
+			std::fstream new_randsource(randoms_file_source, std::ios::out | std::ios::binary);
+
+			int tmp;
+			for (int i = 0; i < TEST_COUNT * ROUNDS_PER_TEST * 10 + 100; i++) {
+
+				tmp = rand();
+
+				randoms.push_back(tmp);
+				new_randsource.write((char *)&tmp, sizeof(int));
+			}
+
+			new_randsource.close();
+		}
+		else {
+
+			int tmp;
+			for (int i = 0; i < TEST_COUNT * ROUNDS_PER_TEST * 10 + 100; i++) {
+
+				randsource.read((char *)&tmp, sizeof(int));
+				randoms.push_back(tmp);
+			}
+
+			randsource.close();
+		}
+	}
+
+	array_ctxt_test(randoms,
+		TEST_COUNT, ROUNDS_PER_TEST,
+		CONTEXT_N, CONTEXT_D,
+		out);
+}
+
+void array_ctxt_predefined_test() {
+
+	std::fstream log(STATS_PATH + "\\array_ctxt_test\\release_DAG_stats_ccc_opt_snd.txt", std::ios::out);
+
+	array_ctxt_test("arrctxttestops.bin", 5, 1000, 1247, 16, log);
 
 	log.close();
 }
@@ -1773,6 +1991,8 @@ int main(){
 		//test_res_correct();
 
 		average_predefined_test();
+
+		//array_ctxt_predefined_test();
 	}
 
     return 0;

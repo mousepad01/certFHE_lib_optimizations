@@ -10,17 +10,22 @@ namespace certFHE{
 
 #pragma region OPValues definitions
 
-	uint64_t OPValues::max_ccc_deflen_size = 2048;  // for now, random value
-	uint64_t OPValues::max_cadd_merge_size = -1;// 2048 * 1024;  // for now, random value
-	uint64_t OPValues::max_cmul_merge_size = -1;// 2048 * 1024;  // for now, random value
+	uint64_t OPValues::max_ccc_deflen_size = 2048;
+	uint64_t OPValues::max_cadd_merge_size = -1; 
+	uint64_t OPValues::max_cmul_merge_size = -1;
 
-	bool OPValues::always_default_multiplication = true;
+	/**
+	 * all these parameters set to some specific value
+	 * can perform way better than with other configurations in some cases, and vice versa
+	**/
+	
+	bool OPValues::always_default_multiplication = true; 
 
 	bool OPValues::remove_duplicates_onadd = true;
 	bool OPValues::remove_duplicates_onmul = true;
 
-	bool OPValues::shorten_on_recursive_cadd_merging = true;
-	bool OPValues::shorten_on_recursive_cmul_merging = true;
+	bool OPValues::shorten_on_recursive_cadd_merging = true; // advantages not clear
+	bool OPValues::shorten_on_recursive_cmul_merging = true; // advantages not clear
 
 #pragma endregion
 

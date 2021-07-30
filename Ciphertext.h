@@ -18,6 +18,10 @@ namespace certFHE{
 
 	public:
     
+		/**
+		 * CNODE associated with the ciphertext
+		 * It can be of any type (CCC, CMUL, CADD) or null
+		**/
 		CNODE * node;
 
 		/**

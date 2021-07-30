@@ -50,7 +50,6 @@ namespace certFHE {
 		 * If true, upstream_shortening is called after every recursive upstream_merging call inside CMUL class
 		**/
 		static bool shorten_on_recursive_cmul_merging;
-
 	};
 
 	/*

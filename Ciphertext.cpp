@@ -136,17 +136,33 @@ namespace certFHE{
 		if (c.node == 0 || this->node == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
 
+		CNODE * addition_result;
+
 		/**
-		 * The called method will treat arguments as different nodes
-		 * So the reference count temporarily increases
+		 * When two ctxt refer to a CCC, operations are performed directly
 		**/
-		if (this->node == c.node)
-			this->node->downstream_reference_count += 1;
+		if (typeid(this->node) == typeid(CCC *) && typeid(this->node) == typeid(c.node) && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size) {
 
-		CADD * addition_result = (CADD *)Ciphertext::add(this->node, c.node);
+			CCC * ccc_thisnode = static_cast <CCC *> (this->node);
+			CCC * ccc_othernode = static_cast <CCC *> (c.node);
 
-		if (this->node == c.node)
-			this->node->downstream_reference_count -= 1;
+			addition_result = CCC::add(ccc_thisnode, ccc_othernode);
+		}
+		else {
+
+			/**
+			 * The called method will treat arguments as different nodes
+			 * So the reference count temporarily increases
+			 * (although not necessary ???)
+			**/
+			if (this->node == c.node)
+				this->node->downstream_reference_count += 1;
+
+			addition_result = Ciphertext::add(this->node, c.node);
+
+			if (this->node == c.node)
+				this->node->downstream_reference_count -= 1;
+		}
 
 		Ciphertext add_result_c;
 		add_result_c.node = addition_result;
@@ -156,20 +172,33 @@ namespace certFHE{
 
 	Ciphertext Ciphertext::operator * (const Ciphertext & c) const {
 
-		if (c.node == 0 || this->node == 0)
-			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
+		CNODE * mul_result;
 
 		/**
-		 * The called method will treat arguments as different nodes
-		 * So the reference count temporarily increases
+		 * When two ctxt refer to a CCC, operations are performed directly
 		**/
-		if (this->node == c.node)
-			this->node->downstream_reference_count += 1;
-		
-		CMUL * mul_result = (CMUL *)Ciphertext::multiply(this->node, c.node);
+		if (typeid(this->node) == typeid(CCC *) && typeid(this->node) == typeid(c.node) && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size) {
 
-		if (this->node == c.node)
-			this->node->downstream_reference_count -= 1;
+			CCC * ccc_thisnode = static_cast <CCC *> (this->node);
+			CCC * ccc_othernode = static_cast <CCC *> (c.node);
+
+			mul_result = CCC::multiply(ccc_thisnode, ccc_othernode);
+		}
+		else {
+
+			/**
+			 * The called method will treat arguments as different nodes
+			 * So the reference count temporarily increases
+			 * (although not necessary ???)
+			**/
+			if (this->node == c.node)
+				this->node->downstream_reference_count += 1;
+
+			mul_result = Ciphertext::multiply(this->node, c.node);
+
+			if (this->node == c.node)
+				this->node->downstream_reference_count -= 1;
+		}
 
 		Ciphertext mul_result_c;
 		mul_result_c.node = mul_result;
@@ -182,13 +211,33 @@ namespace certFHE{
 		if (c.node == 0 || this->node == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
 
-		if (this->node == c.node)
-			this->node->downstream_reference_count += 1;
-		
-		CNODE * addition_result = Ciphertext::add(this->node, c.node);
+		CNODE * addition_result;
 
-		if (this->node == c.node)
-			this->node->downstream_reference_count -= 1;
+		/**
+		 * When two ctxt refer to a CCC, operations are performed directly
+		**/
+		if (typeid(this->node) == typeid(CCC *) && typeid(this->node) == typeid(c.node) && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size) {
+
+			CCC * ccc_thisnode = static_cast <CCC *> (this->node);
+			CCC * ccc_othernode = static_cast <CCC *> (c.node);
+
+			addition_result = CCC::add(ccc_thisnode, ccc_othernode);
+		}
+		else {
+
+			/**
+			 * The called method will treat arguments as different nodes
+			 * So the reference count temporarily increases
+			 * (although not necessary ???)
+			**/
+			if (this->node == c.node)
+				this->node->downstream_reference_count += 1;
+
+			addition_result = Ciphertext::add(this->node, c.node);
+
+			if (this->node == c.node)
+				this->node->downstream_reference_count -= 1;
+		}
 		
 		this->node->try_delete();
 		this->node = addition_result;
@@ -198,16 +247,33 @@ namespace certFHE{
 
 	Ciphertext & Ciphertext::operator *= (const Ciphertext & c) {
 
-		if (c.node == 0 || this->node == 0)
-			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
+		CNODE * mul_result;
 
-		if (this->node == c.node)
-			this->node->downstream_reference_count += 1;
-		
-		CNODE * mul_result = Ciphertext::multiply(this->node, c.node);
+		/**
+		 * When two ctxt refer to a CCC, operations are performed directly
+		**/
+		if (typeid(this->node) == typeid(CCC *) && typeid(this->node) == typeid(c.node) && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size) {
 
-		if (this->node == c.node)
-			this->node->downstream_reference_count -= 1;
+			CCC * ccc_thisnode = static_cast <CCC *> (this->node);
+			CCC * ccc_othernode = static_cast <CCC *> (c.node);
+
+			mul_result = CCC::multiply(ccc_thisnode, ccc_othernode);
+		}
+		else {
+
+			/**
+			 * The called method will treat arguments as different nodes
+			 * So the reference count temporarily increases
+			 * (although not necessary ???)
+			**/
+			if (this->node == c.node)
+				this->node->downstream_reference_count += 1;
+
+			mul_result = Ciphertext::multiply(this->node, c.node);
+
+			if (this->node == c.node)
+				this->node->downstream_reference_count -= 1;
+		}
 
 		this->node->try_delete();
 		this->node = mul_result;
