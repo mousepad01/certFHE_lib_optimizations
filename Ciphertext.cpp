@@ -1,6 +1,6 @@
 #include "Ciphertext.h"
 #include "GlobalParams.h"
-#include "Threadpool.hpp"
+#include "Threadpool.h"
 #include "SecretKey.h"
 #include "Permutation.h"
 #include "Plaintext.h"

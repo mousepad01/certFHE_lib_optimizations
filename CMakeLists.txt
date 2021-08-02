@@ -20,7 +20,7 @@ set(HEADER_FILES ${Plaintext.h}
 		 ${Timer.h}
 		 ${utils.h}
 		 ${Helpers.h}
-		 ${ThreadPool.hpp}
+		 ${ThreadPool.h}
 		 ${certFHE.h} )
 
 add_library(certFHE-static STATIC

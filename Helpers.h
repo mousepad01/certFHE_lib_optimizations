@@ -3,7 +3,7 @@
 
 #include "utils.h"
 #include "ArgClasses.h"
-#include "Threadpool.hpp"
+#include "Threadpool.h"
 
 namespace certFHE{
 

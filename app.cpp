@@ -9,7 +9,7 @@
 #include <fstream>
 
 #include "certFHE.h"
-#include "Threadpool.hpp"
+#include "Threadpool.h"
 
 static std::string STATS_PATH = "C:\\Users\\intern.andreis\\Desktop\\certfhe_stats\\DAG_implementation";
 
@@ -1710,7 +1710,7 @@ void average_test(std::string randoms_file_source,
 
 void average_predefined_test() {
 
-	std::fstream log(STATS_PATH + "\\average_test\\release_DAG_stats_dyncast_replaced.txt", std::ios::out);
+	std::fstream log(STATS_PATH + "\\average_test\\tst.txt", std::ios::out);
 
 	average_test("avgtestops.bin", 1000, 50, 1247, 16, log);
 
@@ -1926,7 +1926,7 @@ void array_ctxt_test(std::string randoms_file_source,
 
 void array_ctxt_predefined_test() {
 
-	std::fstream log(STATS_PATH + "\\array_ctxt_test\\release_DAG_stats_dyncast_replaced_2.txt", std::ios::out);
+	std::fstream log(STATS_PATH + "\\array_ctxt_test\\new_threadpool.txt", std::ios::out);
 
 	array_ctxt_test("arrctxttestops.bin", 5, 1000, 1247, 16, log);
 
@@ -1990,9 +1990,9 @@ int main(){
 
 		//test_res_correct();
 
-		average_predefined_test();
+		//average_predefined_test();
 
-		//array_ctxt_predefined_test();
+		array_ctxt_predefined_test();
 	}
 
     return 0;
