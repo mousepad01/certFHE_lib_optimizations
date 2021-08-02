@@ -40,7 +40,12 @@ void test_res_correct() {
 	Context context(1247, 16);
 	SecretKey sk(context);
 
-	MTValues::m_threshold_autoselect(context);
+	MTValues::m_threshold_autoselect(context, false);
+
+	std::cout << MTValues::add_m_threshold << " "
+		<< MTValues::mul_m_threshold << " "
+		<< MTValues::dec_m_threshold << " "
+		<< MTValues::perm_m_threshold << '\n';
 
 	const int TEST_COUNT = 100; // sansa fals pozitiv: 2^(-TEST_COUNT)
 
@@ -1708,9 +1713,9 @@ void average_test(std::string randoms_file_source,
 		out);
 }
 
-void average_predefined_test() {
+void average_predefined_test(const char * path = "\\average_test\\tst0.txt") {
 
-	std::fstream log(STATS_PATH + "\\average_test\\tst.txt", std::ios::out);
+	std::fstream log(STATS_PATH + path, std::ios::out);
 
 	average_test("avgtestops.bin", 1000, 50, 1247, 16, log);
 
@@ -1757,6 +1762,11 @@ void array_ctxt_test(const std::vector <int> randoms,
 	timer.start();
 
 	MTValues::m_threshold_autoselect(context, false);
+
+	std::cout << MTValues::add_m_threshold << " "
+		<< MTValues::mul_m_threshold << " "
+		<< MTValues::dec_m_threshold << " "
+		<< MTValues::perm_m_threshold << "\n\n";
 
 	out << timer.stop() << " " << TIME_MEASURE_UNIT << "\n";
 	timer.reset();
@@ -1924,9 +1934,9 @@ void array_ctxt_test(std::string randoms_file_source,
 		out);
 }
 
-void array_ctxt_predefined_test() {
+void array_ctxt_predefined_test(const char * path = "\\array_ctxt_test\\tst.txt") {
 
-	std::fstream log(STATS_PATH + "\\array_ctxt_test\\new_threadpool.txt", std::ios::out);
+	std::fstream log(STATS_PATH + path, std::ios::out);
 
 	array_ctxt_test("arrctxttestops.bin", 5, 1000, 1247, 16, log);
 
@@ -1990,9 +2000,7 @@ int main(){
 
 		//test_res_correct();
 
-		//average_predefined_test();
-
-		array_ctxt_predefined_test();
+		//array_ctxt_predefined_test();
 	}
 
     return 0;

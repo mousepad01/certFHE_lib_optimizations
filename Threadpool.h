@@ -84,7 +84,7 @@ namespace certFHE {
 				/**
 				 * For creating new threads
 				**/
-				for (int i = Threadpool <T>::THR_CNT + 1; i <= new_threadcount; i++) {
+				for (int i = Threadpool <T>::THR_CNT; i < new_threadcount; i++) {
 
 					this->threads->push_back(new std::thread(&Threadpool<T>::wait_for_tasks, this));
 				}
@@ -92,7 +92,7 @@ namespace certFHE {
 				/**
 				 * For removing excess threads
 				**/
-				for (int i = new_threadcount + 1; i <= Threadpool <T>::THR_CNT; i++) {
+				for (int i = new_threadcount; i < Threadpool <T>::THR_CNT; i++) {
 
 					this->closed->insert(this->threads->at(i)->get_id());
 				}
@@ -101,7 +101,7 @@ namespace certFHE {
 
 			this->tasks_condition.notify_all();
 
-			for (int i = new_threadcount + 1; i <= Threadpool <T>::THR_CNT; i++)
+			for (int i = new_threadcount; i < Threadpool <T>::THR_CNT; i++)
 				this->threads->at(i)->join();
 		}
 		
