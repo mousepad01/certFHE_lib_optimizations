@@ -259,17 +259,18 @@ namespace certFHE{
 			this->inversions[i] = invs[i];
 	}
 
-	Permutation::Permutation(const Permutation& perm)
+	Permutation::Permutation(const Permutation & perm)
 	{
 		this->length = perm.getLength();
-		this->permutation = new uint64_t [this->length];
-
 		this->inversions_cnt = perm.getInversionsCnt();
+
+		this->permutation = new uint64_t[this->length];
+		this->inversions = new CtxtInversion[this->inversions_cnt];
 
 		uint64_t * _perm = perm.getPermutation();
 		CtxtInversion * _invs = perm.getInversions();
 
-		for(uint64_t i =0 ;i <this->length ;i++)
+		for(uint64_t i = 0; i < this->length; i++)
 			this->permutation[i] = _perm[i];
 		
 		for (uint64_t i = 0; i < this->inversions_cnt; i++)
