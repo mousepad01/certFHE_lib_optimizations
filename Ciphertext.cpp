@@ -40,6 +40,14 @@ namespace certFHE{
 		this->node = permuted;
 	}
 
+	Ciphertext Ciphertext::make_deep_copy() {
+
+		Ciphertext deepcopy;
+		this->node = this->node->make_deep_copy();
+
+		return deepcopy;
+	}
+
 #pragma endregion
 
 #pragma region Private methods

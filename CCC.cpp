@@ -50,11 +50,6 @@ namespace certFHE {
 			std::cout << "WARNING: CCC ctxt pointer is null, should never be\n";
 	}
 
-	CNODE * CCC::make_copy() {
-
-		return new CCC(*this);
-	}
-
 	void CCC::chunk_decrypt(Args * raw_args) {
 
 		DecArgs * args = (DecArgs *)raw_args;

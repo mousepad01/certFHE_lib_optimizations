@@ -30,13 +30,13 @@ namespace certFHE {
 
 		// Getters, setters and methods
 
-		void upstream_merging();
+		void upstream_merging() override;
 
-		uint64_t decrypt(const SecretKey & sk);
+		uint64_t decrypt(const SecretKey & sk) override;
 
-		CNODE * permute(const Permutation & perm, bool force_deep_copy);
+		CNODE * permute(const Permutation & perm, bool force_deep_copy) override;
 
-		CNODE * make_copy();
+		CNODE * make_copy() override;
 
 		//int getclass() { return 2; }
 

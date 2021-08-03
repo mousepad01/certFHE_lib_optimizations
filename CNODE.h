@@ -54,6 +54,8 @@ namespace certFHE {
 
 		virtual CNODE * make_copy() = 0; // virtual copy constructor
 
+		virtual CNODE * make_deep_copy() = 0; // virtual deep copy method 
+
 		virtual uint64_t decrypt(const SecretKey & sk) = 0;
 
 		virtual CNODE * permute(const Permutation & perm, bool force_deep_copy) = 0;

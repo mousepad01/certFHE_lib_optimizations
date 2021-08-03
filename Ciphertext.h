@@ -131,6 +131,16 @@ namespace certFHE{
 		Ciphertext applyPermutation(const Permutation & permutation);
 
 		/**
+			* Creates a deep copy for the current ciphertext
+			* This might be useful in a multithreading situation,
+			* When one wants to parralelise operations on different ctxt
+			* That originally shared at least a common CNODE node 
+			* (usually when one of them was obtained by applying an operation on the other)
+			* @return value : new ciphertext
+		**/
+		Ciphertext make_deep_copy();
+
+		/**
 			* Method for decrypting current ciphertext
 			* @param[in] sk: key under which decryption takes place
 			* @return value: decrypted value as a plaintext object

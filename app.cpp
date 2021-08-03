@@ -1713,11 +1713,11 @@ void average_test(std::string randoms_file_source,
 		out);
 }
 
-void average_predefined_test(const char * path = "\\average_test\\tst0.txt") {
+void average_predefined_test(const char * path = "\\average_multithreading_test\\tst012.txt") {
 
 	std::fstream log(STATS_PATH + path, std::ios::out);
 
-	average_test("avgtestops.bin", 1000, 50, 1247, 16, log);
+	average_test("avgtestops.bin", 100, 110, 1247, 16, log);
 
 	log.close();
 }
@@ -1997,6 +1997,8 @@ int main(){
 		//test_res_correct_noperm();
 
 		//dec_mul_add_test_time(100, 15, 25, 2, 15);
+
+		//average_predefined_test();
 
 		//test_res_correct();
 
