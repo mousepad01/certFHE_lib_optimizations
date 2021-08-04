@@ -23,7 +23,7 @@ namespace certFHE {
 		CNODE_disjoint_set * prev;  // one of the neighbours = some other child of this->parent
 		CNODE_disjoint_set * next;  // same as prev
 
-		CNODE_disjoint_set() : rank(0), parent(0), child(0), prev(0), next(0) {}
+		CNODE_disjoint_set() : current(0), rank(0), parent(0), child(0), prev(0), next(0) {}
 
 		CNODE_disjoint_set(int * current_raw) : current(current_raw),
 												rank(0), parent(0), child(0), prev(0), next(0) {}
@@ -40,7 +40,7 @@ namespace certFHE {
 
 		void set_union(CNODE_disjoint_set * other);
 
-		void remove_from_set(CNODE_disjoint_set * to_remove);
+		void remove_from_set();
 	};
 }
 

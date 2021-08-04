@@ -80,8 +80,33 @@ namespace certFHE {
 			fst_root->rank += 1;
 	}
 
-	void CNODE_disjoint_set::remove_from_set(CNODE_disjoint_set * to_remove) {
+	void CNODE_disjoint_set::remove_from_set() {
 
+		if (this->child == 0) {
 
+			/**
+			 * Node to be deleted has no child
+			 * So it can be safely removed
+			**/
+
+			if (this->prev != 0)
+				this->prev->next = this->next;
+
+			if (this->next != 0)
+				this->next->prev = this->prev;
+
+			delete this;
+		}
+		else {
+
+			/**
+			 * Node to be deleted has at least one child, 
+			 * So this->current will be swapped with this->child->current 
+			 * And the remove method recursively called (only leaves will phisically be removed)
+			**/
+
+			std::swap(this->current, this->child->current);
+			this->child->remove_from_set();
+		}
 	}
 }
