@@ -1,5 +1,7 @@
 #include "CNODE_disjoint_set.h"
 
+#if MULTITHREADING_EXTENDED_SUPPORT
+
 namespace certFHE {
 	
 	CNODE_disjoint_set * CNODE_disjoint_set::get_root() {
@@ -133,3 +135,5 @@ namespace certFHE {
 		}
 	}
 }
+
+#endif

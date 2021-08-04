@@ -1,11 +1,11 @@
-#ifndef CNODE_DISJOIN_SET_H
-#define CNODE_DISJOIN_SET_H
-
 #include "CNODE.h"
 
-namespace certFHE {
+#if MULTITHREADING_EXTENDED_SUPPORT
 
-	class CNODE;
+#ifndef CNODE_DISJOIN_SET_H 
+#define CNODE_DISJOIN_SET_H
+
+namespace certFHE {
 
 	class CNODE_disjoint_set {
 
@@ -13,8 +13,7 @@ namespace certFHE {
 
 		std::mutex mtx;
 
-		//CNODE * current;
-		int * current; // to be replaced with CNODE class
+		CNODE * current;
 
 		int rank;  // upper bound for depth of the current set
 
@@ -25,8 +24,8 @@ namespace certFHE {
 
 		CNODE_disjoint_set() : current(0), rank(0), parent(0), child(0), prev(0), next(0) {}
 
-		CNODE_disjoint_set(int * current_raw) : current(current_raw),
-												rank(0), parent(0), child(0), prev(0), next(0) {}
+		CNODE_disjoint_set(CNODE * current_raw) : current(current_raw),
+			rank(0), parent(0), child(0), prev(0), next(0) {}
 
 		CNODE_disjoint_set(const CNODE_disjoint_set & other) = delete;
 		CNODE_disjoint_set(const CNODE_disjoint_set && other) = delete;
@@ -45,3 +44,6 @@ namespace certFHE {
 }
 
 #endif
+
+#endif
+

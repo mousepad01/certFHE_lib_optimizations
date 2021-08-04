@@ -8,7 +8,9 @@
 #include "CMUL.h"
 #include "CADD.h"
 
-//using namespace certFHE;
+#if MULTITHREADING_EXTENDED_SUPPORT
+#include "CNODE_disjoint_set.h"
+#endif
 
 namespace certFHE{
 
@@ -122,6 +124,12 @@ namespace certFHE{
 
 	std::ostream & operator << (std::ostream & out, const Ciphertext & c) {
 
+#if MULTITHREADING_EXTENDED_SUPPORT
+
+		std::scoped_lock <std::mutex>(c.concurrency_guard->get_root()->mtx);
+
+#endif
+
 		if (c.node == 0)
 			out << "EMPTY CIPHERTEXT";
 
@@ -140,6 +148,12 @@ namespace certFHE{
 	}
 
 	Ciphertext Ciphertext::operator + (const Ciphertext & c) const {
+
+#if MULTITHREADING_EXTENDED_SUPPORT
+
+		std::scoped_lock <std::mutex, std::mutex>(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
+
+#endif
 
 		if (c.node == 0 || this->node == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -185,6 +199,15 @@ namespace certFHE{
 
 	Ciphertext Ciphertext::operator * (const Ciphertext & c) const {
 
+#if MULTITHREADING_EXTENDED_SUPPORT
+
+		std::scoped_lock <std::mutex, std::mutex>(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
+
+#endif
+
+		if (c.node == 0 || this->node == 0)
+			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
+
 		CNODE * mul_result;
 
 		CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
@@ -225,6 +248,12 @@ namespace certFHE{
 	}
 
 	Ciphertext & Ciphertext::operator += (const Ciphertext & c) {
+
+#if MULTITHREADING_EXTENDED_SUPPORT
+
+		std::scoped_lock <std::mutex, std::mutex>(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
+
+#endif
 
 		if (c.node == 0 || this->node == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -270,6 +299,15 @@ namespace certFHE{
 
 	Ciphertext & Ciphertext::operator *= (const Ciphertext & c) {
 
+#if MULTITHREADING_EXTENDED_SUPPORT
+
+		std::scoped_lock <std::mutex, std::mutex>(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
+
+#endif
+
+		if (c.node == 0 || this->node == 0)
+			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
+
 		CNODE * mul_result;
 
 		CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
@@ -310,6 +348,12 @@ namespace certFHE{
 	}
 
 	Ciphertext & Ciphertext::operator = (const Ciphertext & c) {
+
+#if MULTITHREADING_EXTENDED_SUPPORT
+
+		std::scoped_lock <std::mutex, std::mutex>(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
+
+#endif
 		
 		if (this->node != 0)
 			this->node->try_delete();
@@ -323,6 +367,12 @@ namespace certFHE{
 	}
 
 	Ciphertext & Ciphertext::operator = (Ciphertext && c) {
+
+#if MULTITHREADING_EXTENDED_SUPPORT
+
+		std::scoped_lock <std::mutex>(this->concurrency_guard->get_root()->mtx);
+
+#endif
 
 		if (this->node != 0)
 			this->node->try_delete();
@@ -353,6 +403,12 @@ namespace certFHE{
 
 	Ciphertext::Ciphertext(const Ciphertext & ctxt) {
 
+#if MULTITHREADING_EXTENDED_SUPPORT
+
+		std::scoped_lock <std::mutex>(ctxt.concurrency_guard->get_root()->mtx);
+
+#endif
+
 		if(ctxt.node != 0)
 			ctxt.node->downstream_reference_count += 1;
 
@@ -360,6 +416,12 @@ namespace certFHE{
 	}
 
 	Ciphertext::Ciphertext(Ciphertext && ctxt) {
+
+#if MULTITHREADING_EXTENDED_SUPPORT
+
+		std::scoped_lock <std::mutex>(ctxt.concurrency_guard->get_root()->mtx);
+
+#endif
 
 		this->node = ctxt.node;
 		ctxt.node = 0;
@@ -377,6 +439,12 @@ namespace certFHE{
 
 	uint64_t Ciphertext::getLen() const {
 
+#if MULTITHREADING_EXTENDED_SUPPORT
+
+		std::scoped_lock <std::mutex>(this->concurrency_guard->get_root()->mtx);
+
+#endif
+
 		if (this->node == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
 
@@ -384,6 +452,12 @@ namespace certFHE{
 	}
 
 	Context Ciphertext::getContext() const {
+
+#if MULTITHREADING_EXTENDED_SUPPORT
+
+		std::scoped_lock <std::mutex>(this->concurrency_guard->get_root()->mtx);
+
+#endif
 
 		if (this->node == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no value");

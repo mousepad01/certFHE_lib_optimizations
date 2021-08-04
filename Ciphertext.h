@@ -11,6 +11,12 @@ namespace certFHE{
 	class Context;
 	class Plaintext;
 
+#if MULTITHREADING_EXTENDED_SUPPORT
+
+	class CNODE_disjoint_set;
+
+#endif
+
     /**
      * Class used for storing a ciphertext
     **/
@@ -23,6 +29,16 @@ namespace certFHE{
 		 * It can be of any type (CCC, CMUL, CADD) or null
 		**/
 		CNODE * node;
+
+#if MULTITHREADING_EXTENDED_SUPPORT
+
+		/**
+		 * Used to get a common mutex for all ciphertexts 
+		 * that (might) share a common internal CNODE
+		**/
+		CNODE_disjoint_set * concurrency_guard;
+
+#endif
 
 		/**
 			* Method for adding two ciphertexts
