@@ -1943,7 +1943,7 @@ void array_ctxt_predefined_test(const char * path = "\\array_ctxt_test\\tst.txt"
 	log.close();
 }
 
-int main(){
+int main2(){
 
 	{
 		//only_mul_test_time(25, 3, 2, 22);
