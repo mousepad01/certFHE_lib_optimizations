@@ -38,6 +38,8 @@ namespace certFHE {
 
 		CNODE * make_copy() override;
 
+		CNODE * make_deep_copy() override;
+
 		//int getclass() { return 2; }
 
 		static CNODE * upstream_merging(CNODE * fst, CNODE * snd);

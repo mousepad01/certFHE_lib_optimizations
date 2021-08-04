@@ -140,6 +140,25 @@ namespace certFHE {
 		return new CADD(*this);
 	}
 
+	CNODE * CADD::make_deep_copy() {
+
+		CADD * deepcopy = new CADD(this->context);
+		deepcopy->deflen_count = this->deflen_count;
+
+		CNODE_list * deepcopy_nodes = deepcopy->nodes->next;
+		CNODE_list * thisnodes = this->nodes->next;
+
+		while (thisnodes != 0 && thisnodes->current != 0) {
+
+			CNODE * current_deepcopy = thisnodes->current->make_deep_copy();
+			deepcopy_nodes->insert_next_element(current_deepcopy);
+
+			thisnodes = thisnodes->next;
+		}
+
+		return deepcopy;
+	}
+
 	CNODE * CADD::permute(const Permutation & perm, bool force_deep_copy) {
 
 		CADD * to_permute;
