@@ -16,6 +16,8 @@ namespace certFHE {
 
 				// path compression
 
+				this->parent->child = 0;
+
 				if (this->prev != 0) {
 
 					this->prev->next = this->next;
@@ -64,15 +66,19 @@ namespace certFHE {
 
 		// one of the ways to rewire the pointers 
 
-		CNODE_disjoint_set * fst_root_oldchild = fst_root->child;  // guaranteed to NOT be null,
-																   // otherwise there would not be any path to the root
-		fst_root->child = snd_root;
-		snd_root->prev = fst_root_oldchild;
-		snd_root->next = fst_root_oldchild->next;
-		fst_root_oldchild->next = snd_root;
+		CNODE_disjoint_set * fst_root_oldchild = fst_root->child;  
 
-		if (snd_root->next != 0)
-			snd_root->next->prev = snd_root;
+		fst_root->child = snd_root;
+
+		if (fst_root_oldchild != 0) {
+			
+			snd_root->prev = fst_root_oldchild;
+			snd_root->next = fst_root_oldchild->next;
+			fst_root_oldchild->next = snd_root;
+
+			if (snd_root->next != 0)
+				snd_root->next->prev = snd_root;
+		}
 
 		// increase rank 
 
@@ -80,7 +86,7 @@ namespace certFHE {
 			fst_root->rank += 1;
 	}
 
-	void CNODE_disjoint_set::remove_from_set() {
+	CNODE_disjoint_set * CNODE_disjoint_set::remove_from_set() {
 
 		if (this->child == 0) {
 
@@ -89,13 +95,29 @@ namespace certFHE {
 			 * So it can be safely removed
 			**/
 
-			if (this->prev != 0)
+			if (this->parent != 0) {
+
+				this->parent->child = 0;
+
+				if (this->prev != 0) 
+					this->parent->child = this->prev; 
+				
+				else if (this->next != 0) 
+					this->parent->child = this->next; 
+			}
+
+			if (this->prev != 0) 
 				this->prev->next = this->next;
 
-			if (this->next != 0)
+			if (this->next != 0) 
 				this->next->prev = this->prev;
 
-			delete this;
+			this->parent = 0;
+			this->prev = 0;
+			this->next = 0;
+			this->rank = 0;
+
+			return this;
 		}
 		else {
 
@@ -106,7 +128,8 @@ namespace certFHE {
 			**/
 
 			std::swap(this->current, this->child->current);
-			this->child->remove_from_set();
+
+			return this->child->remove_from_set();
 		}
 	}
 }

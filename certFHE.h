@@ -12,6 +12,7 @@
 
 #include "CNODE.h"
 #include "CNODE_list.h"
+#include "CNODE_disjoint_set.h"
 #include "COP.h"
 #include "CADD.h"
 #include "CMUL.h"

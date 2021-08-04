@@ -40,7 +40,7 @@ namespace certFHE {
 
 		void set_union(CNODE_disjoint_set * other);
 
-		void remove_from_set();
+		CNODE_disjoint_set * remove_from_set();
 	};
 }
 
