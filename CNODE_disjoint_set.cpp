@@ -1,4 +1,5 @@
 #include "CNODE_disjoint_set.h"
+#include "Ciphertext.h"
 
 #if MULTITHREADING_EXTENDED_SUPPORT
 
@@ -6,13 +7,11 @@ namespace certFHE {
 
 	std::mutex CNODE_disjoint_set::op_mutex;
 	
-	CNODE_disjoint_set * CNODE_disjoint_set::get_root() {
-
-		std::lock_guard <std::mutex> guard(op_mutex);
+	CNODE_disjoint_set * CNODE_disjoint_set::__get_root() {
 
 		if (this->parent != 0) {
 
-			CNODE_disjoint_set * root = this->parent->get_root();
+			CNODE_disjoint_set * root = this->parent->__get_root();
 
 			/**
 			 * condition to reduce overhead 
@@ -57,10 +56,18 @@ namespace certFHE {
 			return this;
 	}
 
-	void CNODE_disjoint_set::set_union(CNODE_disjoint_set * other) {
+	CNODE_disjoint_set * CNODE_disjoint_set::get_root() {
 
-		CNODE_disjoint_set * fst_root = this->get_root();
-		CNODE_disjoint_set * snd_root = other->get_root();
+		std::lock_guard <std::mutex> guard(op_mutex);
+		return this->__get_root();
+	}
+
+	void CNODE_disjoint_set::__set_union(CNODE_disjoint_set * other) {
+
+		std::lock_guard <std::mutex> guard(op_mutex);
+
+		CNODE_disjoint_set * fst_root = this->__get_root();
+		CNODE_disjoint_set * snd_root = other->__get_root();
 
 		if (fst_root == snd_root)
 			return;
@@ -92,7 +99,15 @@ namespace certFHE {
 			fst_root->rank += 1;
 	}
 
-	CNODE_disjoint_set * CNODE_disjoint_set::remove_from_set() {
+	void CNODE_disjoint_set::set_union(CNODE_disjoint_set * other) {
+
+		std::lock_guard <std::mutex> guard(op_mutex);
+		this->__set_union(other);
+	}
+
+	CNODE_disjoint_set * CNODE_disjoint_set::__remove_from_set() {
+
+		std::lock_guard <std::mutex> guard(op_mutex);
 
 		if (this->child == 0) {
 
@@ -131,12 +146,21 @@ namespace certFHE {
 			 * Node to be deleted has at least one child, 
 			 * So this->current will be swapped with this->child->current 
 			 * And the remove method recursively called (only leaves will phisically be removed)
+			 * NOTE: when swapping, the state of two Ciphertext objects is changing (this->current, this->child->current)
+			 *		 but the tree is already locked in the destructor, so there is no need to lock again
 			**/
 
 			std::swap(this->current, this->child->current);
-
-			return this->child->remove_from_set();
+			std::swap(this->current->concurrency_guard, this->child->current->concurrency_guard);
+			
+			return this->child->__remove_from_set();
 		}
+	}
+
+	CNODE_disjoint_set * CNODE_disjoint_set::remove_from_set() {
+
+		std::lock_guard <std::mutex> guard(op_mutex);
+		return this->__remove_from_set();
 	}
 }
 

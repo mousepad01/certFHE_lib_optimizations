@@ -439,7 +439,7 @@ namespace certFHE{
 		uint64_t * raw_ctxt = sk.encrypt_raw(plaintext);
 		this->node = new CCC(sk.getContext(), raw_ctxt, 1);
 
-		this->concurrency_guard = new CNODE_disjoint_set(this->node);
+		this->concurrency_guard = new CNODE_disjoint_set(this);
 	}
 
 	Ciphertext::Ciphertext(const void * plaintext, const SecretKey & sk) {
@@ -447,7 +447,7 @@ namespace certFHE{
 		uint64_t * raw_ctxt = sk.encrypt_raw(plaintext);
 		this->node = new CCC(sk.getContext(), raw_ctxt, 1);
 
-		this->concurrency_guard = new CNODE_disjoint_set(this->node);
+		this->concurrency_guard = new CNODE_disjoint_set(this);
 	}
 
 	Ciphertext::Ciphertext(const Ciphertext & ctxt) {
@@ -463,7 +463,7 @@ namespace certFHE{
 
 			this->node = ctxt.node;
 
-			this->concurrency_guard = new CNODE_disjoint_set(this->node);
+			this->concurrency_guard = new CNODE_disjoint_set(this);
 			this->concurrency_guard->set_union(ctxt.concurrency_guard);
 		}
 		else

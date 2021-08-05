@@ -10,7 +10,7 @@ namespace certFHE {
 	class CNODE_disjoint_set {
 
 		/**
-		 * mutex that is required to be locked in order to to ANY operation on ANY set
+		 * mutex that is required to be locked in order to do ANY operation on ANY set
 		 * (so, there can only be one thread at a time that searches root / does union / removes)
 		**/
 		static std::mutex op_mutex; 
@@ -19,7 +19,7 @@ namespace certFHE {
 
 		std::mutex mtx;
 
-		CNODE * current;
+		Ciphertext * current;
 
 		int rank;  // upper bound for depth of the current set
 
@@ -30,7 +30,7 @@ namespace certFHE {
 
 		CNODE_disjoint_set() : current(0), rank(0), parent(0), child(0), prev(0), next(0) {}
 
-		CNODE_disjoint_set(CNODE * current_raw) : current(current_raw),
+		CNODE_disjoint_set(Ciphertext * current_raw) : current(current_raw),
 			rank(0), parent(0), child(0), prev(0), next(0) {}
 
 		CNODE_disjoint_set(const CNODE_disjoint_set & other) = delete;
@@ -46,6 +46,21 @@ namespace certFHE {
 		void set_union(CNODE_disjoint_set * other);
 
 		CNODE_disjoint_set * remove_from_set();
+
+		/**
+		 * NO OP_MUTEX LOCK
+		**/
+		CNODE_disjoint_set * __get_root();
+
+		/**
+		 * NO OP_MUTEX LOCK
+		**/
+		void __set_union(CNODE_disjoint_set * other);
+
+		/**
+		 * NO OP_MUTEX LOCK
+		**/
+		CNODE_disjoint_set * __remove_from_set();
 	};
 }
 
