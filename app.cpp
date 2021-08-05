@@ -1713,7 +1713,7 @@ void average_test(std::string randoms_file_source,
 		out);
 }
 
-void average_predefined_test(const char * path = "\\average_multithreading_test\\release_multithr_average_test.txt") {
+void average_predefined_test(const char * path = "\\average_multithreading_test\\debug_multithr_average_test.txt") {
 
 	std::fstream log(STATS_PATH + path, std::ios::out);
 

@@ -107,8 +107,6 @@ namespace certFHE {
 
 	CNODE_disjoint_set * CNODE_disjoint_set::__remove_from_set() {
 
-		std::lock_guard <std::mutex> guard(op_mutex);
-
 		if (this->child == 0) {
 
 			/**
