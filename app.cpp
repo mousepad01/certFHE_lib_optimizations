@@ -1713,7 +1713,7 @@ void average_test(std::string randoms_file_source,
 		out);
 }
 
-void average_predefined_test(const char * path = "\\average_multithreading_test\\debug_multithr_average_test.txt") {
+void average_predefined_test(const char * path = "\\average_multithreading_test\\release_nomultithr_average_test.txt") {
 
 	std::fstream log(STATS_PATH + path, std::ios::out);
 
@@ -1943,7 +1943,7 @@ void array_ctxt_predefined_test(const char * path = "\\array_ctxt_test\\tst.txt"
 	log.close();
 }
 
-int main(){
+int main2(){
 
 	{
 		//only_mul_test_time(25, 3, 2, 22);
@@ -1998,7 +1998,7 @@ int main(){
 
 		//dec_mul_add_test_time(100, 15, 25, 2, 15);
 
-		average_predefined_test();
+		//average_predefined_test();
 
 		//test_res_correct();
 

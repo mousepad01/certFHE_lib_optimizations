@@ -12,7 +12,7 @@ namespace certFHE {
 
 	uint64_t OPValues::max_ccc_deflen_size = 2048;
 	uint64_t OPValues::max_cadd_merge_size = 4096 * 4096;
-	uint64_t OPValues::max_cmul_merge_size = 4096 * 4096 * 4096;
+	uint64_t OPValues::max_cmul_merge_size = (uint64_t)4096 * 4096 * 4096;
 
 	/**
 	 * all these parameters set to some specific value

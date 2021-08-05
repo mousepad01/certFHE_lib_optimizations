@@ -654,7 +654,7 @@ namespace certFHE{
 	}
 	
 	Ciphertext & Ciphertext::operator = (const Ciphertext & c) {
-		std::cout << "assignment\n";
+
 		if (this->concurrency_guard == 0 || c.concurrency_guard == 0)
 			throw new std::runtime_error("concurrency guard cannot be null");
 
