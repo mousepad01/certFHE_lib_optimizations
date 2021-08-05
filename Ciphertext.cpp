@@ -20,25 +20,22 @@ namespace certFHE{
 
 	Plaintext Ciphertext::decrypt(const SecretKey & sk) const {
 
-		if (this->concurrency_guard != 0) {
+		if (this->concurrency_guard == 0) 
+			throw new std::runtime_error("concurrency guard cannot be null");
 
-			std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+		std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
 
-			if (this->node == 0)
-				throw new std::invalid_argument("Cannot operate on ciphertext with no value");
+		if (this->node == 0)
+			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
 
-			uint64_t dec = this->node->decrypt(sk);
-			return Plaintext(dec);
-		}
-		else
-			throw new std::invalid_argument("Cannot decrypt empty cipertext");
-		
+		uint64_t dec = this->node->decrypt(sk);
+		return Plaintext(dec);
 	}
 
 	Ciphertext Ciphertext::applyPermutation(const Permutation & permutation) {
 
 		if (this->concurrency_guard == 0)
-			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
+			throw new std::runtime_error("concurrency guard cannot be null");
 
 		Ciphertext permuted_ciphertext(*this);
 
@@ -58,7 +55,7 @@ namespace certFHE{
 	void Ciphertext::applyPermutation_inplace(const Permutation & permutation) {
 
 		if (this->concurrency_guard == 0)
-			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
+			throw new std::runtime_error("concurrency guard cannot be null");
 
 		std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
 
@@ -74,7 +71,7 @@ namespace certFHE{
 	Ciphertext Ciphertext::make_deep_copy() {
 
 		if (this->concurrency_guard == 0)
-			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
+			throw new std::runtime_error("concurrency guard cannot be null");
 
 		std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
 
@@ -209,40 +206,12 @@ namespace certFHE{
 
 #pragma region Operators
 
-	std::ostream & operator << (std::ostream & out, const Ciphertext & c) {
-
-#if MULTITHREADING_EXTENDED_SUPPORT
-
-		if (c.concurrency_guard == 0)
-			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
-
-		std::scoped_lock <std::mutex> lock(c.concurrency_guard->get_root()->mtx);
-
-#endif
-
-		if (c.node == 0)
-			out << "EMPTY CIPHERTEXT";
-
-		CCC * ccc_node = dynamic_cast <CCC *> (c.node);
-		if (ccc_node != 0) 
-			out << *ccc_node << '\n';
-		
-		else {
-
-			COP * cop_node = dynamic_cast <COP *> (c.node);
-			if (cop_node != 0)
-				out << *cop_node << '\n';
-		}
-
-		return out;
-	}
-
 	Ciphertext Ciphertext::operator + (const Ciphertext & c) const {
 
 #if MULTITHREADING_EXTENDED_SUPPORT
 
 		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
-			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
+			throw new std::runtime_error("concurrency guard cannot be null");
 
 		if(&c != this)
 			std::scoped_lock <std::mutex, std::mutex> lock(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
@@ -288,6 +257,13 @@ namespace certFHE{
 
 		Ciphertext add_result_c;
 		add_result_c.node = addition_result;
+
+#if MULTITHREADING_EXTENDED_SUPPORT
+
+		add_result_c.concurrency_guard->set_union(this->concurrency_guard);
+		add_result_c.concurrency_guard->set_union(c.concurrency_guard);
+
+#endif
 
 		return add_result_c;
 	}
@@ -345,6 +321,13 @@ namespace certFHE{
 		Ciphertext mul_result_c;
 		mul_result_c.node = mul_result;
 
+#if MULTITHREADING_EXTENDED_SUPPORT
+
+		mul_result_c.concurrency_guard->set_union(this->concurrency_guard);
+		mul_result_c.concurrency_guard->set_union(c.concurrency_guard);
+
+#endif
+
 		return mul_result_c;
 	}
 
@@ -400,6 +383,12 @@ namespace certFHE{
 
 		this->node->try_delete();
 		this->node = addition_result;
+
+#if MULTITHREADING_EXTENDED_SUPPORT
+
+		this->concurrency_guard->set_union(c.concurrency_guard);
+
+#endif
 
 		return *this;
 	}
@@ -457,15 +446,45 @@ namespace certFHE{
 		this->node->try_delete();
 		this->node = mul_result;
 
+#if MULTITHREADING_EXTENDED_SUPPORT
+
+		this->concurrency_guard->set_union(c.concurrency_guard);
+
+#endif
+
 		return *this;
 	}
 
 #if MULTITHREADING_EXTENDED_SUPPORT
 
+	std::ostream & operator << (std::ostream & out, const Ciphertext & c) {
+
+		if (c.concurrency_guard == 0) 
+			throw new std::runtime_error("concurrency guard cannot be null");
+
+		std::scoped_lock <std::mutex> lock(c.concurrency_guard->get_root()->mtx);
+
+		if (c.node == 0)
+			out << "EMPTY CIPHERTEXT";
+
+		CCC * ccc_node = dynamic_cast <CCC *> (c.node);
+		if (ccc_node != 0)
+			out << *ccc_node << '\n';
+
+		else {
+
+			COP * cop_node = dynamic_cast <COP *> (c.node);
+			if (cop_node != 0)
+				out << *cop_node << '\n';
+		}
+
+		return out;
+	}
+
 	Ciphertext & Ciphertext::operator = (const Ciphertext & c) {
 
-		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
-			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
+		if (this->concurrency_guard == 0 || c.concurrency_guard == 0)
+			throw new std::runtime_error("concurrency guard cannot be null");
 
 		if (&c != this)
 			std::scoped_lock <std::mutex, std::mutex> lock(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
@@ -485,8 +504,8 @@ namespace certFHE{
 
 	Ciphertext & Ciphertext::operator = (Ciphertext && c) {
 
-		if(this->concurrency_guard == 0)
-			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
+		if (this->concurrency_guard == 0)
+			throw new std::runtime_error("concurrency guard cannot be null");
 
 		std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
 
@@ -500,6 +519,25 @@ namespace certFHE{
 	}
 
 #else
+
+	std::ostream & operator << (std::ostream & out, const Ciphertext & c) {
+
+		if (c.node == 0)
+			out << "EMPTY CIPHERTEXT";
+
+		CCC * ccc_node = dynamic_cast <CCC *> (c.node);
+		if (ccc_node != 0)
+			out << *ccc_node << '\n';
+
+		else {
+
+			COP * cop_node = dynamic_cast <COP *> (c.node);
+			if (cop_node != 0)
+				out << *cop_node << '\n';
+		}
+
+		return out;
+	}
 
 	Ciphertext & Ciphertext::operator = (const Ciphertext & c) {
 
@@ -533,7 +571,10 @@ namespace certFHE{
 
 #if MULTITHREADING_EXTENDED_SUPPORT
 
-	Ciphertext::Ciphertext() : node(0), concurrency_guard(0) {}
+	Ciphertext::Ciphertext() : node(0) {
+		
+		this->concurrency_guard = new CNODE_disjoint_set(this);
+	}
 
 	Ciphertext::Ciphertext(const Plaintext & plaintext, const SecretKey & sk) {
 
@@ -554,7 +595,7 @@ namespace certFHE{
 	Ciphertext::Ciphertext(const Ciphertext & ctxt) {
 
 		if (ctxt.concurrency_guard == 0)
-			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
+			throw new std::runtime_error("concurrency guard cannot be null");
 
 		std::scoped_lock <std::mutex> lock(ctxt.concurrency_guard->get_root()->mtx);
 
@@ -568,7 +609,7 @@ namespace certFHE{
 			this->concurrency_guard->set_union(ctxt.concurrency_guard);
 		}
 		else
-			this->node = ctxt.node;
+			this->node = 0;
 	}
 
 	Ciphertext::Ciphertext(Ciphertext && ctxt) {
@@ -581,17 +622,25 @@ namespace certFHE{
 	Ciphertext::~Ciphertext() {
 
 		if (this->concurrency_guard != 0) {
+			
+			{
+				std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
 
-			std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+				if (this->node != 0)
+					this->node->try_delete();
 
-			if (this->node != 0)
-				this->node->try_delete();
+				this->concurrency_guard->remove_from_set();
+			}
 
-			this->concurrency_guard->remove_from_set();
+			/**
+			 * In the case the set only has one element, the lock needs to be released 
+			 * before it is deleted with the entire node
+			 * so the delete statement is outside the scoped_lock scope
+			**/
 			delete this->concurrency_guard;
 		}
-		else if (this->node != 0)
-			throw new std::runtime_error("concurrency guard is null, but node is not");
+		else 
+			throw new std::runtime_error("concurrency guard cannot be null");
 	}
 
 #else

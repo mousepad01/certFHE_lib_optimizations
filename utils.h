@@ -8,7 +8,7 @@
  * only when manipulating ciphertexts with no common internal node
  * (they were obtained from totally different ciphertexts, and no operation was performed between them)
  * Setting this macro to true enables support for these cases, 
- * although this might slow down (by a constant amount) all operations on all ciphertexts
+ * although this might slow down (by a significant amount) all operations on all ciphertexts
  * NOTE: deepcopies are not considered related (they can be safely used in a multithreading context in any case)
 **/
 #define MULTITHREADING_EXTENDED_SUPPORT true
