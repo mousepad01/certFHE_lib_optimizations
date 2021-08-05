@@ -3,8 +3,12 @@
 #if MULTITHREADING_EXTENDED_SUPPORT
 
 namespace certFHE {
+
+	std::mutex CNODE_disjoint_set::op_mutex;
 	
 	CNODE_disjoint_set * CNODE_disjoint_set::get_root() {
+
+		std::lock_guard <std::mutex> guard(op_mutex);
 
 		if (this->parent != 0) {
 

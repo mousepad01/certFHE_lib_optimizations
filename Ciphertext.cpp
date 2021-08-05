@@ -126,7 +126,10 @@ namespace certFHE{
 
 #if MULTITHREADING_EXTENDED_SUPPORT
 
-		std::scoped_lock <std::mutex>(c.concurrency_guard->get_root()->mtx);
+		if (c.concurrency_guard == 0)
+			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
+
+		std::scoped_lock <std::mutex> lock(c.concurrency_guard->get_root()->mtx);
 
 #endif
 
@@ -151,7 +154,10 @@ namespace certFHE{
 
 #if MULTITHREADING_EXTENDED_SUPPORT
 
-		std::scoped_lock <std::mutex, std::mutex>(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
+		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
+			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
+
+		std::scoped_lock <std::mutex, std::mutex> lock(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
 
 #endif
 
@@ -201,7 +207,10 @@ namespace certFHE{
 
 #if MULTITHREADING_EXTENDED_SUPPORT
 
-		std::scoped_lock <std::mutex, std::mutex>(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
+		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
+			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
+
+		std::scoped_lock <std::mutex, std::mutex> lock(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
 
 #endif
 
@@ -251,7 +260,10 @@ namespace certFHE{
 
 #if MULTITHREADING_EXTENDED_SUPPORT
 
-		std::scoped_lock <std::mutex, std::mutex>(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
+		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
+			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
+
+		std::scoped_lock <std::mutex, std::mutex> lock(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
 
 #endif
 
@@ -301,7 +313,10 @@ namespace certFHE{
 
 #if MULTITHREADING_EXTENDED_SUPPORT
 
-		std::scoped_lock <std::mutex, std::mutex>(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
+		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
+			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
+
+		std::scoped_lock <std::mutex, std::mutex> lock(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
 
 #endif
 
@@ -347,32 +362,32 @@ namespace certFHE{
 		return *this;
 	}
 
-	Ciphertext & Ciphertext::operator = (const Ciphertext & c) {
-
 #if MULTITHREADING_EXTENDED_SUPPORT
 
-		std::scoped_lock <std::mutex, std::mutex>(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
+	Ciphertext & Ciphertext::operator = (const Ciphertext & c) {
 
-#endif
-		
+		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
+			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
+
+		std::scoped_lock <std::mutex, std::mutex> lock(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
+
 		if (this->node != 0)
 			this->node->try_delete();
 
-		if(c.node != 0)
+		if (c.node != 0)
 			c.node->downstream_reference_count += 1;
 
 		this->node = c.node;
-		
+
 		return *this;
 	}
 
 	Ciphertext & Ciphertext::operator = (Ciphertext && c) {
 
-#if MULTITHREADING_EXTENDED_SUPPORT
+		if(this->concurrency_guard == 0)
+			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
 
-		std::scoped_lock <std::mutex>(this->concurrency_guard->get_root()->mtx);
-
-#endif
+		std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
 
 		if (this->node != 0)
 			this->node->try_delete();
@@ -383,9 +398,102 @@ namespace certFHE{
 		return *this;
 	}
 
+#else
+
+	Ciphertext & Ciphertext::operator = (const Ciphertext & c) {
+
+		if (this->node != 0)
+			this->node->try_delete();
+
+		if (c.node != 0)
+			c.node->downstream_reference_count += 1;
+
+		this->node = c.node;
+
+		return *this;
+	}
+
+	Ciphertext & Ciphertext::operator = (Ciphertext && c) {
+
+		if (this->node != 0)
+			this->node->try_delete();
+
+		this->node = c.node;
+		c.node = 0;
+
+		return *this;
+	}
+
+#endif
+
 #pragma endregion
 
 #pragma region Constructors and destructor
+
+#if MULTITHREADING_EXTENDED_SUPPORT
+
+	Ciphertext::Ciphertext() : node(0), concurrency_guard(0) {}
+
+	Ciphertext::Ciphertext(const Plaintext & plaintext, const SecretKey & sk) {
+
+		uint64_t * raw_ctxt = sk.encrypt_raw(plaintext);
+		this->node = new CCC(sk.getContext(), raw_ctxt, 1);
+
+		this->concurrency_guard = new CNODE_disjoint_set(this->node);
+	}
+
+	Ciphertext::Ciphertext(const void * plaintext, const SecretKey & sk) {
+
+		uint64_t * raw_ctxt = sk.encrypt_raw(plaintext);
+		this->node = new CCC(sk.getContext(), raw_ctxt, 1);
+
+		this->concurrency_guard = new CNODE_disjoint_set(this->node);
+	}
+
+	Ciphertext::Ciphertext(const Ciphertext & ctxt) {
+
+		if (ctxt.concurrency_guard == 0)
+			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
+
+		std::scoped_lock <std::mutex> lock(ctxt.concurrency_guard->get_root()->mtx);
+
+		if (ctxt.node != 0) {
+
+			ctxt.node->downstream_reference_count += 1;
+
+			this->node = ctxt.node;
+
+			this->concurrency_guard = new CNODE_disjoint_set(this->node);
+			this->concurrency_guard->set_union(ctxt.concurrency_guard);
+		}
+		else
+			this->node = ctxt.node;
+	}
+
+	Ciphertext::Ciphertext(Ciphertext && ctxt) {
+
+		this->node = ctxt.node;
+		this->concurrency_guard = ctxt.concurrency_guard;
+		ctxt.node = 0;
+	}
+
+	Ciphertext::~Ciphertext() {
+
+		if (this->concurrency_guard != 0) {
+
+			std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+
+			if (this->node != 0)
+				this->node->try_delete();
+
+			this->concurrency_guard->remove_from_set();
+			delete this->concurrency_guard;
+		}
+		else if (this->node != 0)
+			throw new std::runtime_error("concurrency guard is null, but node is not");
+	}
+
+#else
 
 	Ciphertext::Ciphertext() : node(0) {}
 
@@ -403,13 +511,7 @@ namespace certFHE{
 
 	Ciphertext::Ciphertext(const Ciphertext & ctxt) {
 
-#if MULTITHREADING_EXTENDED_SUPPORT
-
-		std::scoped_lock <std::mutex>(ctxt.concurrency_guard->get_root()->mtx);
-
-#endif
-
-		if(ctxt.node != 0)
+		if (ctxt.node != 0)
 			ctxt.node->downstream_reference_count += 1;
 
 		this->node = ctxt.node;
@@ -417,22 +519,18 @@ namespace certFHE{
 
 	Ciphertext::Ciphertext(Ciphertext && ctxt) {
 
-#if MULTITHREADING_EXTENDED_SUPPORT
-
-		std::scoped_lock <std::mutex>(ctxt.concurrency_guard->get_root()->mtx);
-
-#endif
-
 		this->node = ctxt.node;
 		ctxt.node = 0;
 	}
 
 	Ciphertext::~Ciphertext() {
 
-		if(this->node != 0)
+		if (this->node != 0)
 			this->node->try_delete();
 	}
 
+#endif
+	
 #pragma endregion
 
 #pragma region Getters and Setters

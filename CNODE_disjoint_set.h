@@ -9,6 +9,12 @@ namespace certFHE {
 
 	class CNODE_disjoint_set {
 
+		/**
+		 * mutex that is required to be locked in order to to ANY operation on ANY set
+		 * (so, there can only be one thread at a time that searches root / does union / removes)
+		**/
+		static std::mutex op_mutex; 
+
 	public:
 
 		std::mutex mtx;
