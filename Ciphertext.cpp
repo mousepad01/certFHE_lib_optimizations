@@ -654,7 +654,7 @@ namespace certFHE{
 	}
 	
 	Ciphertext & Ciphertext::operator = (const Ciphertext & c) {
-
+		std::cout << "assignment\n";
 		if (this->concurrency_guard == 0 || c.concurrency_guard == 0)
 			throw new std::runtime_error("concurrency guard cannot be null");
 
@@ -662,8 +662,6 @@ namespace certFHE{
 		std::mutex & c_mtx = c.concurrency_guard->get_root()->mtx;
 
 		if (&this_mtx != &c_mtx) {
-
-			CNODE_disjoint_set * c_g_this = this->concurrency_guard;
 
 			CNODE_disjoint_set * removed;
 
@@ -678,10 +676,13 @@ namespace certFHE{
 
 				this->node = c.node;
 
+				removed = this->concurrency_guard->remove_from_set();
+
+				if (removed->current != this)
+					std::cout << "err assign\n";
+
 				this->concurrency_guard = new CNODE_disjoint_set(this);
 				this->concurrency_guard->set_union(c.concurrency_guard);
-
-				removed = c_g_this->remove_from_set();
 			}
 
 			delete removed;
@@ -693,27 +694,26 @@ namespace certFHE{
 	}
 	
 	Ciphertext & Ciphertext::operator = (Ciphertext && c) {
-
+		
 		if (this->concurrency_guard == 0 || c.concurrency_guard == 0)
 			throw new std::runtime_error("concurrency guard cannot be null");
-
-		CNODE_disjoint_set * concurrency_guard_aux = this->concurrency_guard;
 
 		CNODE_disjoint_set * removed;
 
 		{	
-			std::scoped_lock <std::mutex> lock(concurrency_guard_aux->get_root()->mtx);
+			std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
 
 			if (this->node != 0)
 				this->node->try_delete();
 
+			removed = this->concurrency_guard->remove_from_set();
+
 			this->node = c.node;
 			this->concurrency_guard = c.concurrency_guard;
+			this->concurrency_guard->current = this;
 
 			c.node = 0;
 			c.concurrency_guard = 0;
-
-			removed = concurrency_guard_aux->remove_from_set();
 		}
 		
 		delete removed;
@@ -998,15 +998,16 @@ namespace certFHE{
 
 		this->node = ctxt.node;
 		this->concurrency_guard = ctxt.concurrency_guard;
+		this->concurrency_guard->current = this;
 
 		ctxt.node = 0;
 		ctxt.concurrency_guard = 0;
 	}
 
 	Ciphertext::~Ciphertext() {
-
+		
 		if (this->concurrency_guard != 0) {
-
+			
 			CNODE_disjoint_set * removed;
 			
 			{
@@ -1020,7 +1021,7 @@ namespace certFHE{
 
 			/**
 			 * In the case the set only has one element, the lock needs to be released 
-			 * before it is deleted with the entire node
+			 * before it can be deleted with the entire node
 			 * so the delete statement is outside the scoped_lock scope
 			**/
 			delete removed;
