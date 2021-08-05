@@ -64,8 +64,6 @@ namespace certFHE {
 
 	void CNODE_disjoint_set::__set_union(CNODE_disjoint_set * other) {
 
-		std::lock_guard <std::mutex> guard(op_mutex);
-
 		CNODE_disjoint_set * fst_root = this->__get_root();
 		CNODE_disjoint_set * snd_root = other->__get_root();
 
@@ -148,8 +146,8 @@ namespace certFHE {
 			 *		 but the tree is already locked in the destructor, so there is no need to lock again
 			**/
 
-			std::swap(this->current, this->child->current);
 			std::swap(this->current->concurrency_guard, this->child->current->concurrency_guard);
+			std::swap(this->current, this->child->current);
 			
 			return this->child->__remove_from_set();
 		}

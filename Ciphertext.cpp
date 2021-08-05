@@ -214,9 +214,12 @@ namespace certFHE{
 		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
 			throw new std::runtime_error("concurrency guard cannot be null");
 
-		if (&c != this) {
+		std::mutex & this_mtx = this->concurrency_guard->get_root()->mtx;
+		std::mutex & c_mtx = c.concurrency_guard->get_root()->mtx;
+
+		if (&this_mtx != &c_mtx) {
 			
-			std::scoped_lock <std::mutex, std::mutex> lock(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
+			std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
 
 			if (c.node == 0 || this->node == 0)
 				throw new std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -264,7 +267,7 @@ namespace certFHE{
 		}
 		else {
 			
-			std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+			std::scoped_lock <std::mutex> lock(this_mtx);
 
 			if (c.node == 0 || this->node == 0)
 				throw new std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -316,9 +319,12 @@ namespace certFHE{
 		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
 
-		if (&c != this) {
+		std::mutex & this_mtx = this->concurrency_guard->get_root()->mtx;
+		std::mutex & c_mtx = c.concurrency_guard->get_root()->mtx;
 
-			std::scoped_lock <std::mutex, std::mutex> lock(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
+		if (&this_mtx != &c_mtx) {
+
+			std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
 
 			if (c.node == 0 || this->node == 0)
 				throw new std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -366,7 +372,7 @@ namespace certFHE{
 		}
 		else {
 
-			std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+			std::scoped_lock <std::mutex> lock(this_mtx);
 
 			if (c.node == 0 || this->node == 0)
 				throw new std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -420,9 +426,12 @@ namespace certFHE{
 		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
 
-		if (&c != this) {
+		std::mutex & this_mtx = this->concurrency_guard->get_root()->mtx;
+		std::mutex & c_mtx = c.concurrency_guard->get_root()->mtx;
 
-			std::scoped_lock <std::mutex, std::mutex> lock(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
+		if (&this_mtx != &c_mtx) {
+
+			std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
 
 			if (c.node == 0 || this->node == 0)
 				throw new std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -469,7 +478,7 @@ namespace certFHE{
 		}
 		else {
 
-			std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+			std::scoped_lock <std::mutex> lock(this_mtx);
 
 			if (c.node == 0 || this->node == 0)
 				throw new std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -521,9 +530,12 @@ namespace certFHE{
 		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
 
-		if (&c != this) {
+		std::mutex & this_mtx = this->concurrency_guard->get_root()->mtx;
+		std::mutex & c_mtx = c.concurrency_guard->get_root()->mtx;
 
-			std::scoped_lock <std::mutex, std::mutex> lock(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
+		if (&this_mtx != &c_mtx) {
+
+			std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
 
 			if (c.node == 0 || this->node == 0)
 				throw new std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -570,7 +582,7 @@ namespace certFHE{
 		}
 		else {
 
-			std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+			std::scoped_lock <std::mutex> lock(this_mtx);
 
 			if (c.node == 0 || this->node == 0)
 				throw new std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -646,12 +658,17 @@ namespace certFHE{
 		if (this->concurrency_guard == 0 || c.concurrency_guard == 0)
 			throw new std::runtime_error("concurrency guard cannot be null");
 
-		if (&c != this) {
+		std::mutex & this_mtx = this->concurrency_guard->get_root()->mtx;
+		std::mutex & c_mtx = c.concurrency_guard->get_root()->mtx;
+
+		if (&this_mtx != &c_mtx) {
 
 			CNODE_disjoint_set * c_g_this = this->concurrency_guard;
 
+			CNODE_disjoint_set * removed;
+
 			{
-				std::scoped_lock <std::mutex, std::mutex> lock(c_g_this->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
+				std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
 
 				if (this->node != 0)
 					this->node->try_delete();
@@ -664,10 +681,10 @@ namespace certFHE{
 				this->concurrency_guard = new CNODE_disjoint_set(this);
 				this->concurrency_guard->set_union(c.concurrency_guard);
 
-				c_g_this->remove_from_set();
+				removed = c_g_this->remove_from_set();
 			}
 
-			delete c_g_this;
+			delete removed;
 
 			return *this;
 		}
@@ -682,22 +699,24 @@ namespace certFHE{
 
 		CNODE_disjoint_set * concurrency_guard_aux = this->concurrency_guard;
 
-		{
+		CNODE_disjoint_set * removed;
+
+		{	
 			std::scoped_lock <std::mutex> lock(concurrency_guard_aux->get_root()->mtx);
 
 			if (this->node != 0)
 				this->node->try_delete();
 
 			this->node = c.node;
+			this->concurrency_guard = c.concurrency_guard;
+
 			c.node = 0;
+			c.concurrency_guard = 0;
 
-			this->concurrency_guard = new CNODE_disjoint_set(this);
-			this->concurrency_guard->set_union(c.concurrency_guard);
-
-			concurrency_guard_aux->remove_from_set();
+			removed = concurrency_guard_aux->remove_from_set();
 		}
 		
-		delete concurrency_guard_aux;
+		delete removed;
 		
 		return *this;
 	}
@@ -979,12 +998,16 @@ namespace certFHE{
 
 		this->node = ctxt.node;
 		this->concurrency_guard = ctxt.concurrency_guard;
+
 		ctxt.node = 0;
+		ctxt.concurrency_guard = 0;
 	}
 
 	Ciphertext::~Ciphertext() {
 
 		if (this->concurrency_guard != 0) {
+
+			CNODE_disjoint_set * removed;
 			
 			{
 				std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
@@ -992,7 +1015,7 @@ namespace certFHE{
 				if (this->node != 0)
 					this->node->try_delete();
 
-				this->concurrency_guard->remove_from_set();
+				removed = this->concurrency_guard->remove_from_set();
 			}
 
 			/**
@@ -1000,10 +1023,10 @@ namespace certFHE{
 			 * before it is deleted with the entire node
 			 * so the delete statement is outside the scoped_lock scope
 			**/
-			delete this->concurrency_guard;
+			delete removed;
 		}
-		else 
-			throw new std::runtime_error("concurrency guard cannot be null");
+		else if (this->node != 0)
+			throw new std::runtime_error("concurrency guard null but node not null");
 	}
 
 #else
@@ -1052,6 +1075,9 @@ namespace certFHE{
 
 #if MULTITHREADING_EXTENDED_SUPPORT
 
+		if (this->concurrency_guard == 0)
+			throw new std::runtime_error("concurrency guard cannot be null");
+
 		std::scoped_lock <std::mutex>(this->concurrency_guard->get_root()->mtx);
 
 #endif
@@ -1065,6 +1091,9 @@ namespace certFHE{
 	Context Ciphertext::getContext() const {
 
 #if MULTITHREADING_EXTENDED_SUPPORT
+
+		if (this->concurrency_guard == 0)
+			throw new std::runtime_error("concurrency guard cannot be null");
 
 		std::scoped_lock <std::mutex>(this->concurrency_guard->get_root()->mtx);
 
