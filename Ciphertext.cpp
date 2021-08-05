@@ -37,6 +37,7 @@ namespace certFHE{
 		if (this->concurrency_guard == 0)
 			throw new std::runtime_error("concurrency guard cannot be null");
 
+		// guard locked inside copy constructor
 		Ciphertext permuted_ciphertext(*this);
 
 		std::scoped_lock <std::mutex> lock(permuted_ciphertext.concurrency_guard->get_root()->mtx);
@@ -206,18 +207,504 @@ namespace certFHE{
 
 #pragma region Operators
 
-	Ciphertext Ciphertext::operator + (const Ciphertext & c) const {
-
 #if MULTITHREADING_EXTENDED_SUPPORT
+
+	Ciphertext Ciphertext::operator + (const Ciphertext & c) const {
 
 		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
 			throw new std::runtime_error("concurrency guard cannot be null");
 
-		if(&c != this)
+		if (&c != this) {
+			
 			std::scoped_lock <std::mutex, std::mutex> lock(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
-		else
+
+			if (c.node == 0 || this->node == 0)
+				throw new std::invalid_argument("Cannot operate on ciphertext with no value");
+
+			CNODE * addition_result;
+
+			CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+			CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
+			//int thistype = this->node->getclass();
+			//int othertype = c.node->getclass();
+
+			/**
+			 * When two ctxt refer to a CCC, operations are performed directly
+			**/
+			if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+				addition_result = CCC::add(ccc_thisnode, ccc_othernode);
+
+			//if (!thistype && !othertype && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size) 
+				//addition_result = CCC::add((CCC *)this->node, (CCC *)c.node);
+
+			else {
+
+				/**
+				 * The called method will treat arguments as different nodes
+				 * So the reference count temporarily increases
+				 * (although not necessary ???)
+				**/
+				if (this->node == c.node)
+					this->node->downstream_reference_count += 1;
+
+				addition_result = Ciphertext::add(this->node, c.node);
+
+				if (this->node == c.node)
+					this->node->downstream_reference_count -= 1;
+			}
+
+			Ciphertext add_result_c;
+			add_result_c.node = addition_result;
+
+			add_result_c.concurrency_guard->set_union(this->concurrency_guard);
+			add_result_c.concurrency_guard->set_union(c.concurrency_guard);
+
+			return add_result_c;
+		}
+		else {
+			
 			std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
-#endif
+
+			if (c.node == 0 || this->node == 0)
+				throw new std::invalid_argument("Cannot operate on ciphertext with no value");
+
+			CNODE * addition_result;
+
+			CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+			CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
+			//int thistype = this->node->getclass();
+			//int othertype = c.node->getclass();
+
+			/**
+			 * When two ctxt refer to a CCC, operations are performed directly
+			**/
+			if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+				addition_result = CCC::add(ccc_thisnode, ccc_othernode);
+
+			//if (!thistype && !othertype && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size) 
+				//addition_result = CCC::add((CCC *)this->node, (CCC *)c.node);
+
+			else {
+
+				/**
+				 * The called method will treat arguments as different nodes
+				 * So the reference count temporarily increases
+				 * (although not necessary ???)
+				**/
+				if (this->node == c.node)
+					this->node->downstream_reference_count += 1;
+
+				addition_result = Ciphertext::add(this->node, c.node);
+
+				if (this->node == c.node)
+					this->node->downstream_reference_count -= 1;
+			}
+
+			Ciphertext add_result_c;
+			add_result_c.node = addition_result;
+
+			add_result_c.concurrency_guard->set_union(this->concurrency_guard);
+
+			return add_result_c;
+		}
+	}
+
+	Ciphertext Ciphertext::operator * (const Ciphertext & c) const {
+
+		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
+			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
+
+		if (&c != this) {
+
+			std::scoped_lock <std::mutex, std::mutex> lock(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
+
+			if (c.node == 0 || this->node == 0)
+				throw new std::invalid_argument("Cannot operate on ciphertext with no value");
+
+			CNODE * mul_result;
+
+			CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+			CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
+			//int thistype = this->node->getclass();
+			//int othertype = c.node->getclass();
+
+			/**
+			 * When two ctxt refer to a CCC, operations are performed directly
+			**/
+			if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+				mul_result = CCC::multiply(ccc_thisnode, ccc_othernode);
+
+			//if (!thistype && !othertype && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+				//mul_result = CCC::multiply((CCC *)this->node, (CCC *)c.node);
+
+			else {
+
+				/**
+				 * The called method will treat arguments as different nodes
+				 * So the reference count temporarily increases
+				 * (although not necessary ???)
+				**/
+				if (this->node == c.node)
+					this->node->downstream_reference_count += 1;
+
+				mul_result = Ciphertext::multiply(this->node, c.node);
+
+				if (this->node == c.node)
+					this->node->downstream_reference_count -= 1;
+			}
+
+			Ciphertext mul_result_c;
+			mul_result_c.node = mul_result;
+
+			mul_result_c.concurrency_guard->set_union(this->concurrency_guard);
+			mul_result_c.concurrency_guard->set_union(c.concurrency_guard);
+
+			return mul_result_c;
+		}
+		else {
+
+			std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+
+			if (c.node == 0 || this->node == 0)
+				throw new std::invalid_argument("Cannot operate on ciphertext with no value");
+
+			CNODE * mul_result;
+
+			CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+			CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
+			//int thistype = this->node->getclass();
+			//int othertype = c.node->getclass();
+
+			/**
+			 * When two ctxt refer to a CCC, operations are performed directly
+			**/
+			if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+				mul_result = CCC::multiply(ccc_thisnode, ccc_othernode);
+
+			//if (!thistype && !othertype && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+				//mul_result = CCC::multiply((CCC *)this->node, (CCC *)c.node);
+
+			else {
+
+				/**
+				 * The called method will treat arguments as different nodes
+				 * So the reference count temporarily increases
+				 * (although not necessary ???)
+				**/
+				if (this->node == c.node)
+					this->node->downstream_reference_count += 1;
+
+				mul_result = Ciphertext::multiply(this->node, c.node);
+
+				if (this->node == c.node)
+					this->node->downstream_reference_count -= 1;
+			}
+
+			Ciphertext mul_result_c;
+			mul_result_c.node = mul_result;
+
+			mul_result_c.concurrency_guard->set_union(this->concurrency_guard);
+
+			return mul_result_c;
+		}
+
+		
+	}
+
+	Ciphertext & Ciphertext::operator += (const Ciphertext & c) {
+
+		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
+			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
+
+		if (&c != this) {
+
+			std::scoped_lock <std::mutex, std::mutex> lock(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
+
+			if (c.node == 0 || this->node == 0)
+				throw new std::invalid_argument("Cannot operate on ciphertext with no value");
+
+			CNODE * addition_result;
+
+			CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+			CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
+			//int thistype = this->node->getclass();
+			//int othertype = c.node->getclass();
+
+			/**
+			 * When two ctxt refer to a CCC, operations are performed directly
+			**/
+			if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+				addition_result = CCC::add(ccc_thisnode, ccc_othernode);
+
+			//if (!thistype && !othertype && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+				//addition_result = CCC::add((CCC *)this->node, (CCC *)c.node);
+
+			else {
+
+				/**
+				 * The called method will treat arguments as different nodes
+				 * So the reference count temporarily increases
+				 * (although not necessary ???)
+				**/
+				if (this->node == c.node)
+					this->node->downstream_reference_count += 1;
+
+				addition_result = Ciphertext::add(this->node, c.node);
+
+				if (this->node == c.node)
+					this->node->downstream_reference_count -= 1;
+			}
+
+			this->node->try_delete();
+			this->node = addition_result;
+
+			this->concurrency_guard->set_union(c.concurrency_guard);
+
+			return *this;
+		}
+		else {
+
+			std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+
+			if (c.node == 0 || this->node == 0)
+				throw new std::invalid_argument("Cannot operate on ciphertext with no value");
+
+			CNODE * addition_result;
+
+			CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+			CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
+			//int thistype = this->node->getclass();
+			//int othertype = c.node->getclass();
+
+			/**
+			 * When two ctxt refer to a CCC, operations are performed directly
+			**/
+			if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+				addition_result = CCC::add(ccc_thisnode, ccc_othernode);
+
+			//if (!thistype && !othertype && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+				//addition_result = CCC::add((CCC *)this->node, (CCC *)c.node);
+
+			else {
+
+				/**
+				 * The called method will treat arguments as different nodes
+				 * So the reference count temporarily increases
+				 * (although not necessary ???)
+				**/
+				if (this->node == c.node)
+					this->node->downstream_reference_count += 1;
+
+				addition_result = Ciphertext::add(this->node, c.node);
+
+				if (this->node == c.node)
+					this->node->downstream_reference_count -= 1;
+			}
+
+			this->node->try_delete();
+			this->node = addition_result;
+
+			return *this;
+		}
+
+		
+	}
+
+	Ciphertext & Ciphertext::operator *= (const Ciphertext & c) {
+
+		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
+			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
+
+		if (&c != this) {
+
+			std::scoped_lock <std::mutex, std::mutex> lock(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
+
+			if (c.node == 0 || this->node == 0)
+				throw new std::invalid_argument("Cannot operate on ciphertext with no value");
+
+			CNODE * mul_result;
+
+			CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+			CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
+			//int thistype = this->node->getclass();
+			//int othertype = c.node->getclass();
+
+			/**
+			 * When two ctxt refer to a CCC, operations are performed directly
+			**/
+			if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+				mul_result = CCC::multiply(ccc_thisnode, ccc_othernode);
+
+			//if (!thistype && !othertype && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+				//mul_result = CCC::multiply((CCC *)this->node, (CCC *)c.node);
+
+			else {
+
+				/**
+				 * The called method will treat arguments as different nodes
+				 * So the reference count temporarily increases
+				 * (although not necessary ???)
+				**/
+				if (this->node == c.node)
+					this->node->downstream_reference_count += 1;
+
+				mul_result = Ciphertext::multiply(this->node, c.node);
+
+				if (this->node == c.node)
+					this->node->downstream_reference_count -= 1;
+			}
+
+			this->node->try_delete();
+			this->node = mul_result;
+
+			this->concurrency_guard->set_union(c.concurrency_guard);
+
+			return *this;
+		}
+		else {
+
+			std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+
+			if (c.node == 0 || this->node == 0)
+				throw new std::invalid_argument("Cannot operate on ciphertext with no value");
+
+			CNODE * mul_result;
+
+			CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+			CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
+			//int thistype = this->node->getclass();
+			//int othertype = c.node->getclass();
+
+			/**
+			 * When two ctxt refer to a CCC, operations are performed directly
+			**/
+			if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+				mul_result = CCC::multiply(ccc_thisnode, ccc_othernode);
+
+			//if (!thistype && !othertype && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+				//mul_result = CCC::multiply((CCC *)this->node, (CCC *)c.node);
+
+			else {
+
+				/**
+				 * The called method will treat arguments as different nodes
+				 * So the reference count temporarily increases
+				 * (although not necessary ???)
+				**/
+				if (this->node == c.node)
+					this->node->downstream_reference_count += 1;
+
+				mul_result = Ciphertext::multiply(this->node, c.node);
+
+				if (this->node == c.node)
+					this->node->downstream_reference_count -= 1;
+			}
+
+			this->node->try_delete();
+			this->node = mul_result;
+
+			return *this;
+		}
+
+		
+	}
+
+	std::ostream & operator << (std::ostream & out, const Ciphertext & c) {
+
+		if (c.concurrency_guard == 0) 
+			throw new std::runtime_error("concurrency guard cannot be null");
+
+		std::scoped_lock <std::mutex> lock(c.concurrency_guard->get_root()->mtx);
+
+		if (c.node == 0)
+			out << "EMPTY CIPHERTEXT";
+
+		CCC * ccc_node = dynamic_cast <CCC *> (c.node);
+		if (ccc_node != 0)
+			out << *ccc_node << '\n';
+
+		else {
+
+			COP * cop_node = dynamic_cast <COP *> (c.node);
+			if (cop_node != 0)
+				out << *cop_node << '\n';
+		}
+
+		return out;
+	}
+	
+	Ciphertext & Ciphertext::operator = (const Ciphertext & c) {
+
+		if (this->concurrency_guard == 0 || c.concurrency_guard == 0)
+			throw new std::runtime_error("concurrency guard cannot be null");
+
+		if (&c != this) {
+
+			CNODE_disjoint_set * c_g_this = this->concurrency_guard;
+
+			{
+				std::scoped_lock <std::mutex, std::mutex> lock(c_g_this->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
+
+				if (this->node != 0)
+					this->node->try_delete();
+
+				if (c.node != 0)
+					c.node->downstream_reference_count += 1;
+
+				this->node = c.node;
+
+				this->concurrency_guard = new CNODE_disjoint_set(this);
+				this->concurrency_guard->set_union(c.concurrency_guard);
+
+				c_g_this->remove_from_set();
+			}
+
+			delete c_g_this;
+
+			return *this;
+		}
+		else
+			return *this;
+	}
+	
+	Ciphertext & Ciphertext::operator = (Ciphertext && c) {
+
+		if (this->concurrency_guard == 0 || c.concurrency_guard == 0)
+			throw new std::runtime_error("concurrency guard cannot be null");
+
+		CNODE_disjoint_set * concurrency_guard_aux = this->concurrency_guard;
+
+		{
+			std::scoped_lock <std::mutex> lock(concurrency_guard_aux->get_root()->mtx);
+
+			if (this->node != 0)
+				this->node->try_delete();
+
+			this->node = c.node;
+			c.node = 0;
+
+			this->concurrency_guard = new CNODE_disjoint_set(this);
+			this->concurrency_guard->set_union(c.concurrency_guard);
+
+			concurrency_guard_aux->remove_from_set();
+		}
+		
+		delete concurrency_guard_aux;
+		
+		return *this;
+	}
+
+#else
+
+	Ciphertext Ciphertext::operator + (const Ciphertext & c) const {
 
 		if (c.node == 0 || this->node == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -238,7 +725,7 @@ namespace certFHE{
 
 		//if (!thistype && !othertype && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size) 
 			//addition_result = CCC::add((CCC *)this->node, (CCC *)c.node);
-			
+
 		else {
 
 			/**
@@ -258,29 +745,10 @@ namespace certFHE{
 		Ciphertext add_result_c;
 		add_result_c.node = addition_result;
 
-#if MULTITHREADING_EXTENDED_SUPPORT
-
-		add_result_c.concurrency_guard->set_union(this->concurrency_guard);
-		add_result_c.concurrency_guard->set_union(c.concurrency_guard);
-
-#endif
-
 		return add_result_c;
 	}
 
 	Ciphertext Ciphertext::operator * (const Ciphertext & c) const {
-
-#if MULTITHREADING_EXTENDED_SUPPORT
-
-		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
-			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
-
-		if (&c != this)
-			std::scoped_lock <std::mutex, std::mutex> lock(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
-		else
-			std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
-
-#endif
 
 		if (c.node == 0 || this->node == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -321,29 +789,10 @@ namespace certFHE{
 		Ciphertext mul_result_c;
 		mul_result_c.node = mul_result;
 
-#if MULTITHREADING_EXTENDED_SUPPORT
-
-		mul_result_c.concurrency_guard->set_union(this->concurrency_guard);
-		mul_result_c.concurrency_guard->set_union(c.concurrency_guard);
-
-#endif
-
 		return mul_result_c;
 	}
 
 	Ciphertext & Ciphertext::operator += (const Ciphertext & c) {
-
-#if MULTITHREADING_EXTENDED_SUPPORT
-
-		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
-			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
-
-		if (&c != this)
-			std::scoped_lock <std::mutex, std::mutex> lock(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
-		else
-			std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
-
-#endif
 
 		if (c.node == 0 || this->node == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -384,28 +833,10 @@ namespace certFHE{
 		this->node->try_delete();
 		this->node = addition_result;
 
-#if MULTITHREADING_EXTENDED_SUPPORT
-
-		this->concurrency_guard->set_union(c.concurrency_guard);
-
-#endif
-
 		return *this;
 	}
 
 	Ciphertext & Ciphertext::operator *= (const Ciphertext & c) {
-
-#if MULTITHREADING_EXTENDED_SUPPORT
-
-		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
-			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
-
-		if (&c != this)
-			std::scoped_lock <std::mutex, std::mutex> lock(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
-		else
-			std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
-
-#endif
 
 		if (c.node == 0 || this->node == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -446,79 +877,8 @@ namespace certFHE{
 		this->node->try_delete();
 		this->node = mul_result;
 
-#if MULTITHREADING_EXTENDED_SUPPORT
-
-		this->concurrency_guard->set_union(c.concurrency_guard);
-
-#endif
-
 		return *this;
 	}
-
-#if MULTITHREADING_EXTENDED_SUPPORT
-
-	std::ostream & operator << (std::ostream & out, const Ciphertext & c) {
-
-		if (c.concurrency_guard == 0) 
-			throw new std::runtime_error("concurrency guard cannot be null");
-
-		std::scoped_lock <std::mutex> lock(c.concurrency_guard->get_root()->mtx);
-
-		if (c.node == 0)
-			out << "EMPTY CIPHERTEXT";
-
-		CCC * ccc_node = dynamic_cast <CCC *> (c.node);
-		if (ccc_node != 0)
-			out << *ccc_node << '\n';
-
-		else {
-
-			COP * cop_node = dynamic_cast <COP *> (c.node);
-			if (cop_node != 0)
-				out << *cop_node << '\n';
-		}
-
-		return out;
-	}
-
-	Ciphertext & Ciphertext::operator = (const Ciphertext & c) {
-
-		if (this->concurrency_guard == 0 || c.concurrency_guard == 0)
-			throw new std::runtime_error("concurrency guard cannot be null");
-
-		if (&c != this)
-			std::scoped_lock <std::mutex, std::mutex> lock(this->concurrency_guard->get_root()->mtx, c.concurrency_guard->get_root()->mtx);
-		else
-			std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
-
-		if (this->node != 0)
-			this->node->try_delete();
-
-		if (c.node != 0)
-			c.node->downstream_reference_count += 1;
-
-		this->node = c.node;
-
-		return *this;
-	}
-
-	Ciphertext & Ciphertext::operator = (Ciphertext && c) {
-
-		if (this->concurrency_guard == 0)
-			throw new std::runtime_error("concurrency guard cannot be null");
-
-		std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
-
-		if (this->node != 0)
-			this->node->try_delete();
-
-		this->node = c.node;
-		c.node = 0;
-
-		return *this;
-	}
-
-#else
 
 	std::ostream & operator << (std::ostream & out, const Ciphertext & c) {
 
@@ -540,6 +900,9 @@ namespace certFHE{
 	}
 
 	Ciphertext & Ciphertext::operator = (const Ciphertext & c) {
+
+		if (&c == this)
+			return *this;
 
 		if (this->node != 0)
 			this->node->try_delete();
