@@ -307,7 +307,6 @@ namespace certFHE {
 
 			for (uint64_t i = 0; i < snd_u64_cnt; i++)
 				res[i + fst_u64_cnt] = snd_c[i];
-
 		}
 		else {
 
@@ -396,7 +395,7 @@ namespace certFHE {
 #ifdef __AVX512F__
 
 				uint64_t k = 0;
-				for (; k + 4 <= deflen_to_u64; k += 4) {
+				for (; k + 8 <= deflen_to_u64; k += 8) {
 
 					__m512i avx_fst_c = _mm512_loadu_si512((const void *)(fst_c + fst_ch_i + k));
 					__m512i avx_snd_c = _mm512_loadu_si512((const void *)(snd_c + snd_ch_j + k));

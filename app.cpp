@@ -1985,7 +1985,7 @@ void average_m_thrfct_test(const std::vector <int> & randoms, int randindex,
 					randindex += 3;
 
 					*cs[k] += *cs[i] * *cs[j];
-
+					
 					val[k] ^= (val[i] & val[j]);
 
 					break;
@@ -2047,6 +2047,16 @@ void average_m_thrfct_test(const std::vector <int> & randoms, int randindex,
 					out.flush();
 					out_mutex.unlock();
 				}
+
+#if MULTITHREADING_EXTENDED_SUPPORT
+
+				out_mutex.lock();
+				out << "root mutex for thread " << std::this_thread::get_id()
+					<< " ctxt " << pos << " is " << cs[pos]->concurrency_guard->get_root()->mtx.native_handle() << '\n';
+				out.flush();
+				out_mutex.unlock();
+
+#endif
 			}
 
 			delete cs[max_index];
@@ -2416,7 +2426,7 @@ void average_m_predefined_test(const char * path = "\\average_multithreading_tes
 
 	std::fstream log(STATS_PATH + path, std::ios::out);
 
-	average_m_test("avgtestops.bin", 500, 40, 60, 65, 1247, 16, log);
+	average_m_test("avgtestops.bin", 100, 6, 70, 65, 1247, 16, log);
 
 	log.close();
 }
