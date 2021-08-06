@@ -2422,7 +2422,7 @@ void average_m_test(std::string randoms_file_source,
 		out);
 }
 
-void average_m_predefined_test(const char * path = "\\average_multithreading_test\\release_11thr_cccopt_multithr_stats.txt") {
+void average_m_predefined_test(const char * path = "\\average_multithreading_test\\release_11thr_cccopt_multithr2_stats.txt") {
 
 	std::fstream log(STATS_PATH + path, std::ios::out);
 

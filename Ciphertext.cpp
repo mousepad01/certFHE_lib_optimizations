@@ -18,9 +18,12 @@ namespace certFHE{
 
 #if MULTITHREADING_EXTENDED_SUPPORT
 
-	Plaintext Ciphertext::decrypt(const SecretKey & sk) const {
+	uint64_t Ciphertext::decrypt_raw(const SecretKey & sk) const {
 
-		if (this->concurrency_guard == 0) 
+		if (this->node->context != sk.getContext())
+			throw new std::runtime_error("ciphertext and secret key do not have the same context");
+
+		if (this->concurrency_guard == 0)
 			throw new std::runtime_error("concurrency guard cannot be null");
 
 		std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
@@ -29,7 +32,7 @@ namespace certFHE{
 			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
 
 		uint64_t dec = this->node->decrypt(sk);
-		return Plaintext(dec);
+		return dec;
 	}
 
 	Ciphertext Ciphertext::applyPermutation(const Permutation & permutation) {
@@ -87,13 +90,16 @@ namespace certFHE{
 
 #else
 
-	Plaintext Ciphertext::decrypt(const SecretKey & sk) const {
+	uint64_t Ciphertext::decrypt_raw(const SecretKey & sk) const {
+
+		if (this->node->context != sk.getContext())
+			throw new std::runtime_error("ciphertext and secret key do not have the same context");
 
 		if (this->node == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
 
 		uint64_t dec = this->node->decrypt(sk);
-		return Plaintext(dec);
+		return dec;
 	}
 
 	Ciphertext Ciphertext::applyPermutation(const Permutation & permutation) {
@@ -211,6 +217,9 @@ namespace certFHE{
 
 	Ciphertext Ciphertext::operator + (const Ciphertext & c) const {
 
+		if (this->node->context != c.node->context)
+			throw new std::runtime_error("ciphertexts do not have the same context");
+
 		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
 			throw new std::runtime_error("concurrency guard cannot be null");
 
@@ -303,6 +312,9 @@ namespace certFHE{
 
 	Ciphertext Ciphertext::operator * (const Ciphertext & c) const {
 
+		if (this->node->context != c.node->context)
+			throw new std::runtime_error("ciphertexts do not have the same context");
+
 		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
 
@@ -380,6 +392,9 @@ namespace certFHE{
 
 	Ciphertext & Ciphertext::operator += (const Ciphertext & c) {
 
+		if (this->node->context != c.node->context)
+			throw new std::runtime_error("ciphertexts do not have the same context");
+
 		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
 
@@ -455,6 +470,9 @@ namespace certFHE{
 	}
 
 	Ciphertext & Ciphertext::operator *= (const Ciphertext & c) {
+
+		if (this->node->context != c.node->context)
+			throw new std::runtime_error("ciphertexts do not have the same context");
 
 		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
@@ -556,6 +574,9 @@ namespace certFHE{
 	
 	Ciphertext & Ciphertext::operator = (const Ciphertext & c) {
 
+		if (this->node->context != c.node->context)
+			throw new std::runtime_error("ciphertexts do not have the same context");
+
 		if (this->concurrency_guard == 0 || c.concurrency_guard == 0)
 			throw new std::runtime_error("concurrency guard cannot be null");
 
@@ -592,6 +613,9 @@ namespace certFHE{
 	}
 	
 	Ciphertext & Ciphertext::operator = (Ciphertext && c) {
+
+		if (this->node->context != c.node->context)
+			throw new std::runtime_error("ciphertexts do not have the same context");
 		
 		if (this->concurrency_guard == 0 || c.concurrency_guard == 0)
 			throw new std::runtime_error("concurrency guard cannot be null");
@@ -622,6 +646,9 @@ namespace certFHE{
 #else
 
 	Ciphertext Ciphertext::operator + (const Ciphertext & c) const {
+
+		if (this->node->context != c.node->context)
+			throw new std::runtime_error("ciphertexts do not have the same context");
 
 		if (c.node == 0 || this->node == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -667,6 +694,9 @@ namespace certFHE{
 
 	Ciphertext Ciphertext::operator * (const Ciphertext & c) const {
 
+		if (this->node->context != c.node->context)
+			throw new std::runtime_error("ciphertexts do not have the same context");
+
 		if (c.node == 0 || this->node == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
 
@@ -711,6 +741,9 @@ namespace certFHE{
 
 	Ciphertext & Ciphertext::operator += (const Ciphertext & c) {
 
+		if (this->node->context != c.node->context)
+			throw new std::runtime_error("ciphertexts do not have the same context");
+
 		if (c.node == 0 || this->node == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
 
@@ -754,6 +787,9 @@ namespace certFHE{
 	}
 
 	Ciphertext & Ciphertext::operator *= (const Ciphertext & c) {
+
+		if (this->node->context != c.node->context)
+			throw new std::runtime_error("ciphertexts do not have the same context");
 
 		if (c.node == 0 || this->node == 0)
 			throw new std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -818,6 +854,9 @@ namespace certFHE{
 
 	Ciphertext & Ciphertext::operator = (const Ciphertext & c) {
 
+		if (this->node->context != c.node->context)
+			throw new std::runtime_error("ciphertexts do not have the same context");
+
 		if (&c == this)
 			return *this;
 
@@ -833,6 +872,9 @@ namespace certFHE{
 	}
 
 	Ciphertext & Ciphertext::operator = (Ciphertext && c) {
+
+		if (this->node->context != c.node->context)
+			throw new std::runtime_error("ciphertexts do not have the same context");
 
 		if (this->node != 0)
 			this->node->try_delete();
@@ -851,10 +893,7 @@ namespace certFHE{
 
 #if MULTITHREADING_EXTENDED_SUPPORT
 
-	Ciphertext::Ciphertext() : node(0) {
-		
-		this->concurrency_guard = new CNODE_disjoint_set(this);
-	}
+	Ciphertext::Ciphertext() : node(0), concurrency_guard(new CNODE_disjoint_set(this)) {}
 
 	Ciphertext::Ciphertext(const Plaintext & plaintext, const SecretKey & sk) {
 
@@ -968,7 +1007,7 @@ namespace certFHE{
 	
 #pragma endregion
 
-#pragma region Getters and Setters
+#pragma region Getters
 
 	uint64_t Ciphertext::getLen() const {
 

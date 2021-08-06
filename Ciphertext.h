@@ -45,10 +45,6 @@ namespace certFHE{
 			* @param[in] fst: node corresponding to the first ciphertext
 			* @param[in] snd: node corresponding to the second ciphertext
 			* @return value: the result CNODE as a pointer
-			*
-			* NOTE: this function treats the nodes as being different
-			*		so the caller should manually increase the reference count (and then decrease it?)
-			*		when calling this function with the same pointer in both arguments
 		**/
 		static CNODE * add(CNODE * fst, CNODE * snd);
 
@@ -57,18 +53,11 @@ namespace certFHE{
 			* @param[in] fst: node corresponding to the first ciphertext
 			* @param[in] snd: node corresponding to the second ciphertext
 			* @return value: the result CNODE as a pointer
-			*
-			* NOTE: this function treats the nodes as being different
-			*		so the caller should manually increase the reference count (and then decrease it?)
-			*		when calling this function with the same pointer in both arguments
 		**/
 		static CNODE * multiply(CNODE * fst, CNODE * snd);
 
 	public:
 
-		/**
-			* Default constructor
-		**/
 		Ciphertext();
 
 		/**
@@ -85,52 +74,34 @@ namespace certFHE{
 		**/
 		Ciphertext(const void * plaintext, const SecretKey & sk);
 
-		/**
-			* Copy constructor
-		**/
 		Ciphertext(const Ciphertext & ctxt);
 
-		/**
-			* Move constructor
-		**/
 		Ciphertext(Ciphertext && ctxt);
 
-		/**
-			* Destructor
-		**/
 		virtual ~Ciphertext();
 
 		/**
-			* Getters and setters
+			* @return value: (estimated) ciphertext number of default length chunks, 
+			*				if the ciphertext were stored (real number of ciphertext chunks might be smaller
+			*												due to lazy operations and copy-on-write)
+			*							
 		**/
 		uint64_t getLen() const;
+
 		Context getContext() const;
         
-		/**
-			* Friend class for operator<<
-		**/
 		friend std::ostream & operator << (std::ostream & out, const Ciphertext & c);
         
-		/**
-			* Operators for addition of ciphertexts
-		**/
 		Ciphertext operator + (const Ciphertext & c) const;
+
 		Ciphertext & operator += (const Ciphertext & c);
 
-		/**
-			* Operators for multiplication of ciphertexts
-		**/
 		Ciphertext operator * (const Ciphertext & c) const;
+
 		Ciphertext & operator *= (const Ciphertext & c);
 
-		/**
-			* Operator for copy assignment
-		**/ 
 		Ciphertext & operator = (const Ciphertext & c);
 
-		/**
-			* Operator for move assignment
-		**/
 		Ciphertext & operator = (Ciphertext && c);
 
 		/**
@@ -142,7 +113,7 @@ namespace certFHE{
 		/**
 			* Permute the current ciphertext and return a new object
 			* @param[in] permutation: constant reference to permutation object
-			* @return value : permuted ciphertext
+			* @return value: permuted ciphertext
 		**/
 		Ciphertext applyPermutation(const Permutation & permutation);
 
@@ -152,16 +123,23 @@ namespace certFHE{
 			* When one wants to parralelise operations on different ctxt
 			* That originally shared at least a common CNODE node 
 			* (usually when one of them was obtained by applying an operation on the other)
-			* @return value : new ciphertext
+			* @return value: new ciphertext
 		**/
 		Ciphertext make_deep_copy();
 
 		/**
 			* Method for decrypting current ciphertext
 			* @param[in] sk: key under which decryption takes place
+			* @return value: decrypted value as an uint64_t (0 or 1)
+		**/
+		uint64_t decrypt_raw(const SecretKey & sk) const;
+
+		/**
+			* Method for decrypting current ciphertext
+			* @param[in] sk: key under which decryption takes place
 			* @return value: decrypted value as a plaintext object
 		**/
-		Plaintext decrypt(const SecretKey & sk) const;
+		Plaintext decrypt(const SecretKey & sk) const { return Plaintext(this->decrypt_raw(sk)); }
 
 	};
 }

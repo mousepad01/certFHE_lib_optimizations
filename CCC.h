@@ -41,18 +41,12 @@ namespace certFHE {
 		**/
 		CNODE * upstream_shortening() override { return 0; }
 
-		inline CNODE * make_copy() override {
-
-			return new CCC(*this);
-		}
+		CNODE * make_copy() override { return new CCC(*this); }
 
 		/**
 		 * For CCC, same as make_copy
 		**/
-		inline CNODE * make_deep_copy() override {
-
-			return new CCC(*this);
-		}
+		CNODE * make_deep_copy() override { return new CCC(*this); }
 
 		//int getclass() { return 0; }
 

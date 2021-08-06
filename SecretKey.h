@@ -16,8 +16,6 @@ namespace certFHE {
     **/
     class SecretKey{
 
-    private:
-
         uint64_t * s;                    // secret positions from the vector [0,n-1]. 
 		uint64_t * s_mask;				 // secret key as a bitmask
 
@@ -42,9 +40,6 @@ namespace certFHE {
 
     public:
 
-        /**
-         * Deleted default constructor
-        **/
         SecretKey() = delete;
 
         /**
@@ -53,10 +48,6 @@ namespace certFHE {
         **/
         SecretKey(const Context & context);
 
-        /**
-         * Copy constructor
-         * @param[in] secKey: SecretKey object 
-        **/
         SecretKey(const SecretKey & secKey);
 
         /**
@@ -78,14 +69,14 @@ namespace certFHE {
 		 * @param[in] plaintext: input to be encrypted ({0,1})
 		 * @return value: Ciphertext object
 		**/
-		Ciphertext encrypt(const Plaintext & plaintext) const;
+		Ciphertext encrypt(const Plaintext & plaintext) const { return Ciphertext(plaintext, *this); }
 
         /**
          * Decrypts a ciphertext
          * @param[in] ciphertext: ciphertext to be decrypted 
          * @return value: decrypted plaintext
         **/
-        Plaintext decrypt(Ciphertext & ciphertext);
+        Plaintext decrypt(Ciphertext & ciphertext) { return ciphertext.decrypt(*this); }
 
         /**
          * Apply the permutation on current secret key
@@ -100,13 +91,8 @@ namespace certFHE {
         **/
         SecretKey applyPermutation(const Permutation & permutation);
 
-		/**
-		 * Decrypt in chunks -- only for multithreading --
-		**/
-		friend void chunk_decrypt(Args * raw_args);
-
         /**
-         * Friend class for operator<<
+         * Friend class for operator <<
         **/
         friend std::ostream & operator << (std::ostream & out, const SecretKey & c);
 
@@ -116,30 +102,27 @@ namespace certFHE {
         **/
         SecretKey & operator = (const SecretKey & secKey);
 
-        /**
-         * Destructor
-        **/
         virtual ~SecretKey();
 
         /**
-         * Getters
+         * @return value: number of elements in the secret key (s vector length)
         **/
-        uint64_t getLength() const;
+		uint64_t getLength() const { return this->length; }
 
 		/**
 		* DO NOT DELETE THIS POINTER
 	   **/
-		Context * getContext() const;
+		Context * getContext() const { return this->certFHEContext; }
 
         /**
          * DO NOT DELETE THIS POINTER
         **/
-        uint64_t* getKey() const;
+		uint64_t* getKey() const { return this->s; }
 
 		/**
 		 * DO NOT DELETE THIS POINTER
 		**/
-		uint64_t* getMaskKey() const;
+		uint64_t* getMaskKey() const { return this->s_mask; }
 
     };
 
