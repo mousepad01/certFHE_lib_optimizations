@@ -5,6 +5,10 @@
 
 namespace certFHE {
 
+	/**
+	 * Template singleton class that implements a threadpool
+	 * (Currently) used only with T = Args * (defined in ArgClasses.h)
+	**/
 	template <typename T>
 	class Threadpool {
 
@@ -42,19 +46,19 @@ namespace certFHE {
 		**/
 		void set_threadcount(const int new_threadcount);
 
-		/*
-		Creating the threadpool
-		*/
+		/**
+		 * Creating the threadpool
+		**/
 		static Threadpool <T> * make_threadpool();
 
-		/*
-		Schedules given tasks in FIFO order
-		*/
+		/**
+		 * Schedules given tasks in FIFO order
+		**/
 		void add_task(std::function <void(T)> to_execute, T to_execute_args);
 
-		/*
-		Closes threadpool
-		*/
+		/**
+		 * Closes the threadpool
+		**/
 		void close();
 	};
 

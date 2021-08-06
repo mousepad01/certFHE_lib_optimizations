@@ -7,6 +7,12 @@ namespace certFHE {
 
 	class CMUL;
 
+	/**
+	 * Class that marks an addition operation
+	 * Every node contained in this->nodes list is (/should eventually be) added
+	 * (CADD = Ciphertext Addition)
+	 * NOTE: check GlobalParams for parametrization of this class
+	**/
 	class CADD : public COP {
 
 	protected:
@@ -16,6 +22,10 @@ namespace certFHE {
 		CADD() = delete;
 		CADD(Context * context): COP(context) {}
 
+		/**
+		 * Creates (intentional) shallow copy
+		 * GOOD to use, at least in a single threaded environment
+		**/
 		CADD(const CADD & other): COP(other) {}
 		CADD(const CADD && other): COP(other) {}
 
@@ -30,21 +40,18 @@ namespace certFHE {
 
 		// Getters, setters and methods
 
-		/**
-		 * This function tries to merge as many operations as possible
-		 * NOTE: the changes are done inplace,
-		 * and if there is another reference to this node, changes will also reflect there
-		 * it should not be a problem, because the result after merged operations remains the same
-		**/
-		void upstream_merging();
+		void upstream_merging() override;
 
-		uint64_t decrypt(const SecretKey & sk);
+		uint64_t decrypt(const SecretKey & sk) override;
 
-		CNODE * permute(const Permutation & perm, bool force_deep_copy);
+		CNODE * permute(const Permutation & perm, bool force_deep_copy) override;
 
-		CNODE * make_copy();
+		CNODE * make_copy() override;
 
-		//int getclass() { return 1; }
+		CNODE * make_deep_copy() override;
+
+		// Methods that merge two nodes
+		// Only called internally by other methods of this class
 
 		static CNODE * upstream_merging(CNODE * fst, CNODE * snd);
 

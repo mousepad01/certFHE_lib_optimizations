@@ -9,7 +9,7 @@ namespace certFHE {
 			std::cout << "ERROR creating CCC node: deflen " << deflen_cnt
 				<< " exceeds limit " << OPValues::max_ccc_deflen_size << "\n";
 
-			throw new std::invalid_argument("ERROR creating CCC node: deflen exceeds limit");
+			throw std::invalid_argument("ERROR creating CCC node: deflen exceeds limit");
 		}
 		else {
 
@@ -47,12 +47,7 @@ namespace certFHE {
 		if (this->ctxt != 0)
 			delete[] ctxt;
 		else
-			std::cout << "WARNING: CCC ctxt pointer is null, should never be\n";
-	}
-
-	CNODE * CCC::make_copy() {
-
-		return new CCC(*this);
+			std::cout << "CCC ctxt pointer should never be null (check the rest of the code)";
 	}
 
 	void CCC::chunk_decrypt(Args * raw_args) {
@@ -312,7 +307,6 @@ namespace certFHE {
 
 			for (uint64_t i = 0; i < snd_u64_cnt; i++)
 				res[i + fst_u64_cnt] = snd_c[i];
-
 		}
 		else {
 
@@ -401,7 +395,7 @@ namespace certFHE {
 #ifdef __AVX512F__
 
 				uint64_t k = 0;
-				for (; k + 4 <= deflen_to_u64; k += 4) {
+				for (; k + 8 <= deflen_to_u64; k += 8) {
 
 					__m512i avx_fst_c = _mm512_loadu_si512((const void *)(fst_c + fst_ch_i + k));
 					__m512i avx_snd_c = _mm512_loadu_si512((const void *)(snd_c + snd_ch_j + k));
@@ -648,7 +642,7 @@ namespace certFHE {
 		}
 		else
 			to_permute = new CCC(*this);
-		MTValues::perm_m_threshold = 10;
+		
 		if (deflen_cnt < MTValues::perm_m_threshold) {
 			
 			for (uint64_t i = 0; i < deflen_cnt; i++) {

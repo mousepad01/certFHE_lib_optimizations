@@ -29,9 +29,9 @@ namespace certFHE{
 		return *this;
 	}
 
-	std::ostream & operator << (std::ostream &out, const SecretKey &c) {
+	std::ostream & operator << (std::ostream & out, const SecretKey & c) {
 
-		uint64_t* key = c.getKey();
+		uint64_t * key = c.getKey();
 
 		for(uint64_t i = 0; i < c.getLength(); i++)
 			out << key[i] << " ";
@@ -61,19 +61,6 @@ namespace certFHE{
 		}
 
 		this->s_mask = mask;
-
-		/*for (int u = 0; u < default_len; u++) {
-
-			for (int b = 63; b >= 0; b--)
-				std::cout << ((s_mask[u] >> b) & 0x01);
-
-			std::cout << " ";
-		}
-		std::cout << '\n';
-
-		for (int i = 0; i < length; i++)
-			std::cout << s[i] << " ";
-		std::cout << '\n';*/
 	}
 
 	uint64_t * SecretKey::encrypt_raw_bit(unsigned char bit) const {
@@ -85,36 +72,35 @@ namespace certFHE{
 		//@TODO: generate only a random of size n-d instead of n-d randoms()
 		uint64_t * res = new uint64_t[n];
 
-		if (bit == 0x01)
-		{
+		if (bit == 0x01) {
+
 			for (uint64_t i = 0; i < n; i++)
 				if (Helper::exists(s, d, i))
 					res[i] = 0x01;
 				else
 					res[i] = rand() % 2;
 		}
-		else
-		{
+		else {
+
 			uint64_t sRandom = (uint64_t)rand() % d;
 			uint64_t v = 0x00;
 			bool vNok = true;
 
 			for (uint64_t i = 0; i < n; i++)
-				if (i != s[sRandom])
-				{
+
+				if (i != s[sRandom]){
+
 					res[i] = rand() % 2;
 
-					if (Helper::exists(s, d, i))
-					{
-						if (vNok)
-						{
+					if (Helper::exists(s, d, i)) {
+
+						if (vNok) {
+
 							v = res[i];
 							vNok = false;
 						}
 						v = v & res[i];
-
 					}
-
 				}
 
 			if (v == 0x01)
@@ -129,6 +115,16 @@ namespace certFHE{
 #pragma endregion
 
 #pragma region Public methods
+
+	Ciphertext SecretKey::encrypt(const Plaintext & plaintext) const {
+
+		return Ciphertext(plaintext, *this); 
+	}
+
+	Plaintext SecretKey::decrypt(Ciphertext & ciphertext) {
+
+		return ciphertext.decrypt(*this); 
+	}
 
 	uint64_t * SecretKey::encrypt_raw(const Plaintext & plaintext) const {
 
@@ -147,27 +143,26 @@ namespace certFHE{
 		uint64_t * _encValues = new uint64_t[len];
 
 		uint64_t uint64index = 0;
-		for (uint64_t step = 0; step < div; step++)
-		{
+		for (uint64_t step = 0; step < div; step++) {
+
 			_encValues[uint64index] = 0x00;
-			for (uint64_t s = 0; s < 64; s++)
-			{
+			for (uint64_t s = 0; s < 64; s++) {
+
 				uint64_t inter = (vect[step * 64 + s] & 0x01) << (sizeof(uint64_t) * 8 - 1 - s);
 				_encValues[uint64index] = _encValues[uint64index] | inter;
 			}
 			uint64index++;
 		}
 
-		if (rem != 0)
-		{
+		if (rem != 0) {
+
 			_encValues[uint64index] = 0x00;
-			for (uint64_t r = 0; r < rem; r++)
-			{
+			for (uint64_t r = 0; r < rem; r++) {
+
 				uint64_t inter = (vect[div * 64 + r] & 0x01) << (sizeof(uint64_t) * 8 - 1 - r);
-				_encValues[uint64index] = (_encValues[uint64index]) | (inter);
+				_encValues[uint64index] = _encValues[uint64index] | inter;
 
 			}
-
 		}
 
 		delete[] vect;
@@ -192,27 +187,25 @@ namespace certFHE{
 		uint64_t * _encValues = new uint64_t[len];
 
 		uint64_t uint64index = 0;
-		for (uint64_t step = 0; step < div; step++)
-		{
+		for (uint64_t step = 0; step < div; step++) {
+
 			_encValues[uint64index] = 0x00;
-			for (uint64_t s = 0; s < 64; s++)
-			{
+			for (uint64_t s = 0; s < 64; s++) {
+
 				uint64_t inter = (vect[step * 64 + s] & 0x01) << (sizeof(uint64_t) * 8 - 1 - s);
 				_encValues[uint64index] = _encValues[uint64index] | inter;
 			}
 			uint64index++;
 		}
 
-		if (rem != 0)
-		{
+		if (rem != 0) {
+
 			_encValues[uint64index] = 0x00;
-			for (uint64_t r = 0; r < rem; r++)
-			{
+			for (uint64_t r = 0; r < rem; r++) {
+
 				uint64_t inter = (vect[div * 64 + r] & 0x01) << (sizeof(uint64_t) * 8 - 1 - r);
-				_encValues[uint64index] = (_encValues[uint64index]) | (inter);
-
+				_encValues[uint64index] = _encValues[uint64index] | inter;
 			}
-
 		}
 
 		delete[] vect;
@@ -220,37 +213,27 @@ namespace certFHE{
 		return _encValues;
 	}
 
-	Ciphertext SecretKey::encrypt(const Plaintext & plaintext) const {
+	void SecretKey::applyPermutation_inplace(const Permutation & permutation){
 
-		return Ciphertext(plaintext, *this);
-	}
+		uint64_t * perm = permutation.getPermutation();
 
-	Plaintext SecretKey::decrypt(Ciphertext & ciphertext){   
-
-		return ciphertext.decrypt(*this);
-	}
-
-	void SecretKey::applyPermutation_inplace(const Permutation& permutation){
-
-		uint64_t *perm = permutation.getPermutation();
-
-		uint64_t *current_key = new uint64_t[this->certFHEContext->getN()];
+		uint64_t * current_key = new uint64_t[this->certFHEContext->getN()];
 		
-		for(uint64_t i = 0;i<this->certFHEContext->getN();i++)
+		for(uint64_t i = 0; i < this->certFHEContext->getN(); i++)
 			current_key[i] = 0;
 
-		for(uint64_t i = 0;i<length;i++)
-			current_key[s[i]] =1;
+		for(uint64_t i = 0; i < length; i++)
+			current_key[s[i]] = 1;
 
-		uint64_t *temp = new uint64_t[this->certFHEContext->getN()];
+		uint64_t * temp = new uint64_t[this->certFHEContext->getN()];
 
 		for (uint64_t i = 0; i < this->certFHEContext->getN(); i++)
 			temp[i] = current_key[perm[i]];
 
-		uint64_t *newKey = new uint64_t[length];
+		uint64_t * newKey = new uint64_t[length];
 		uint64_t index = 0; 
-		for(uint64_t i = 0; i<this->certFHEContext->getN(); i++)
-		{
+		for(uint64_t i = 0; i < this->certFHEContext->getN(); i++) {
+
 			if (temp[i] == 1)
 				newKey[index++] = i;
 		}
@@ -265,35 +248,11 @@ namespace certFHE{
 		delete [] temp;
 	}
 
-	SecretKey SecretKey::applyPermutation(const Permutation& permutation)
-	{
+	SecretKey SecretKey::applyPermutation(const Permutation & permutation) {
+
 		SecretKey secKey(*this);
 		secKey.applyPermutation_inplace(permutation);
 		return secKey;
-	}
-
-#pragma endregion
-
-#pragma region Getters and setters
-
-	uint64_t  SecretKey::getLength() const {
-
-		return this->length;
-	}
-
-	Context * SecretKey::getContext() const {
-
-		return this->certFHEContext;
-	}
-
-	uint64_t * SecretKey::getMaskKey() const{
-
-		return this->s_mask;
-	}
-
-	uint64_t * SecretKey::getKey() const {
-
-		return this->s;
 	}
 
 #pragma endregion
@@ -303,9 +262,9 @@ namespace certFHE{
 	SecretKey::SecretKey(const Context & context) {	
 
 		// seed once again the PRNG with local time
-		srand((unsigned int)time(NULL));
+		srand((unsigned int)time(0));
 
-		this->certFHEContext = new certFHE::Context(context);
+		this->certFHEContext = new Context(context);
 
 		uint64_t _d = certFHEContext->getD();
 		uint64_t _n = certFHEContext->getN();
@@ -315,8 +274,7 @@ namespace certFHE{
 
 		uint64_t count = 0;
 		bool go = true;
-		while (go)
-		{
+		while (go) {
 
 			uint64_t temp = rand() % _n;
 			if (Helper::exists(s,_d, temp))
@@ -353,22 +311,22 @@ namespace certFHE{
 		for (uint64_t i = 0; i < default_len; i++)
 			s_mask[i] = 0;
 
-		if (this->s != nullptr)
-		{
+		if (this->s != nullptr) {
+
 			delete [] this->s;
 			this->s = nullptr;
 		}
 
-		if (this->s_mask != nullptr)
-		{
+		if (this->s_mask != nullptr) {
+
 			delete[] this->s_mask;
 			this->s_mask = nullptr;
 		}
 		
 		this->length = -1;
 
-		if (this->certFHEContext != nullptr)
-		{
+		if (this->certFHEContext != nullptr) {
+
 			delete this->certFHEContext;
 			this->certFHEContext = nullptr;
 		}

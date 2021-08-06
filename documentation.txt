@@ -1,5 +1,7 @@
 diferite surse parcurse, pe langa documentatiile oficiale
 
+https://www.cs.princeton.edu/courses/archive/fall05/cos528/handouts/Union-Find%20with%20Constant%20Time%20Deletions.pdf
+https://chromium.googlesource.com/chromium/src/+/refs/tags/72.0.3626.81/styleguide/c++/c++-dos-and-donts.md
 http://www.open-std.org/jtc1/sc22/wg21/docs/TR18015.pdf
 https://stackoverflow.com/questions/50832505/xcode-and-bittest-function
 https://stackoverflow.com/questions/53562739/if-i-have-an-8-bit-value-is-there-any-advantage-to-using-an-8-bit-register-inst

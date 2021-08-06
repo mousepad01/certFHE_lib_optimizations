@@ -118,6 +118,25 @@ namespace certFHE {
 		return new CMUL(*this);
 	}
 
+	CNODE * CMUL::make_deep_copy() {
+
+		CMUL * deepcopy = new CMUL(this->context);
+		deepcopy->deflen_count = this->deflen_count;
+
+		CNODE_list * deepcopy_nodes = deepcopy->nodes->next;
+		CNODE_list * thisnodes = this->nodes->next;
+
+		while (thisnodes != 0 && thisnodes->current != 0) {
+
+			CNODE * current_deepcopy = thisnodes->current->make_deep_copy();
+			deepcopy_nodes->insert_next_element(current_deepcopy);
+
+			thisnodes = thisnodes->next;
+		}
+
+		return deepcopy;
+	}
+
 	std::ostream & operator << (std::ostream & out, const CMUL & cmul) {
 
 		out << "CADD\n" << static_cast <const COP &> (cmul) << '\n';
