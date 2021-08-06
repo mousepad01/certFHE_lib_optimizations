@@ -5,11 +5,19 @@
 
 namespace certFHE {
 
+	/**
+	 * Class that stores the actual ciphertext chunks in memory
+	 * (CCC = Contiguous Ciphertext Chunk)
+	**/
 	class CCC : public CNODE {
 
 	public:
 
-		uint64_t * ctxt;
+		/**
+		 * Ciphertext as uint64_t array
+		 * Check GlobalParams for parametrization of its length
+		**/
+		uint64_t * ctxt; 
 
 		// Constructors - destructors
 
@@ -41,14 +49,15 @@ namespace certFHE {
 		**/
 		CNODE * upstream_shortening() override { return 0; }
 
+		/**
+		 * Makes a DEEP COPY (copies ctxt array into a new one and wraps it into a new CCC object)
+		**/
 		CNODE * make_copy() override { return new CCC(*this); }
 
 		/**
-		 * For CCC, same as make_copy
+		 * (ONLY for CCC) same as make_copy
 		**/
 		CNODE * make_deep_copy() override { return new CCC(*this); }
-
-		//int getclass() { return 0; }
 
 		/**
 			* Add two chunks of ciphertxts --- for multithreading only ---
@@ -92,9 +101,6 @@ namespace certFHE {
 		**/
 		static CCC * multiply(CCC * fst, CCC * snd);
 
-		/**
-		 * Decryption function
-		**/
 		uint64_t decrypt(const SecretKey & sk) override;
 
 		/**

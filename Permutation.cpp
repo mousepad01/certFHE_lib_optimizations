@@ -4,7 +4,7 @@
 namespace certFHE{
 
 #pragma region Public methods
-
+	//TODO : fix so that inversions are also set
 	Permutation Permutation::getInverse() {
 
 		uint64_t * p = new uint64_t[length];
@@ -62,7 +62,7 @@ namespace certFHE{
 		return *this;
 	}
 
-	Permutation Permutation::operator + (const Permutation& permB) const {
+	Permutation Permutation::operator + (const Permutation & permB) const {
 
 		if (length != permB.getLength())
 			return Permutation();         
@@ -201,7 +201,7 @@ namespace certFHE{
 #endif
 	}
 
-	/*Permutation::Permutation(const uint64_t * perm, const uint64_t len) : Permutation() {
+	Permutation::Permutation(const uint64_t * perm, const uint64_t len) : Permutation() {
 
 		this->permutation = new uint64_t[len];
 
@@ -224,7 +224,7 @@ namespace certFHE{
 
 		for (uint64_t i = 0; i < inv_cnt; i++)
 			this->inversions[i] = invs[i];
-	}*/
+	}
 
 	Permutation::Permutation(const Permutation & perm) {
 

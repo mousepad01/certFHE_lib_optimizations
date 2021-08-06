@@ -43,17 +43,21 @@ namespace certFHE{
 		virtual ~Context() {}
 
         /**
-         * Equal operator
-         * @param[in] context: a const. ref. to a Context object
+         * Assignment operator
+         * @param[in] context: a const reference to a Context object
          * @return value : a deep copy of the context parameter
         **/
         Context & operator = (const Context & context);
 
-        /**
-         * Friend class for operator<<
-        **/
-        friend std::ostream & operator << (std::ostream & out, const Context & c);
+		bool operator == (const Context & other) const {
 
+			return this->N == other.N && this->D == other.D
+				&& this->S == other.S && this->defaultLen == other.defaultLen;
+		}
+
+		bool operator != (const Context & other) const { return !(*this == other); }
+
+        friend std::ostream & operator << (std::ostream & out, const Context & c);
 
         /**
          * Getters and setters

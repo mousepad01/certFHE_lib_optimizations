@@ -2050,11 +2050,11 @@ void average_m_thrfct_test(const std::vector <int> & randoms, int randindex,
 
 #if MULTITHREADING_EXTENDED_SUPPORT
 
-				out_mutex.lock();
+				/*out_mutex.lock();
 				out << "root mutex for thread " << std::this_thread::get_id()
 					<< " ctxt " << pos << " is " << cs[pos]->concurrency_guard->get_root()->mtx.native_handle() << '\n';
 				out.flush();
-				out_mutex.unlock();
+				out_mutex.unlock();*/
 
 #endif
 			}
@@ -2311,8 +2311,8 @@ void average_m_test(const std::vector <int> randoms,
 
 			for (int thr = 0; thr < THR_CNT; thr++) {
 
-				thr_sk[thr] = new SecretKey(sk);
-				thr_perm[thr] = new Permutation(perm);
+				//thr_sk[thr] = new SecretKey(sk);
+				//thr_perm[thr] = new Permutation(perm);
 
 				thr_args[thr] = new Ciphertext *[LEFT_CTXT_CNT];
 				thr_val[thr] = new int[LEFT_CTXT_CNT];
@@ -2334,7 +2334,7 @@ void average_m_test(const std::vector <int> randoms,
 
 				thrs[thr] = new std::thread(&average_m_thrfct_test, std::ref(randoms),
 					randindex + rand_offset,
-					std::ref(*thr_sk[thr]), std::ref(*thr_perm[thr]), thr_args[thr], thr_val[thr],
+					std::ref(sk), std::ref(perm), thr_args[thr], thr_val[thr],
 					std::ref(out), std::ref(out_mutex), ROUNDS_PER_THREAD);
 
 				rand_offset += ROUNDS_PER_THREAD * 10;
@@ -2347,14 +2347,14 @@ void average_m_test(const std::vector <int> randoms,
 
 				delete thr_val[thr];
 				delete thr_args[thr];
-				delete thr_sk[thr];
-				delete thr_perm[thr];
+				//delete thr_sk[thr];
+				//delete thr_perm[thr];
 			}
 
 			delete thr_args;
 			delete thr_val;
-			delete thr_sk;
-			delete thr_perm;
+			//delete thr_sk;
+			//delete thr_perm;
 
 			for (int c_left = 0; c_left <= max_index; c_left++)
 				delete cs[c_left];

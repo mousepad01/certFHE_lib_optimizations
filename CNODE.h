@@ -9,6 +9,11 @@
 
 namespace certFHE {
 
+	/**
+	 * Abstract base class for all internal nodes
+	 * Used to implement a ciphertext
+	 * (CNODE = Ciphertext Node)
+	**/
 	class CNODE {
 
 	public:

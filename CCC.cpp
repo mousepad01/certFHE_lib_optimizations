@@ -9,7 +9,7 @@ namespace certFHE {
 			std::cout << "ERROR creating CCC node: deflen " << deflen_cnt
 				<< " exceeds limit " << OPValues::max_ccc_deflen_size << "\n";
 
-			throw new std::invalid_argument("ERROR creating CCC node: deflen exceeds limit");
+			throw std::invalid_argument("ERROR creating CCC node: deflen exceeds limit");
 		}
 		else {
 
@@ -47,7 +47,7 @@ namespace certFHE {
 		if (this->ctxt != 0)
 			delete[] ctxt;
 		else
-			std::cout << "WARNING: CCC ctxt pointer is null, should never be\n";
+			std::cout << "CCC ctxt pointer should never be null (check the rest of the code)";
 	}
 
 	void CCC::chunk_decrypt(Args * raw_args) {
@@ -642,7 +642,7 @@ namespace certFHE {
 		}
 		else
 			to_permute = new CCC(*this);
-		MTValues::perm_m_threshold = 10;
+		
 		if (deflen_cnt < MTValues::perm_m_threshold) {
 			
 			for (uint64_t i = 0; i < deflen_cnt; i++) {

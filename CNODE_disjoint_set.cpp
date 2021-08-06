@@ -56,12 +56,6 @@ namespace certFHE {
 			return this;
 	}
 
-	CNODE_disjoint_set * CNODE_disjoint_set::get_root() {
-
-		std::lock_guard <std::mutex> guard(op_mutex);
-		return this->__get_root();
-	}
-
 	void CNODE_disjoint_set::__set_union(CNODE_disjoint_set * other) {
 
 		CNODE_disjoint_set * fst_root = this->__get_root();
@@ -95,12 +89,6 @@ namespace certFHE {
 
 		if (fst_root->rank == snd_root->rank)
 			fst_root->rank += 1;
-	}
-
-	void CNODE_disjoint_set::set_union(CNODE_disjoint_set * other) {
-
-		std::lock_guard <std::mutex> guard(op_mutex);
-		this->__set_union(other);
 	}
 
 	CNODE_disjoint_set * CNODE_disjoint_set::__remove_from_set() {
@@ -151,12 +139,6 @@ namespace certFHE {
 			
 			return this->child->__remove_from_set();
 		}
-	}
-
-	CNODE_disjoint_set * CNODE_disjoint_set::remove_from_set() {
-
-		std::lock_guard <std::mutex> guard(op_mutex);
-		return this->__remove_from_set();
 	}
 }
 

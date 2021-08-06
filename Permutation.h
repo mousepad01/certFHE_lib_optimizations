@@ -22,9 +22,9 @@ namespace certFHE{
 
         Permutation();
 
-        //Permutation(const uint64_t * perm, const uint64_t len);
+        Permutation(const uint64_t * perm, const uint64_t len);
 
-		//Permutation(const uint64_t * perm, const uint64_t len, uint64_t inv_cnt, CtxtInversion * invs);
+		Permutation(const uint64_t * perm, const uint64_t len, uint64_t inv_cnt, CtxtInversion * invs);
 
         /**
          * Custom constructor - generates a random permutation using the N from context

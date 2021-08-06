@@ -7,6 +7,12 @@ namespace certFHE {
 
 	class CADD;
 
+	/**
+	 * Class that marks an addition operation
+	 * Every node contained in this->nodes list is (/should eventually be) multiplied
+	 * (CMUL = Ciphertext Multiplication)
+	 * NOTE: check GlobalParams for parametrization of this class
+	**/
 	class CMUL : public COP {
 
 	protected:
@@ -16,6 +22,10 @@ namespace certFHE {
 		CMUL() = delete;
 		CMUL(Context * context): COP(context) {}
 
+		/**
+		 * Creates (intentional) shallow copy
+		 * GOOD to use, at least in a single threaded environment
+		**/
 		CMUL(const CMUL & other): COP(other) {}
 		CMUL(const CMUL && other): COP(other) {}
 
@@ -40,7 +50,8 @@ namespace certFHE {
 
 		CNODE * make_deep_copy() override;
 
-		//int getclass() { return 2; }
+		// Methods that merge two nodes
+		// Only called internally by other methods of this class
 
 		static CNODE * upstream_merging(CNODE * fst, CNODE * snd);
 

@@ -7,12 +7,17 @@
 
 namespace certFHE {
 
+	/**
+	 * Abstract base class that marks the execution of an operation (addition / multiplication)
+	 * (COP = Ciphertext Operation)
+	**/
 	class COP : public CNODE {
 
 	protected:
 
 		/**
-		 * ALWAYS first element is a dummy, to avoid changing first element address
+		 * ALWAYS the first element is a dummy, 
+		 * to avoid changing first element address when doing operations
 		**/
 		CNODE_list * nodes;
 
@@ -23,6 +28,10 @@ namespace certFHE {
 
 		virtual ~COP();
 
+		/**
+		 * Creates (intentional) shallow copy
+		 * GOOD to use, at least in a single threaded environment
+		**/
 		COP(const COP & other);
 		COP(const COP && other);
 
@@ -46,8 +55,6 @@ namespace certFHE {
 		uint64_t decrypt(const SecretKey & sk) override = 0;
 
 		CNODE * permute(const Permutation & perm, bool force_deep_copy) override = 0;
-
-		//int getclass() = 0;
 
 		// Other
 

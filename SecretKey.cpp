@@ -116,6 +116,16 @@ namespace certFHE{
 
 #pragma region Public methods
 
+	Ciphertext SecretKey::encrypt(const Plaintext & plaintext) const {
+
+		return Ciphertext(plaintext, *this); 
+	}
+
+	Plaintext SecretKey::decrypt(Ciphertext & ciphertext) {
+
+		return ciphertext.decrypt(*this); 
+	}
+
 	uint64_t * SecretKey::encrypt_raw(const Plaintext & plaintext) const {
 
 		uint64_t n = this->certFHEContext->getN();
@@ -215,7 +225,7 @@ namespace certFHE{
 		for(uint64_t i = 0; i < length; i++)
 			current_key[s[i]] = 1;
 
-		uint64_t  *temp = new uint64_t[this->certFHEContext->getN()];
+		uint64_t * temp = new uint64_t[this->certFHEContext->getN()];
 
 		for (uint64_t i = 0; i < this->certFHEContext->getN(); i++)
 			temp[i] = current_key[perm[i]];

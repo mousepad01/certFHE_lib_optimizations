@@ -69,14 +69,14 @@ namespace certFHE {
 		 * @param[in] plaintext: input to be encrypted ({0,1})
 		 * @return value: Ciphertext object
 		**/
-		Ciphertext encrypt(const Plaintext & plaintext) const { return Ciphertext(plaintext, *this); }
+		Ciphertext encrypt(const Plaintext & plaintext) const;
 
         /**
          * Decrypts a ciphertext
          * @param[in] ciphertext: ciphertext to be decrypted 
          * @return value: decrypted plaintext
         **/
-        Plaintext decrypt(Ciphertext & ciphertext) { return ciphertext.decrypt(*this); }
+		Plaintext decrypt(Ciphertext & ciphertext); 
 
         /**
          * Apply the permutation on current secret key

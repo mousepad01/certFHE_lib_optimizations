@@ -7,14 +7,15 @@ namespace certFHE {
 
 	class Context;
 
+	/**
+	 * Class for CNODE class(es) parametrization
+	**/
 	class OPValues {
-
-		static std::mutex opvalues_mutex;
 
 	public:
 
 		/**
-		 * (guaranteed) Maximum size in deflen chunks for a contiguous ciphertext chunk
+		 * (guaranteed) Maximum size in deflen chunks for a CCC (contiguous ciphertext chunk)
 		 * If max_cadd_merge_size or max_cmul_merge_size is SMALLER THAN THIS LIMIT
 		 * max_ccc_deflen_size might not be reached
 		**/
@@ -36,21 +37,24 @@ namespace certFHE {
 
 		/**
 		 * If true and IF THE ALGORITHM ENCOUNTERS a chunk with deflen 1, it will multiply no matter what
-		 * This implies that if there is somehow a node with deflen 1
+		 * This also implies that if there is somehow a node with deflen 1
 		 * that does not take part in a merging call, it will remain unchanged even if the option is selected
 		**/
 		static bool always_default_multiplication;
 
 		/**
 		 * If true, removes duplicates when adding two CADD nodes (a + a = 0)
-		 * If there are somehow two duplicates, but they do not meet inside a merging operations
+		 * It might slow down (by a variable amount) the addition
+		 * It works by comparing memory addreses, so
+		 * It DOES NOT WORK WITH DIFFERENT DEEP COPIES
+		 * Also, if there are somehow two duplicates, but they do not meet inside a merging operations
 		 * they will not be reduced, even if this option is selected
 		**/
 		static bool remove_duplicates_onadd;
 
 		/**
 		 * If true, removes duplicates when multiplying two CMUL nodes (a * a = a)
-		 * Same warning as for remove_duplicates_onadd
+		 * Same warnings as for remove_duplicates_onadd
 		**/
 		static bool remove_duplicates_onmul;
 
@@ -67,16 +71,25 @@ namespace certFHE {
 		static bool shorten_on_recursive_cmul_merging;
 	};
 
-	/*
+	/**
 	 * Class for multithreading threshold values
 	 * and their management
-	 */
+	**/
 	class MTValues {
 
-		static std::mutex mtvalues_mutex;
+		//static std::mutex mtvalues_mutex;
 
-		static const uint64_t AUTOSELECT_TEST_CNT = 4;  // number of tests, to be averaged
-		static const uint64_t ROUND_PER_TEST_CNT = 50;  // number of counted operations per test
+		/**
+		 * number of tests to be averaged 
+		 * in an automatic threshold selection
+		**/
+		static const uint64_t AUTOSELECT_TEST_CNT = 4;
+
+		/**
+		 * number of counted operations per test 
+		 * in an automatic threshold selection
+		**/
+		static const uint64_t ROUND_PER_TEST_CNT = 50; 
 
 		static void __cpy_m_threshold_autoselect(const Context & context);
 		static void __dec_m_threshold_autoselect(const Context & context);
@@ -86,17 +99,47 @@ namespace certFHE {
 
 	public:
 
-		static uint64_t cpy_m_threshold;  // minimum threshold for using multithreading for CCC chunk copying
-		static uint64_t dec_m_threshold;  // minimum threshold for using multithreading for CCC chunk decryption
-		static uint64_t mul_m_threshold;  // minimum threshold for using multithreading for CCC chunk multiplication
-		static uint64_t add_m_threshold;  // minimum threshold for using multithreading for CCC chunk addition
-		static uint64_t perm_m_threshold; // minimum threshold for using multithreading for CCC chunk permutation
+		/**
+		 * Minimum threshold for using multithreading for CCC chunk COPYING
+		 * measured in default len multiples
+		**/
+		static uint64_t cpy_m_threshold;  
+
+		/**
+		 * minimum threshold for using multithreading for CCC chunk DECRYPTION
+		 * measured in default len multiples
+		**/
+		static uint64_t dec_m_threshold; 
+		
+		/**
+		 * Minimum threshold for using multithreading for CCC chunk MULTIPLICATION
+		 * measured in default len multiples
+		**/
+		static uint64_t mul_m_threshold; 
+		
+		/**
+		 * Minimum threshold for using multithreading for CCC chunk ADDITION
+		 * measured in default len multiples
+		**/
+		static uint64_t add_m_threshold;  
+		
+		/**
+		 * Minimum threshold for using multithreading for CCC chunk PERMUTATION
+		 * measured in default len multiples
+		**/
+		static uint64_t perm_m_threshold;
 
 		static void cpy_m_threshold_autoselect(const Context & context, bool cache_in_file = true, std::string cache_file_name = "cpy_m_thrsh_cache.bin");
 		static void dec_m_threshold_autoselect(const Context & context, bool cache_in_file = true, std::string cache_file_name = "dec_m_thrsh_cache.bin");
 		static void mul_m_threshold_autoselect(const Context & context, bool cache_in_file = true, std::string cache_file_name = "mul_m_thrsh_cache.bin");
 		static void add_m_threshold_autoselect(const Context & context, bool cache_in_file = true, std::string cache_file_name = "add_m_thrsh_cache.bin");
 		static void perm_m_threshold_autoselect(const Context & context, bool cache_in_file = true, std::string cache_file_name = "perm_m_thrsh_cache.bin");
+		
+		/**
+		 * Automatic tests for selecting the threshold
+		 * Under which sequential code is used 
+		 * To perform operations on CCC objects
+		**/
 		static void m_threshold_autoselect(const Context & context, bool cache_in_file = true, std::string cache_file_name = "m_thrsh_cache.bin");
 	};
 

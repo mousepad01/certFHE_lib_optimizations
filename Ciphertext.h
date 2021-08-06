@@ -139,7 +139,7 @@ namespace certFHE{
 			* @param[in] sk: key under which decryption takes place
 			* @return value: decrypted value as a plaintext object
 		**/
-		Plaintext decrypt(const SecretKey & sk) const { return Plaintext(this->decrypt_raw(sk)); }
+		Plaintext decrypt(const SecretKey & sk) const; 
 
 	};
 }
