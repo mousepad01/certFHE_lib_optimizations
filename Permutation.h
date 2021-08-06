@@ -18,13 +18,11 @@ namespace certFHE{
 		uint64_t length;				// size of permutation vector
 		uint64_t inversions_cnt;		// number of inversions
 
+		Permutation(const uint64_t * perm, const uint64_t len, uint64_t inv_cnt, CtxtInversion * invs);
+
     public:
 
         Permutation();
-
-        Permutation(const uint64_t * perm, const uint64_t len);
-
-		Permutation(const uint64_t * perm, const uint64_t len, uint64_t inv_cnt, CtxtInversion * invs);
 
         /**
          * Custom constructor - generates a random permutation using the N from context

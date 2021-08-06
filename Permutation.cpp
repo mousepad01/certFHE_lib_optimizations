@@ -4,7 +4,7 @@
 namespace certFHE{
 
 #pragma region Public methods
-	//TODO : fix so that inversions are also set
+	
 	Permutation Permutation::getInverse() {
 
 		uint64_t * p = new uint64_t[length];
@@ -19,8 +19,14 @@ namespace certFHE{
 				}
 			}
 		}
+
+		uint64_t this_invcnt = this->inversions_cnt;
+
+		CtxtInversion * inverseInvs = new CtxtInversion[this_invcnt];
+		for (int i = 0; i < this_invcnt; i++)
+			inverseInvs[i] = this->inversions[this_invcnt - 1 - i];
     
-		Permutation invP(p, length);
+		Permutation invP(p, length, this_invcnt, inverseInvs);
 		delete[] p;
 		return invP;
 	}
@@ -62,35 +68,63 @@ namespace certFHE{
 		return *this;
 	}
 
-	Permutation Permutation::operator + (const Permutation & permB) const {
+	Permutation Permutation::operator + (const Permutation & other) const {
 
-		if (length != permB.getLength())
-			return Permutation();         
+		if (length != other.getLength())
+			throw std::invalid_argument("cannot add permutations with different length");
 
 		uint64_t * p = new uint64_t[length];
-		uint64_t * pB = permB.getPermutation();
+		uint64_t * p_other = other.getPermutation();
 
 		for (uint64_t i = 0; i < length; i++)
-			p[i] = this->permutation[pB[i]];
+			p[i] = this->permutation[p_other[i]];
 
-		Permutation result(p, length);
+		uint64_t this_invcnt = this->inversions_cnt;
+		uint64_t other_invcnt = other.inversions_cnt;
+
+		CtxtInversion * resultInvs = new CtxtInversion[this_invcnt + other_invcnt];
+		int i;
+
+		for (i = 0; i < this_invcnt; i++)
+			resultInvs[i] = this->inversions[i];
+
+		for (i; i < this_invcnt + other_invcnt; i++)
+			resultInvs[i] = other.inversions[i - this_invcnt];
+
+		Permutation result(p, length, this_invcnt + other_invcnt, resultInvs);
+
 		delete [] p;
 		return result;
 	}
 
-	Permutation & Permutation::operator += (const Permutation & permB) {
+	Permutation & Permutation::operator += (const Permutation & other) {
 
-		if (length != permB.getLength())
-			return *this;         
+		if (length != other.getLength())
+			throw std::invalid_argument("cannot add permutations with different length");
 
 		uint64_t * p = new uint64_t[length];
-		uint64_t * pB = permB.getPermutation();
+		uint64_t * p_other = other.getPermutation();
 
 		for (uint64_t i = 0; i < length; i++)
-			p[i] = this->permutation[pB[i]];
+			p[i] = this->permutation[p_other[i]];
 
-		delete [] this->permutation;
+		uint64_t this_invcnt = this->inversions_cnt;
+		uint64_t other_invcnt = other.inversions_cnt;
+
+		CtxtInversion * thisNewInvs = new CtxtInversion[this_invcnt + other_invcnt];
+		int i;
+
+		for (i = 0; i < this_invcnt; i++)
+			thisNewInvs[i] = this->inversions[i];
+
+		for (i; i < this_invcnt + other_invcnt; i++)
+			thisNewInvs[i] = other.inversions[i - this_invcnt];
+
+		delete[] this->permutation;
 		this->permutation = p;
+
+		delete[] this->inversions;
+		this->inversions = thisNewInvs;
 
 		return *this;
 	}
@@ -199,16 +233,6 @@ namespace certFHE{
 		}
 
 #endif
-	}
-
-	Permutation::Permutation(const uint64_t * perm, const uint64_t len) : Permutation() {
-
-		this->permutation = new uint64_t[len];
-
-		this->length = len;
-
-		for (uint64_t i = 0; i < len; i++)
-			this->permutation[i] = perm[i];
 	}
 
 	Permutation::Permutation(const uint64_t * perm, const uint64_t len, uint64_t inv_cnt, CtxtInversion * invs) {

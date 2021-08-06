@@ -2492,7 +2492,7 @@ int main(){
 
 		//array_ctxt_predefined_test();
 
-		average_m_predefined_test();
+		//average_m_predefined_test();
 	}
 
     return 0;
