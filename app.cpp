@@ -1934,7 +1934,7 @@ void array_ctxt_test(std::string randoms_file_source,
 		out);
 }
 
-void array_ctxt_predefined_test(const char * path = "\\array_ctxt_test\\tst.txt") {
+void array_ctxt_predefined_test(const char * path = "\\array_ctxt_test\\thread_safety\\debug_multithr_cccopt_stats.txt") {
 
 	std::fstream log(STATS_PATH + path, std::ios::out);
 
@@ -2422,11 +2422,11 @@ void average_m_test(std::string randoms_file_source,
 		out);
 }
 
-void average_m_predefined_test(const char * path = "\\average_multithreading_test\\release_65thr_multithr_stats.txt") {
+void average_m_predefined_test(const char * path = "\\average_multithreading_test\\release_11thr_cccopt_multithr_stats.txt") {
 
 	std::fstream log(STATS_PATH + path, std::ios::out);
 
-	average_m_test("avgtestops.bin", 100, 6, 70, 65, 1247, 16, log);
+	average_m_test("avgtestops.bin", 100, 40, 60, 11, 1247, 16, log);
 
 	log.close();
 }

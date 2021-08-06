@@ -225,12 +225,14 @@ namespace certFHE{
 				throw new std::invalid_argument("Cannot operate on ciphertext with no value");
 
 			CNODE * addition_result;
+			Ciphertext add_result_c;
 
 			CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
 			CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
 
 			/**
 			 * When two ctxt refer to a CCC, operations are performed directly
+			 * NOTE: the result CCC is always a different one, so there is no need for concurrency_guard union
 			**/
 			if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
 				addition_result = CCC::add(ccc_thisnode, ccc_othernode);
@@ -249,14 +251,12 @@ namespace certFHE{
 
 				if (this->node == c.node)
 					this->node->downstream_reference_count -= 1;
+
+				add_result_c.concurrency_guard->set_union(this->concurrency_guard);
+				add_result_c.concurrency_guard->set_union(c.concurrency_guard);
 			}
 
-			Ciphertext add_result_c;
 			add_result_c.node = addition_result;
-
-			add_result_c.concurrency_guard->set_union(this->concurrency_guard);
-			add_result_c.concurrency_guard->set_union(c.concurrency_guard);
-
 			return add_result_c;
 		}
 		else {
@@ -267,6 +267,7 @@ namespace certFHE{
 				throw new std::invalid_argument("Cannot operate on ciphertext with no value");
 
 			CNODE * addition_result;
+			Ciphertext add_result_c;
 
 			CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
 			CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
@@ -291,13 +292,11 @@ namespace certFHE{
 
 				if (this->node == c.node)
 					this->node->downstream_reference_count -= 1;
+
+				add_result_c.concurrency_guard->set_union(this->concurrency_guard);
 			}
 
-			Ciphertext add_result_c;
 			add_result_c.node = addition_result;
-
-			add_result_c.concurrency_guard->set_union(this->concurrency_guard);
-
 			return add_result_c;
 		}
 	}
@@ -318,6 +317,7 @@ namespace certFHE{
 				throw new std::invalid_argument("Cannot operate on ciphertext with no value");
 
 			CNODE * mul_result;
+			Ciphertext mul_result_c;
 
 			CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
 			CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
@@ -334,14 +334,12 @@ namespace certFHE{
 
 				if (this->node == c.node)
 					this->node->downstream_reference_count -= 1;
+
+				mul_result_c.concurrency_guard->set_union(this->concurrency_guard);
+				mul_result_c.concurrency_guard->set_union(c.concurrency_guard);
 			}
 
-			Ciphertext mul_result_c;
 			mul_result_c.node = mul_result;
-
-			mul_result_c.concurrency_guard->set_union(this->concurrency_guard);
-			mul_result_c.concurrency_guard->set_union(c.concurrency_guard);
-
 			return mul_result_c;
 		}
 		else {
@@ -352,6 +350,7 @@ namespace certFHE{
 				throw new std::invalid_argument("Cannot operate on ciphertext with no value");
 
 			CNODE * mul_result;
+			Ciphertext mul_result_c;
 
 			CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
 			CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
@@ -368,13 +367,11 @@ namespace certFHE{
 
 				if (this->node == c.node)
 					this->node->downstream_reference_count -= 1;
+
+				mul_result_c.concurrency_guard->set_union(this->concurrency_guard);
 			}
 
-			Ciphertext mul_result_c;
 			mul_result_c.node = mul_result;
-
-			mul_result_c.concurrency_guard->set_union(this->concurrency_guard);
-
 			return mul_result_c;
 		}
 
@@ -413,12 +410,12 @@ namespace certFHE{
 
 				if (this->node == c.node)
 					this->node->downstream_reference_count -= 1;
+
+				this->concurrency_guard->set_union(c.concurrency_guard);
 			}
 
 			this->node->try_delete();
 			this->node = addition_result;
-
-			this->concurrency_guard->set_union(c.concurrency_guard);
 
 			return *this;
 		}
@@ -489,12 +486,12 @@ namespace certFHE{
 
 				if (this->node == c.node)
 					this->node->downstream_reference_count -= 1;
+
+				this->concurrency_guard->set_union(c.concurrency_guard);
 			}
 
 			this->node->try_delete();
 			this->node = mul_result;
-
-			this->concurrency_guard->set_union(c.concurrency_guard);
 
 			return *this;
 		}
@@ -581,9 +578,6 @@ namespace certFHE{
 				this->node = c.node;
 
 				removed = this->concurrency_guard->remove_from_set();
-
-				if (removed->current != this)
-					std::cout << "err assign\n";
 
 				this->concurrency_guard = new CNODE_disjoint_set(this);
 				this->concurrency_guard->set_union(c.concurrency_guard);
