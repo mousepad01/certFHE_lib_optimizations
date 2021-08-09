@@ -11,7 +11,7 @@ namespace certFHE{
 	class Context;
 	class Plaintext;
 
-#if MULTITHREADING_EXTENDED_SUPPORT
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
 
 	class CNODE_disjoint_set;
 
@@ -30,7 +30,7 @@ namespace certFHE{
 		**/
 		CNODE * node;
 
-#if MULTITHREADING_EXTENDED_SUPPORT
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
 
 		/**
 		 * Used to get a common mutex for all ciphertexts 

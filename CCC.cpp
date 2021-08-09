@@ -252,7 +252,7 @@ namespace certFHE {
 				uint64_t fst_u64_r = perm_invs[k].fst_u64_r;
 				uint64_t snd_u64_r = perm_invs[k].snd_u64_r;
 
-#if MSVC_COMPILER_LOCAL_MACRO_WORSE
+#if MSVC_COMPILER_LOCAL_CERTFHE_MACRO_WORSE
 
 				//unsigned char val_i = _bittest64((const __int64 *)current_chunk + fst_u64_ch, fst_u64_r);
 				//unsigned char val_j = _bittest64((const __int64 *)current_chunk + snd_u64_ch, snd_u64_r);
@@ -656,7 +656,7 @@ namespace certFHE {
 					uint64_t fst_u64_r = invs[k].fst_u64_r;
 					uint64_t snd_u64_r = invs[k].snd_u64_r;
 
-#if MSVC_COMPILER_LOCAL_MACRO
+#if MSVC_COMPILER_LOCAL_CERTFHE_MACRO
 
 					//unsigned char val_i = _bittest64((const __int64 *)current_chunk + fst_u64_ch, fst_u64_r);
 					//unsigned char val_j = _bittest64((const __int64 *)current_chunk + snd_u64_ch, snd_u64_r);

@@ -8,7 +8,7 @@
 #include "CMUL.h"
 #include "CADD.h"
 
-#if MULTITHREADING_EXTENDED_SUPPORT
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
 #include "CNODE_disjoint_set.h"
 #endif
 
@@ -21,7 +21,7 @@ namespace certFHE{
 		return Plaintext(this->decrypt_raw(sk));
 	}
 
-#if MULTITHREADING_EXTENDED_SUPPORT
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
 
 	uint64_t Ciphertext::decrypt_raw(const SecretKey & sk) const {
 
@@ -218,7 +218,7 @@ namespace certFHE{
 
 #pragma region Operators
 
-#if MULTITHREADING_EXTENDED_SUPPORT
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
 
 	Ciphertext Ciphertext::operator + (const Ciphertext & c) const {
 
@@ -908,7 +908,7 @@ namespace certFHE{
 
 #pragma region Constructors and destructor
 
-#if MULTITHREADING_EXTENDED_SUPPORT
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
 
 	Ciphertext::Ciphertext() : node(0), concurrency_guard(new CNODE_disjoint_set(this)) {}
 
@@ -1028,7 +1028,7 @@ namespace certFHE{
 
 	uint64_t Ciphertext::getLen() const {
 
-#if MULTITHREADING_EXTENDED_SUPPORT
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
 
 		if (this->concurrency_guard == 0)
 			throw std::runtime_error("concurrency guard cannot be null");
@@ -1045,7 +1045,7 @@ namespace certFHE{
 
 	Context Ciphertext::getContext() const {
 
-#if MULTITHREADING_EXTENDED_SUPPORT
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
 
 		if (this->concurrency_guard == 0)
 			throw std::runtime_error("concurrency guard cannot be null");

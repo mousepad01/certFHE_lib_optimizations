@@ -1,7 +1,7 @@
 #include "CNODE_disjoint_set.h"
 #include "Ciphertext.h"
 
-#if MULTITHREADING_EXTENDED_SUPPORT
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
 
 namespace certFHE {
 

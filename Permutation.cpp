@@ -192,7 +192,7 @@ namespace certFHE{
 		for (uint64_t i = 0; i < len; i++)
 			permutation[i] = i;
 
-#if MSVC_COMPILER_LOCAL_MACRO // std::random_devide guaranteed by MSVC to be criptographically secure
+#if MSVC_COMPILER_LOCAL_CERTFHE_MACRO // std::random_devide guaranteed by MSVC to be criptographically secure
 
 		std::random_device csprng;
 
