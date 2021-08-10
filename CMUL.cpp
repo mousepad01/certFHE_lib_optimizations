@@ -5,6 +5,9 @@ namespace certFHE {
 
 	void CMUL::upstream_merging() {
 
+		//if (this->deflen_count > OPValues::max_cmul_merge_size)
+			//return;
+
 		CNODE_list * thisnodes = this->nodes->next; // skipping dummy element
 
 		if (thisnodes == 0 || thisnodes->current == 0)
@@ -98,17 +101,29 @@ namespace certFHE {
 
 	uint64_t CMUL::decrypt(const SecretKey & sk) {
 
+		if (OPValues::decryption_cache) {
+
+			auto cache_entry = CNODE::decryption_cached_values.find(this);
+
+			if (cache_entry != CNODE::decryption_cached_values.end())
+				return (uint64_t)cache_entry->second;
+		}
+
 		CNODE_list * thisnodes = this->nodes->next;
 
 		if (thisnodes == 0 || thisnodes->current == 0)
 			return 0;
 
 		uint64_t rez = 1;
+
 		while (thisnodes != 0 && thisnodes->current != 0) {
 
 			rez &= thisnodes->current->decrypt(sk);
 			thisnodes = thisnodes->next;
 		}
+
+		if (OPValues::decryption_cache)
+			CNODE::decryption_cached_values[this] = (unsigned char)rez;
 
 		return rez;
 	}
@@ -238,8 +253,10 @@ namespace certFHE {
 
 		return 0;
 	}
-
+	//
 	CNODE * CMUL::__upstream_merging(CADD * fst, CADD * snd) { 
+
+		//return 0;
 
 		/**
 		 * Check maximum operation size for when to try to merge or not
@@ -343,10 +360,10 @@ namespace certFHE {
 
 		return distributed_mul;
 	}
-
+	//
 	CNODE * CMUL::__upstream_merging(CADD * fst, CMUL * snd) { 
 
-		// almost identical to upstream merging (CADD, CCC) ?
+		//return 0;
 		
 		/**
 		 * Check maximum operation size for when to try to merge or not
@@ -567,8 +584,10 @@ namespace certFHE {
 
 		return merged;
 	}
-
+	//
 	CNODE * CMUL::__upstream_merging(CADD * fst, CCC * snd) { 
+
+		//return 0;
 		
 		/**
 		 * Check maximum operation size for when to try to merge or not

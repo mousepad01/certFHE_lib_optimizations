@@ -14,6 +14,8 @@ namespace certFHE {
 	uint64_t OPValues::max_cadd_merge_size = 4096 * 4096;
 	uint64_t OPValues::max_cmul_merge_size = (uint64_t)4096 * 4096 * 4096;
 
+	bool OPValues::decryption_cache = true;
+
 	/**
 	 * all these parameters set to some specific value
 	 * can perform way better than with other configurations in some cases, and vice versa

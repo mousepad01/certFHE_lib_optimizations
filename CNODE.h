@@ -18,6 +18,8 @@ namespace certFHE {
 
 	public:
 
+		static std::unordered_map <CNODE *, unsigned char> decryption_cached_values;
+
 		/**
 		 * certFHE context
 		 * ASSUMED to be te SAME 
@@ -102,6 +104,12 @@ namespace certFHE {
 		 * Decides whether to decrease reference count or actually delete the node
 		**/
 		void try_delete();
+
+		/**
+		 * Method used to clear the decryption cache
+		 * Should ALWAYS BE CALLED between decryptions, if additions or multiplications are being performed
+		**/
+		static void clear_decryption_cache() { CNODE::decryption_cached_values.clear(); }
 
 		// Other
 

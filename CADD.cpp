@@ -5,6 +5,9 @@ namespace certFHE {
 
 	void CADD::upstream_merging() {
 
+		//if (this->deflen_count > OPValues::max_cadd_merge_size)
+			//return;
+
 		CNODE_list * thisnodes = this->nodes->next; // skipping dummy element
 
 		if (thisnodes == 0 || thisnodes->current == 0)
@@ -110,9 +113,13 @@ namespace certFHE {
 
 	uint64_t CADD::decrypt(const SecretKey & sk) {
 
-		/*static int testv = 0;
-		testv += 1;
-		std::cout << "decrypt in CADD " << testv << '\n';*/
+		if (OPValues::decryption_cache) {
+
+			auto cache_entry = CNODE::decryption_cached_values.find(this);
+
+			if (cache_entry != CNODE::decryption_cached_values.end())
+				return (uint64_t)cache_entry->second;
+		}
 
 		CNODE_list * thisnodes = this->nodes->next;
 
@@ -120,11 +127,15 @@ namespace certFHE {
 			return 0;
 
 		uint64_t rez = 0;
+
 		while (thisnodes != 0 && thisnodes->current != 0) {
 
 			rez ^= thisnodes->current->decrypt(sk);
 			thisnodes = thisnodes->next;
 		}
+		
+		if (OPValues::decryption_cache)
+			CNODE::decryption_cached_values[this] = (unsigned char)rez;
 
 		return rez;
 	}

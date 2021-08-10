@@ -756,6 +756,7 @@ void average_test(const std::vector <int> randoms,
 	const int CS_CNT = 20, const int EPOCH_CNT = 3, const int DEL_FACTOR = 3,
 	std::ostream & out = std::cout, 
 	std::ostream & out_old = std::cout, 
+	bool PERM = true,
 	bool execute_old_test = true) {
 
 	// addition (+, +=), multiplication (*, *=), permutation inplace (only!)
@@ -806,16 +807,15 @@ void average_test(const std::vector <int> randoms,
 			out << timer.stop() << " " << TIME_MEASURE_UNIT << "\n";
 			timer.reset();
 
-			/****** TEST CODE SHOULD BE CHANGED IF THIS CONSTANT IS CHANGED ******/
-			const int CS_CNT = 20;
-
 			const int rounds_per_epoch = ROUNDS_PER_TEST / EPOCH_CNT;
 
-			int val[CS_CNT];
+			int * val = new int[CS_CNT];
 			certFHE::Ciphertext ** cs;
 			cs = new certFHE::Ciphertext *[CS_CNT];
 
 			uint64_t pp;
+
+			int OP_MODULUS = PERM ? 3 : 2;
 
 			out << "Starting tests:\n\n";
 			out.flush();
@@ -857,7 +857,298 @@ void average_test(const std::vector <int> randoms,
 
 						for (int rnd = 0; rnd < rounds_per_epoch; rnd++) {
 
-							int opc = randoms[randindex] % 3;
+							int opc = randoms[randindex] % OP_MODULUS;
+							randindex += 1;
+
+							switch (opc) {
+
+							case(0): // * between two random ctxt, += in the third
+
+								i = randoms[randindex] % max_index;
+								j = randoms[randindex + 1] % max_index;
+								k = randoms[randindex + 2] % max_index;
+
+								randindex += 3;
+
+								timer.start();
+
+								*cs[k] += *cs[i] * *cs[j];
+
+								t = timer.stop();
+								timer.reset();
+
+								t_acc += t;
+
+								val[k] ^= (val[i] & val[j]);
+
+								break;
+
+							case(1): // + between two random ctxt, *= in the third
+
+								i = randoms[randindex] % max_index;
+								j = randoms[randindex + 1] % max_index;
+								k = randoms[randindex + 2] % max_index;
+
+								randindex += 3;
+
+								timer.start();
+
+								*cs[k] *= *cs[i] + *cs[j];
+
+								t = timer.stop();
+								timer.reset();
+
+								t_acc += t;
+
+								val[k] &= (val[i] ^ val[j]);
+
+								break;
+
+							case(2): // permutation on a random ctxt
+
+								i = randoms[randindex] % max_index;
+
+								randindex += 1;
+
+								timer.start();
+
+								temp = cs[i]->applyPermutation(perm);
+
+								t = timer.stop();
+								timer.reset();
+
+								t_acc += t;
+
+								pp = sk.decrypt(*cs[i]).getValue() & 0x01;
+
+								if (val[i] != pp) {
+
+									out << "WRONG decryption on permuted ctxt; should be " << val[i] << ", decrypted " << pp << '\n';
+									out.flush();
+								}
+
+								certFHE::CNODE::clear_decryption_cache();
+
+								break;
+
+							default:
+								break;
+							}
+						}
+
+						out << "Decrypting...\n";
+						out.flush();
+
+						double t_acc_dec = 0;
+						double t_dec;
+
+						for (int pos = 0; pos < max_index; pos++) {
+
+							timer.start();
+
+							uint64_t p = sk.decrypt(*cs[pos]).getValue() & 0x01;
+
+							t_dec = timer.stop();
+							timer.reset();
+
+							t_acc_dec += t_dec;
+
+							if (p != val[pos]) {
+
+								out << "WRONG decryption; should be " << val[pos] << ", decrypted " << p << '\n';
+								out.flush();
+							}
+						}
+
+						certFHE::CNODE::clear_decryption_cache();
+
+						timer.start();
+
+						int to_delete_cnt = 0;
+						if(DEL_FACTOR > 0)
+							to_delete_cnt = max_index / DEL_FACTOR;
+
+						for (int td = 0; td < to_delete_cnt; td++) {
+
+							max_index -= 1;
+							delete cs[max_index];
+						}
+
+						t = timer.stop();
+						timer.reset();
+
+						t_acc += t;
+
+						out << "Epoch " << epoch << ": operations " << t_acc << " " << TIME_MEASURE_UNIT
+							<< ", decryption " << t_acc_dec << " " << TIME_MEASURE_UNIT << "\n";
+						out.flush();
+					}
+
+					double t_m_acc = 0;
+
+					out << "Starting threads...\n";
+					out.flush();
+
+					certFHE::Ciphertext *** thr_args = new certFHE::Ciphertext **[THR_CNT];
+					int ** thr_val = new int *[THR_CNT];
+
+					const int LEFT_CTXT_CNT = max_index;
+
+					for (int thr = 0; thr < THR_CNT; thr++) {
+
+						thr_args[thr] = new certFHE::Ciphertext *[LEFT_CTXT_CNT];
+						thr_val[thr] = new int[LEFT_CTXT_CNT];
+
+						for (int carg = 0; carg < LEFT_CTXT_CNT; carg++) {
+
+							thr_args[thr][carg] = new certFHE::Ciphertext(*cs[carg]);
+							thr_val[thr][carg] = val[carg];
+						}
+					}
+
+					std::thread ** thrs = new std::thread *[THR_CNT];
+
+					std::mutex out_mutex;
+
+					int rand_offset = 0;
+
+					timer.start();
+
+					for (int thr = 0; thr < THR_CNT; thr++) {
+
+						thrs[thr] = new std::thread(&average_thrfct_test, std::ref(randoms),
+							randindex + rand_offset,
+							std::ref(sk), std::ref(perm), thr_args[thr], thr_val[thr],
+							std::ref(out), std::ref(out_mutex), ROUNDS_PER_THREAD);
+
+						rand_offset += ROUNDS_PER_THREAD * 10;
+					}
+
+					for (int thr = 0; thr < THR_CNT; thr++)
+						thrs[thr]->join();
+
+					t_m_acc = timer.stop();
+					timer.reset();
+
+					for (int thr = 0; thr < THR_CNT; thr++) {
+
+						delete thr_val[thr];
+						delete thr_args[thr];
+					}
+
+					delete thr_args;
+					delete thr_val;
+
+					for (int c_left = 0; c_left < max_index; c_left++)
+						delete cs[c_left];
+
+					out << "Multithreading total time " << t_m_acc << " miliseconds\n";
+					out.flush();
+
+					out << "TEST " << ts << " DONE\n\n";
+					out.flush();
+
+				}
+				catch (std::exception e) {
+
+					out << "ERROR: " << e.what() << '\n';
+				}
+			}
+
+			delete val;
+		}
+		catch (std::exception & err) {
+
+			out << "ERROR running current implementation tests: " << err.what() << '\n';
+		}
+	}
+
+	// initial implementation stats
+	if (execute_old_test) {
+
+		try {
+
+			certFHE_old::Timer timer;
+			int randindex = 0; // for randoms
+
+			const char * TIME_MEASURE_UNIT = "miliseconds";
+
+			out << ROUNDS_PER_TEST << " rounds per test, "
+				<< ROUNDS_PER_THREAD << " rounds per thread, "
+				<< CS_CNT << " ciphertexts, "
+				<< EPOCH_CNT << " epochs per test, "
+				<< DEL_FACTOR << " ciphertexts deleted per epoch factor\n\n";
+
+			out << "Starting...";
+			out.flush();
+
+			timer.start();
+
+			certFHE_old::Library::initializeLibrary();
+			certFHE_old::Context context(CONTEXT_N, CONTEXT_D);
+			certFHE_old::SecretKey sk(context);
+
+			certFHE_old::Permutation perm(context);
+			certFHE_old::SecretKey psk = sk.applyPermutation(perm);
+
+			// declared here to force compiler to use it and not remove it
+			// when doing optimisations
+			certFHE_old::Ciphertext temp;
+
+			out << timer.stop() << " " << TIME_MEASURE_UNIT << "\n";
+			timer.reset();
+
+			const int rounds_per_epoch = ROUNDS_PER_TEST / EPOCH_CNT;
+
+			int * val = new int[CS_CNT];
+			certFHE_old::Ciphertext ** cs;
+			cs = new certFHE_old::Ciphertext *[CS_CNT];
+
+			uint64_t pp;
+
+			int OP_MODULUS = PERM ? 3 : 2;
+
+			out << "Starting tests:\n\n";
+			out.flush();
+
+			for (int ts = 0; ts < TEST_COUNT; ts++) {
+
+				try {
+
+					out << "TEST " << ts << ":\n";
+					out.flush();
+
+					out << "Initializing starting values...";
+					out.flush();
+
+					timer.start();
+
+					for (int i = 0; i < CS_CNT; i++) {
+
+						val[i] = randoms[randindex] % 2;
+						randindex += 1;
+
+						cs[i] = new certFHE_old::Ciphertext();
+
+						certFHE_old::Plaintext p(val[i]);
+						*cs[i] = sk.encrypt(p);
+					}
+
+					out << timer.stop() << " " << TIME_MEASURE_UNIT << "\n";
+					timer.reset();
+
+					int max_index = CS_CNT;
+
+					for (int epoch = 0; epoch < EPOCH_CNT; epoch++) {
+
+						double t_acc = 0;
+						double t;
+
+						int i, j, k;
+
+						for (int rnd = 0; rnd < rounds_per_epoch; rnd++) {
+
+							int opc = randoms[randindex] % OP_MODULUS;
 							randindex += 1;
 
 							switch (opc) {
@@ -961,7 +1252,7 @@ void average_test(const std::vector <int> randoms,
 						timer.start();
 
 						int to_delete_cnt = 0;
-						if(DEL_FACTOR > 0)
+						if (DEL_FACTOR > 0)
 							to_delete_cnt = max_index / DEL_FACTOR;
 
 						for (int td = 0; td < to_delete_cnt; td++) {
@@ -985,293 +1276,12 @@ void average_test(const std::vector <int> randoms,
 					out << "Starting threads...\n";
 					out.flush();
 
-					certFHE::Ciphertext *** thr_args = new certFHE::Ciphertext **[THR_CNT];
+					certFHE_old::Ciphertext *** thr_args = new certFHE_old::Ciphertext **[THR_CNT];
 					int ** thr_val = new int *[THR_CNT];
 
 					const int LEFT_CTXT_CNT = max_index;
 
 					for (int thr = 0; thr < THR_CNT; thr++) {
-
-						thr_args[thr] = new certFHE::Ciphertext *[LEFT_CTXT_CNT];
-						thr_val[thr] = new int[LEFT_CTXT_CNT];
-
-						for (int carg = 0; carg < LEFT_CTXT_CNT; carg++) {
-
-							thr_args[thr][carg] = new certFHE::Ciphertext(*cs[carg]);
-							thr_val[thr][carg] = val[carg];
-						}
-					}
-
-					std::thread ** thrs = new std::thread *[THR_CNT];
-
-					std::mutex out_mutex;
-
-					int rand_offset = 0;
-
-					timer.start();
-
-					for (int thr = 0; thr < THR_CNT; thr++) {
-
-						thrs[thr] = new std::thread(&average_thrfct_test, std::ref(randoms),
-							randindex + rand_offset,
-							std::ref(sk), std::ref(perm), thr_args[thr], thr_val[thr],
-							std::ref(out), std::ref(out_mutex), ROUNDS_PER_THREAD);
-
-						rand_offset += ROUNDS_PER_THREAD * 10;
-					}
-
-					for (int thr = 0; thr < THR_CNT; thr++)
-						thrs[thr]->join();
-
-					t_m_acc = timer.stop();
-					timer.reset();
-
-					for (int thr = 0; thr < THR_CNT; thr++) {
-
-						delete thr_val[thr];
-						delete thr_args[thr];
-					}
-
-					delete thr_args;
-					delete thr_val;
-
-					for (int c_left = 0; c_left < max_index; c_left++)
-						delete cs[c_left];
-
-					out << "Multithreading total time " << t_m_acc << " miliseconds\n";
-					out.flush();
-
-					out << "TEST " << ts << " DONE\n\n";
-					out.flush();
-
-				}
-				catch (std::exception e) {
-
-					out << "ERROR: " << e.what() << '\n';
-				}
-			}
-
-		}
-		catch (std::exception & err) {
-
-			out << "ERROR running current implementation tests: " << err.what() << '\n';
-		}
-	}
-
-	// initial implementation stats
-	if (execute_old_test) {
-
-		try {
-
-			certFHE_old::Timer timer;
-			int randindex = 0; // for randoms
-
-			const char * TIME_MEASURE_UNIT = "miliseconds";
-
-			out_old << "Starting...";
-			out_old.flush();
-
-			timer.start();
-
-			certFHE_old::Library::initializeLibrary();
-			certFHE_old::Context context(CONTEXT_N, CONTEXT_D);
-			certFHE_old::SecretKey sk(context);
-
-			certFHE_old::Permutation perm(context);
-			certFHE_old::SecretKey psk = sk.applyPermutation(perm);
-
-			// declared here to force compiler to use it and not remove it
-			// when doing optimisations
-			certFHE_old::Ciphertext temp;
-
-			out_old << timer.stop() << " " << TIME_MEASURE_UNIT << "\n";
-			timer.reset();
-
-			/****** TEST CODE SHOULD BE CHANGED IF THIS CONSTANT IS CHANGED ******/
-			const int CS_CNT = 20;
-
-			const int rounds_per_epoch[3] = { ROUNDS_PER_TEST / 2, ROUNDS_PER_TEST / 3, ROUNDS_PER_TEST / 6 };
-
-			int val[CS_CNT];
-			certFHE_old::Ciphertext ** cs;
-			cs = new certFHE_old::Ciphertext *[CS_CNT];
-
-			uint64_t pp;
-
-			out_old << "Starting tests:\n\n";
-			out_old.flush();
-
-			for (int ts = 0; ts < TEST_COUNT; ts++) {
-
-				try {
-
-					out_old << "TEST " << ts << ":\n";
-					out_old.flush();
-
-					out_old << "Initializing starting values...";
-					out_old.flush();
-
-					timer.start();
-
-					for (int i = 0; i < CS_CNT; i++) {
-
-						val[i] = randoms[randindex] % 2;
-						randindex += 1;
-
-						cs[i] = new certFHE_old::Ciphertext();
-
-						certFHE_old::Plaintext p(val[i]);
-						*cs[i] = sk.encrypt(p);
-					}
-
-					out_old << timer.stop() << " " << TIME_MEASURE_UNIT << "\n";
-					timer.reset();
-
-					int max_index = CS_CNT - 1;
-
-					for (int epoch = 0; epoch < 3; epoch++) {
-
-						double t_acc = 0;
-						double t;
-
-						int i, j, k;
-
-						for (int rnd = 0; rnd < rounds_per_epoch[epoch]; rnd++) {
-
-							int opc = randoms[randindex] % 3;
-							randindex += 1;
-
-							switch (opc) {
-
-							case(0): // * between two random ctxt, += in the third
-
-								i = randoms[randindex] % (max_index + 1);
-								j = randoms[randindex + 1] % (max_index + 1);
-								k = randoms[randindex + 2] % (max_index + 1);
-
-								randindex += 3;
-
-								timer.start();
-
-								*cs[k] += *cs[i] * *cs[j];
-
-								t = timer.stop();
-								timer.reset();
-
-								t_acc += t;
-
-								val[k] ^= (val[i] & val[j]);
-
-								break;
-
-							case(1): // + between two random ctxt, *= in the third
-
-								i = randoms[randindex] % (max_index + 1);
-								j = randoms[randindex + 1] % (max_index + 1);
-								k = randoms[randindex + 2] % (max_index + 1);
-
-								randindex += 3;
-
-								timer.start();
-
-								*cs[k] *= *cs[i] + *cs[j];
-
-								t = timer.stop();
-								timer.reset();
-
-								t_acc += t;
-
-								val[k] &= (val[i] ^ val[j]);
-
-								break;
-
-							case(2): // permutation on a random ctxt
-
-								i = randoms[randindex] % (max_index + 1);
-
-								randindex += 1;
-
-								timer.start();
-
-								temp = cs[i]->applyPermutation(perm);
-
-								t = timer.stop();
-								timer.reset();
-
-								t_acc += t;
-
-								pp = sk.decrypt(*cs[i]).getValue() & 0x01;
-
-								if (val[i] != pp) {
-
-									out_old << "WRONG decryption on permuted ctxt; should be " << val[i] << ", decrypted " << pp << '\n';
-									out_old.flush();
-								}
-
-								break;
-
-							default:
-								break;
-							}
-						}
-
-						out_old << "Decrypting...\n";
-						out_old.flush();
-
-						double t_acc_dec = 0;
-						double t_dec;
-
-						for (int pos = 0; pos < max_index; pos++) {
-
-							timer.start();
-
-							uint64_t p = sk.decrypt(*cs[pos]).getValue() & 0x01;
-
-							t_dec = timer.stop();
-							timer.reset();
-
-							t_acc_dec += t_dec;
-
-							if (p != val[pos]) {
-
-								out_old << "WRONG decryption; should be " << val[pos] << ", decrypted " << p << '\n';
-								out_old.flush();
-							}
-						}
-
-						timer.start();
-
-						delete cs[max_index];
-						delete cs[max_index - 1];
-						delete cs[max_index - 2];
-
-						t = timer.stop();
-						timer.reset();
-
-						t_acc += t;
-
-						max_index -= 3;
-
-						out_old << "Epoch " << epoch << ": operations " << t_acc << " " << TIME_MEASURE_UNIT
-							<< ", decryption " << t_acc_dec << " " << TIME_MEASURE_UNIT << "\n";
-						out_old.flush();
-					}
-
-					double t_m_acc = 0;
-
-					// launching THR_CNT separate threads
-
-					certFHE_old::Ciphertext *** thr_args = new certFHE_old::Ciphertext **[THR_CNT];
-					int ** thr_val = new int *[THR_CNT];
-					certFHE_old::SecretKey ** thr_sk = new certFHE_old::SecretKey *[THR_CNT];
-					certFHE_old::Permutation ** thr_perm = new certFHE_old::Permutation *[THR_CNT];
-
-					const int LEFT_CTXT_CNT = 11;
-
-					for (int thr = 0; thr < THR_CNT; thr++) {
-
-						//thr_sk[thr] = new SecretKey(sk);
-						//thr_perm[thr] = new Permutation(perm);
 
 						thr_args[thr] = new certFHE_old::Ciphertext *[LEFT_CTXT_CNT];
 						thr_val[thr] = new int[LEFT_CTXT_CNT];
@@ -1311,31 +1321,28 @@ void average_test(const std::vector <int> randoms,
 
 						delete thr_val[thr];
 						delete thr_args[thr];
-						//delete thr_sk[thr];
-						//delete thr_perm[thr];
 					}
 
 					delete thr_args;
 					delete thr_val;
-					//delete thr_sk;
-					//delete thr_perm;
 
-					for (int c_left = 0; c_left <= max_index; c_left++)
+					for (int c_left = 0; c_left < max_index; c_left++)
 						delete cs[c_left];
 
-					out_old << "Multithreading total time " << t_m_acc << " miliseconds\n";
-					out_old.flush();
+					out << "Multithreading total time " << t_m_acc << " miliseconds\n";
+					out.flush();
 
-					out_old << "TEST " << ts << " DONE\n\n";
-					out_old.flush();
+					out << "TEST " << ts << " DONE\n\n";
+					out.flush();
 
 				}
 				catch (std::exception e) {
 
-					out_old << "ERROR: " << e.what() << '\n';
+					out << "ERROR: " << e.what() << '\n';
 				}
 			}
 
+			delete val;
 		}
 		catch (std::exception & err) {
 
@@ -1351,6 +1358,7 @@ void average_test(std::string randoms_file_source,
 	const int CS_CNT = 20, const int EPOCH_CNT = 3, const int DEL_FACTOR = 3,
 	std::ostream & out = std::cout,
 	std::ostream & out_old = std::cout,
+	bool PERM = true,
 	bool execute_old_test = true) {
 
 	std::vector <int> randoms;
@@ -1399,18 +1407,20 @@ void average_test(std::string randoms_file_source,
 		CS_CNT, EPOCH_CNT, DEL_FACTOR,
 		out,
 		out_old,
+		PERM,
 		execute_old_test);
 }
 
 void average_predefined_test(std::string path = "\\average_test\\debug_stats",
-								bool execute_old_test = false) {
+								bool execute_old_test = false,
+								bool permutations = false) {
 
 	if (execute_old_test) {
 
 		std::fstream log(STATS_PATH + path + ".txt", std::ios::out);
 		std::fstream log_old(STATS_PATH + path + "_old.txt", std::ios::out);
 
-		average_test("avgtestops.bin", 100, 140, 10, 2, 1247, 16, 20, 5, 6, log, std::cout, false);
+		average_test("avgtestops.bin", 10, 200000, 0, 0, 1247, 16, 1000, 10, 100, log, std::cout, permutations, false);
 
 		log.close();
 		log_old.close();
@@ -1419,7 +1429,7 @@ void average_predefined_test(std::string path = "\\average_test\\debug_stats",
 
 		std::fstream log(STATS_PATH + path + ".txt", std::ios::out);
 
-		average_test("avgtestops.bin", 100, 140, 10, 2, 1247, 16, 20, 6, 10, log, std::cout, false);
+		average_test("avgtestops.bin", 10, 200000, 0, 0, 1247, 16, 1000, 10, 100, log, std::cout, permutations, false);
 
 		log.close();
 	}
@@ -1516,7 +1526,7 @@ int main(){
 
 	//multiple_average_predefined_tests("\\average_test\\multiple_tests\\release");
 
-	average_predefined_test("\\average_test\\release_stats", false);
+	average_predefined_test("\\average_test\\release_noperm_stats", false, false);
 	
     return 0;
 }
