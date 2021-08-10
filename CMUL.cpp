@@ -170,49 +170,6 @@ namespace certFHE {
 		return to_permute;
 	}
 
-	/*CNODE * CMUL::upstream_merging(CNODE * fst, CNODE * snd) {
-
-		int fst_type = fst->getclass();
-		int snd_type = snd->getclass();
-
-		if (fst_type == 0) {
-
-			if(snd_type == 0)
-				return CMUL::__upstream_merging((CCC *)fst, (CCC *)snd);
-
-			else if(snd_type == 1)
-				return CMUL::__upstream_merging((CADD *)snd, (CCC *)fst);
-
-			else
-				return CMUL::__upstream_merging((CMUL *)snd, (CCC *)fst);
-
-		}
-		else if (fst_type == 1) {
-
-			if (snd_type == 0)
-				return CMUL::__upstream_merging((CADD *)fst, (CCC *)snd);
-
-			else if (snd_type == 1)
-				return CMUL::__upstream_merging((CADD *)fst, (CADD *)snd);
-
-			else
-				return CMUL::__upstream_merging((CADD *)fst, (CMUL *)snd);
-		}
-		else {
-
-			if (snd_type == 0)
-				return CMUL::__upstream_merging((CMUL *)fst, (CCC *)snd);
-
-			else if (snd_type == 1)
-				return CMUL::__upstream_merging((CADD *)snd, (CMUL *)fst);
-
-			else
-				return CMUL::__upstream_merging((CMUL *)fst, (CMUL *)snd);
-		}
-
-		return 0;
-	}*/
-
 	CNODE * CMUL::upstream_merging(CNODE * fst, CNODE * snd) {
 
 		CCC * fst_c = dynamic_cast<CCC *>(fst);
