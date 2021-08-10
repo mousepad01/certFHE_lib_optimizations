@@ -69,7 +69,7 @@ def array_ctxt_tests_plot(op, legend):
         plt.legend(plt_legend)
     plt.show()
 
-def average_m_tests_plot(legend):
+def average_tests_plot(dectime, legend):
 
     def __plot_test(file_name):
 
@@ -86,7 +86,8 @@ def average_m_tests_plot(legend):
 
         rounds_per_epoch = ROUNDS_PER_TEST // EPOCH_CNT
 
-        to_plot_x = [f"{rounds_per_epoch} ops, {CS_CNT} ctxt"]
+        to_plot_x = [f"{CS_CNT} ctxt"]
+        plt.xlabel(f'{rounds_per_epoch} operations (+, *, perm) per step        n = 1247, s = 16')
 
         current_cs_cnt = CS_CNT
         for e in range(1, EPOCH_CNT):
@@ -94,7 +95,7 @@ def average_m_tests_plot(legend):
             if DEL_FACTOR > 0:
                 current_cs_cnt -= current_cs_cnt // DEL_FACTOR
 
-            to_plot_x.append(f"{rounds_per_epoch} more ops, {current_cs_cnt} ctxt")
+            to_plot_x.append(f"{current_cs_cnt} ctxt")
 
         tests = tests[1:]
 
@@ -129,7 +130,8 @@ def average_m_tests_plot(legend):
         to_plot_y_dec = [val / tcnt for val in to_plot_y_dec]
 
         plt.plot(to_plot_x, to_plot_y)
-        plt.plot(to_plot_x, to_plot_y_dec)
+        if dectime is True:
+            plt.plot(to_plot_x, to_plot_y_dec)
 
     files = []
     for (_, _, filenames) in walk(path.abspath(getcwd())):
@@ -140,12 +142,17 @@ def average_m_tests_plot(legend):
 
     for file in files:
         if "debug" in file or "release" in file or "_stats" in file:
+            
+            try:
+                __plot_test(file)
 
-            __plot_test(file)
-            plt_legend.append(file)
-            plt_legend.append(file + " (decryption)")
+                plt_legend.append(file)
+                if dectime is True:
+                    plt_legend.append(file + " (decryption)")
 
-    plt.xlabel(f'number of random operations (+, *, perm) on 20 ciphertexts (n = 1247, s=16)')
+            except Exception as e:
+                print(f"ERROR while trying to plot file {file}: {e.args}")
+
     plt.ylabel('average time in miliseconds')
     if legend is True:
         plt.legend(plt_legend)
@@ -154,4 +161,4 @@ def average_m_tests_plot(legend):
 #array_ctxt_tests_plot("Addition", legend=False)
 #array_ctxt_tests_plot("Multiplication", legend=False)
 
-average_m_tests_plot(legend=True)
+average_tests_plot(dectime=False, legend=True)

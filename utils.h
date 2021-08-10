@@ -12,7 +12,7 @@
  * NOTE: deepcopies are not considered related (they can be safely used in a multithreading context in any case)
  * NOTE: when operating on ciphertext with only CCC as nodes, implementation IS THREADSAFE
 **/
-#define CERTFHE_MULTITHREADING_EXTENDED_SUPPORT true
+#define CERTFHE_MULTITHREADING_EXTENDED_SUPPORT false
 
 #define MSVC_COMPILER_LOCAL_CERTFHE_MACRO (_MSC_VER && !__INTEL_COMPILER)
 
