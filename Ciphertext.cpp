@@ -675,33 +675,14 @@ namespace certFHE{
 		CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
 		CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
 
-		//int thistype = this->node->getclass();
-		//int othertype = c.node->getclass();
-
 		/**
 		 * When two ctxt refer to a CCC, operations are performed directly
 		**/
 		if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
 			addition_result = CCC::add(ccc_thisnode, ccc_othernode);
 
-		//if (!thistype && !othertype && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size) 
-			//addition_result = CCC::add((CCC *)this->node, (CCC *)c.node);
-
-		else {
-
-			/**
-			 * The called method will treat arguments as different nodes
-			 * So the reference count temporarily increases
-			 * (although not necessary ???)
-			**/
-			if (this->node == c.node)
-				this->node->downstream_reference_count += 1;
-
+		else 
 			addition_result = Ciphertext::add(this->node, c.node);
-
-			if (this->node == c.node)
-				this->node->downstream_reference_count -= 1;
-		}
 
 		Ciphertext add_result_c;
 		add_result_c.node = addition_result;
@@ -722,33 +703,14 @@ namespace certFHE{
 		CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
 		CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
 
-		//int thistype = this->node->getclass();
-		//int othertype = c.node->getclass();
-
 		/**
 		 * When two ctxt refer to a CCC, operations are performed directly
 		**/
 		if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
 			mul_result = CCC::multiply(ccc_thisnode, ccc_othernode);
 
-		//if (!thistype && !othertype && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
-			//mul_result = CCC::multiply((CCC *)this->node, (CCC *)c.node);
-
-		else {
-
-			/**
-			 * The called method will treat arguments as different nodes
-			 * So the reference count temporarily increases
-			 * (although not necessary ???)
-			**/
-			if (this->node == c.node)
-				this->node->downstream_reference_count += 1;
-
+		else 
 			mul_result = Ciphertext::multiply(this->node, c.node);
-
-			if (this->node == c.node)
-				this->node->downstream_reference_count -= 1;
-		}
 
 		Ciphertext mul_result_c;
 		mul_result_c.node = mul_result;
@@ -769,33 +731,14 @@ namespace certFHE{
 		CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
 		CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
 
-		//int thistype = this->node->getclass();
-		//int othertype = c.node->getclass();
-
 		/**
 		 * When two ctxt refer to a CCC, operations are performed directly
 		**/
 		if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
 			addition_result = CCC::add(ccc_thisnode, ccc_othernode);
 
-		//if (!thistype && !othertype && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
-			//addition_result = CCC::add((CCC *)this->node, (CCC *)c.node);
-
-		else {
-
-			/**
-			 * The called method will treat arguments as different nodes
-			 * So the reference count temporarily increases
-			 * (although not necessary ???)
-			**/
-			if (this->node == c.node)
-				this->node->downstream_reference_count += 1;
-
+		else 
 			addition_result = Ciphertext::add(this->node, c.node);
-
-			if (this->node == c.node)
-				this->node->downstream_reference_count -= 1;
-		}
 
 		this->node->try_delete();
 		this->node = addition_result;
@@ -816,33 +759,14 @@ namespace certFHE{
 		CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
 		CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
 
-		//int thistype = this->node->getclass();
-		//int othertype = c.node->getclass();
-
 		/**
 		 * When two ctxt refer to a CCC, operations are performed directly
 		**/
 		if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
 			mul_result = CCC::multiply(ccc_thisnode, ccc_othernode);
 
-		//if (!thistype && !othertype && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
-			//mul_result = CCC::multiply((CCC *)this->node, (CCC *)c.node);
-
-		else {
-
-			/**
-			 * The called method will treat arguments as different nodes
-			 * So the reference count temporarily increases
-			 * (although not necessary ???)
-			**/
-			if (this->node == c.node)
-				this->node->downstream_reference_count += 1;
-
+		else 
 			mul_result = Ciphertext::multiply(this->node, c.node);
-
-			if (this->node == c.node)
-				this->node->downstream_reference_count -= 1;
-		}
 
 		this->node->try_delete();
 		this->node = mul_result;

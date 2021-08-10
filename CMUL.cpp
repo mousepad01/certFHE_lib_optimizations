@@ -4,9 +4,9 @@
 namespace certFHE {
 
 	void CMUL::upstream_merging() {
-
-		//if (this->deflen_count > OPValues::max_cmul_merge_size)
-			//return;
+		
+		if (OPValues::no_merging)
+			return;
 
 		CNODE_list * thisnodes = this->nodes->next; // skipping dummy element
 
@@ -54,12 +54,8 @@ namespace certFHE {
 					CNODE_list * thisnodes_aux = this->nodes->next;
 					while (thisnodes_aux != 0)
 						thisnodes_aux = thisnodes_aux->pop_current_node();
-					
-					/*
-					COP * merged_cop = dynamic_cast<COP *>(merged);  // useless ?
-					while (merged_cop->nodes->next != 0) // useless ?
-						merged_cop->nodes->next->pop_current_node(); // useless ?
-					*/
+
+					merged->try_delete();
 
 					return;
 				}

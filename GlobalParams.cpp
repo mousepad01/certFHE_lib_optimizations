@@ -29,6 +29,8 @@ namespace certFHE {
 	bool OPValues::shorten_on_recursive_cadd_merging = true;
 	bool OPValues::shorten_on_recursive_cmul_merging = true;
 
+	bool OPValues::no_merging = false;
+
 #pragma endregion
 
 #pragma region MTValues definitions

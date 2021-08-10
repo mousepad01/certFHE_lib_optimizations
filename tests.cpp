@@ -1816,7 +1816,7 @@ void average_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 
 				out << "Starting tests:\n\n";
 				out.flush();
-
+				std::cout << "tests start\n";
 				for (int ts = 0; ts < TEST_COUNT; ts++) {
 
 					try {
@@ -2028,9 +2028,12 @@ void average_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 						delete thr_args;
 						delete thr_val;
 
-						for (int c_left = 0; c_left < max_index; c_left++)
-							delete cs[c_left];
+						for (int c_left = 0; c_left < max_index; c_left++) {
 
+							//std::cout << cs[c_left]->node->downstream_reference_count << '\n';
+							delete cs[c_left];
+						}
+							
 						out << "Multithreading total time " << t_m_acc << " miliseconds\n";
 						out.flush();
 
@@ -2350,7 +2353,7 @@ void average_predefined_test(std::string path = "\\average_test\\debug_stats",
 		std::fstream log(STATS_PATH + path + ".txt", std::ios::out);
 		std::fstream log_old(STATS_PATH + path + "_old.txt", std::ios::out);
 
-		average_test(10, 2000000, 0, 0, 1247, 16, 1000, 10, 0, log, log_old, permutations, true);
+		average_test(10, 2000000, 0, 0, 1247, 16, 1000, 10, 100, log, log_old, permutations, true);
 
 		log.close();
 		log_old.close();
@@ -2359,7 +2362,7 @@ void average_predefined_test(std::string path = "\\average_test\\debug_stats",
 
 		std::fstream log(STATS_PATH + path + ".txt", std::ios::out);
 
-		average_test(10, 2000000, 0, 0, 1247, 16, 1000, 10, 0, log, std::cout, permutations, false);
+		average_test(10, 2000000, 0, 0, 1247, 16, 1000, 10, 100, log, std::cout, permutations, false);
 
 		log.close();
 	}
@@ -2377,7 +2380,7 @@ int main(){
 
 	//multiple_average_predefined_tests("\\average_test\\multiple_tests\\release");
 
-	average_predefined_test("\\average_test\\release_noperm_0_stats", false, false);
+	average_predefined_test("\\average_test\\release_noperm_nomerging_stats", false, false);
 	
     return 0;
 }

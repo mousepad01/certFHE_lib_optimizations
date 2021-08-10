@@ -79,6 +79,14 @@ namespace certFHE {
 		 *		 otherwise, inconsistencies (wrong decryptions) may appear
 		**/
 		static bool decryption_cache;
+
+		/**
+		 * Absolutely no merging takes place
+		 * In some situations this will mean significantly more memory is consumed
+		 * and the decryption / deepcopy / permutation will be significantly more slower,
+		 * but the addition / multiplication times will be faster
+		**/
+		static bool no_merging;
 	};
 
 	/**
