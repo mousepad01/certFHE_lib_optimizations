@@ -13,10 +13,7 @@
 #include "./old_implementation/certFHE_old.h"
 
 // STATS_PATH to be manually configured 
-// make sure first_certFHE_test and second_certFHE_test folders are present in STATS_PATH
 static std::string STATS_PATH = "";
-static std::string STATS_AVGTEST_PATH_SUFFIX = "\\first_certFHE_test";
-static std::string STATS_ARRTEST_PATH_SUFFIX = "\\second_certFHE_test";
 
 void array_ctxt_test(const std::vector <int> randoms,
 	const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
@@ -391,8 +388,8 @@ void array_ctxt_predefined_test(std::string path_sufix = "\\array_ctxt_test\\rel
 
 	if (execute_old_test) {
 
-		std::fstream log(STATS_PATH + path_sufix + ".txt", std::ios::out);
-		std::fstream log_old(STATS_PATH + path_sufix + "_old.txt", std::ios::out);
+		std::fstream log(STATS_PATH + "arrtest_" + path_sufix + ".txt", std::ios::out);
+		std::fstream log_old(STATS_PATH + "arrtest_" + path_sufix + "_old.txt", std::ios::out);
 
 		array_ctxt_test("arrctxttestops.bin", 2, 1000, 1247, 16, log, log_old, true);
 
@@ -401,7 +398,7 @@ void array_ctxt_predefined_test(std::string path_sufix = "\\array_ctxt_test\\rel
 	}
 	else {
 
-		std::fstream log(STATS_PATH + path_sufix + ".txt", std::ios::out);
+		std::fstream log(STATS_PATH + "arrtest_" + path_sufix + ".txt", std::ios::out);
 
 		array_ctxt_test("arrctxttestops.bin", 2, 1000, 1247, 16, log, std::cout, false);
 
@@ -1431,7 +1428,7 @@ void average_rndloaded_predefined_test(std::string path_sufix = "\\average_test\
 	}
 }
 
-void multiple_average_rndloaded_predefined_tests(std::string path) {
+/*void multiple_average_rndloaded_predefined_tests(std::string path) {
 
 	// changing OPValues parameters in current implementation
 
@@ -1508,7 +1505,7 @@ void multiple_average_rndloaded_predefined_tests(std::string path) {
 			}
 		}
 	}
-}
+}*/
 
 void average_thrfct_test(certFHE::SecretKey & sk, certFHE::Permutation & perm,
 	certFHE::Ciphertext ** cs, int * val,
@@ -2350,19 +2347,19 @@ void average_predefined_test(std::string path_sufix = "\\average_test\\debug_sta
 
 	if (execute_old_test) {
 
-		std::fstream log(STATS_PATH + path_sufix + ".txt", std::ios::out);
-		std::fstream log_old(STATS_PATH + path_sufix + "_old.txt", std::ios::out);
+		std::fstream log(STATS_PATH + "averagetest_" + path_sufix + ".txt", std::ios::out);
+		std::fstream log_old(STATS_PATH + "averagetest_" + path_sufix + "_old.txt", std::ios::out);
 
-		average_test(100, 100, 0, 0, 1247, 16, 100, 10, 0, log, log_old, permutations, true);
+		average_test(100, 90, 0, 0, 1247, 16, 100, 10, 0, log, log_old, permutations, true);
 
 		log.close();
 		log_old.close();
 	}
 	else {
 
-		std::fstream log(STATS_PATH + path_sufix + ".txt", std::ios::out);
+		std::fstream log(STATS_PATH + "averagetest_" + path_sufix + ".txt", std::ios::out);
 
-		average_test(100, 100, 0, 0, 1247, 16, 100, 10, 0, log, std::cout, permutations, false);
+		average_test(100, 90, 0, 0, 1247, 16, 100, 10, 0, log, std::cout, permutations, false);
 
 		log.close();
 	}
@@ -2373,20 +2370,20 @@ int main(){
 	std::cout << "NOTE: make sure the STATS_PATH is configured and all directories exist\n\n";
 
 	std::cout << "Starting the first test, where random operations will be applied between a fixed amount of ciphertexts\n"
-		<< "Stats will be saved in " << STATS_PATH + STATS_AVGTEST_PATH_SUFFIX << '\n'
+		<< "Stats will be saved in " << STATS_PATH << '\n'
 		<< "To plot them, call average_test_plot function from plotter.py (dectime parameter - whether you want to plot decryption times in the same graph or not)\n" 
 		<< "NOTE: plotter.py needs to be in the same directory in which the result files are located\n\n";
 
-	average_predefined_test(STATS_AVGTEST_PATH_SUFFIX + "\\stats", true, false);
+	average_predefined_test("stats", true, false);
 
 	std::cout << "First test done\n\n";
 
 	std::cout << "Starting the second test, where the addition and multiplication times are measured separately, on small ciphertexts\n"
-		<< "Stats will be saved in " << STATS_PATH + STATS_ARRTEST_PATH_SUFFIX << '\n'
+		<< "Stats will be saved in " << STATS_PATH << '\n'
 		<< "To plot them, call array_ctxt_tests_plot from plotter.py (op parameter - Addition or Multiplication)\n"
 		<< "NOTE: plotter.py needs to be in the same directory in which the result files are located\n\n";
 
-	array_ctxt_predefined_test(STATS_ARRTEST_PATH_SUFFIX + "\\stats", true);
+	array_ctxt_predefined_test("stats", true);
 
 	std::cout << "Second test done\n\n";
 
