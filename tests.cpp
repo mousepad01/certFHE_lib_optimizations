@@ -14,7 +14,7 @@
 
 // STATS_PATH to be manually configured 
 // make sure first_certFHE_test and second_certFHE_test folders are present in STATS_PATH
-static std::string STATS_PATH = "C:\\Users\\intern.andreis\\Desktop\\certfhe_stats\\tests";
+static std::string STATS_PATH = "";
 static std::string STATS_AVGTEST_PATH_SUFFIX = "\\first_certFHE_test";
 static std::string STATS_ARRTEST_PATH_SUFFIX = "\\second_certFHE_test";
 
