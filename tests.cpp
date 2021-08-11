@@ -12,7 +12,11 @@
 #include "Threadpool.h"
 #include "./old_implementation/certFHE_old.h"
 
+// STATS_PATH to be manually configured 
+// make sure first_certFHE_test and second_certFHE_test folders are present in STATS_PATH
 static std::string STATS_PATH = "C:\\Users\\intern.andreis\\Desktop\\certfhe_stats\\tests";
+static std::string STATS_AVGTEST_PATH_SUFFIX = "\\first_certFHE_test";
+static std::string STATS_ARRTEST_PATH_SUFFIX = "\\second_certFHE_test";
 
 void array_ctxt_test(const std::vector <int> randoms,
 	const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
@@ -382,24 +386,24 @@ void array_ctxt_test(std::string randoms_file_source,
 		execute_old_test);
 }
 
-void array_ctxt_predefined_test(std::string path = "\\array_ctxt_test\\release_stats",
+void array_ctxt_predefined_test(std::string path_sufix = "\\array_ctxt_test\\release_stats",
 								bool execute_old_test = true) {
 
 	if (execute_old_test) {
 
-		std::fstream log(STATS_PATH + path + ".txt", std::ios::out);
-		std::fstream log_old(STATS_PATH + path + "_old.txt", std::ios::out);
+		std::fstream log(STATS_PATH + path_sufix + ".txt", std::ios::out);
+		std::fstream log_old(STATS_PATH + path_sufix + "_old.txt", std::ios::out);
 
-		array_ctxt_test("arrctxttestops.bin", 1, 1000, 1247, 16, log, log_old, true);
+		array_ctxt_test("arrctxttestops.bin", 2, 1000, 1247, 16, log, log_old, true);
 
 		log.close();
 		log_old.close();
 	}
 	else {
 
-		std::fstream log(STATS_PATH + path + ".txt", std::ios::out);
+		std::fstream log(STATS_PATH + path_sufix + ".txt", std::ios::out);
 
-		array_ctxt_test("arrctxttestops.bin", 1, 1000, 1247, 16, log, std::cout, false);
+		array_ctxt_test("arrctxttestops.bin", 2, 1000, 1247, 16, log, std::cout, false);
 
 		log.close();
 	}
@@ -1403,14 +1407,14 @@ void average_rndloaded_test(std::string randoms_file_source,
 		execute_old_test);
 }
 
-void average_rndloaded_predefined_test(std::string path = "\\average_test\\debug_stats",
+void average_rndloaded_predefined_test(std::string path_sufix = "\\average_test\\debug_stats",
 								bool execute_old_test = false,
 								bool permutations = false) {
 
 	if (execute_old_test) {
 
-		std::fstream log(STATS_PATH + path + ".txt", std::ios::out);
-		std::fstream log_old(STATS_PATH + path + "_old.txt", std::ios::out);
+		std::fstream log(STATS_PATH + path_sufix + ".txt", std::ios::out);
+		std::fstream log_old(STATS_PATH + path_sufix + "_old.txt", std::ios::out);
 
 		average_rndloaded_test("avgtestops.bin", 10, 2000000, 0, 0, 1247, 16, 1000, 10, 100, log, log_old, permutations, true);
 
@@ -1419,7 +1423,7 @@ void average_rndloaded_predefined_test(std::string path = "\\average_test\\debug
 	}
 	else {
 
-		std::fstream log(STATS_PATH + path + ".txt", std::ios::out);
+		std::fstream log(STATS_PATH + path_sufix + ".txt", std::ios::out);
 
 		average_rndloaded_test("avgtestops.bin", 10, 2000000, 0, 0, 1247, 16, 1000, 10, 100, log, std::cout, permutations, false);
 
@@ -1816,7 +1820,7 @@ void average_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 
 				out << "Starting tests:\n\n";
 				out.flush();
-				std::cout << "tests start\n";
+
 				for (int ts = 0; ts < TEST_COUNT; ts++) {
 
 					try {
@@ -2028,16 +2032,12 @@ void average_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 						delete thr_args;
 						delete thr_val;
 
-						for (int c_left = 0; c_left < max_index; c_left++) {
-
-							//std::cout << cs[c_left]->node->downstream_reference_count << '\n';
+						for (int c_left = 0; c_left < max_index; c_left++) 
 							delete cs[c_left];
-						}
 							
 						out << "Multithreading total time " << t_m_acc << " miliseconds\n";
 						out.flush();
 
-						std::cout << "TEST " << ts << " DONE\n\n";
 						out << "TEST " << ts << " DONE\n\n";
 						out.flush();
 
@@ -2344,25 +2344,25 @@ void average_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 		}
 }
 
-void average_predefined_test(std::string path = "\\average_test\\debug_stats",
+void average_predefined_test(std::string path_sufix = "\\average_test\\debug_stats",
 	bool execute_old_test = false,
 	bool permutations = false) {
 
 	if (execute_old_test) {
 
-		std::fstream log(STATS_PATH + path + ".txt", std::ios::out);
-		std::fstream log_old(STATS_PATH + path + "_old.txt", std::ios::out);
+		std::fstream log(STATS_PATH + path_sufix + ".txt", std::ios::out);
+		std::fstream log_old(STATS_PATH + path_sufix + "_old.txt", std::ios::out);
 
-		average_test(10, 2000000, 0, 0, 1247, 16, 1000, 10, 100, log, log_old, permutations, true);
+		average_test(100, 100, 0, 0, 1247, 16, 100, 10, 0, log, log_old, permutations, true);
 
 		log.close();
 		log_old.close();
 	}
 	else {
 
-		std::fstream log(STATS_PATH + path + ".txt", std::ios::out);
+		std::fstream log(STATS_PATH + path_sufix + ".txt", std::ios::out);
 
-		average_test(10, 2000000, 0, 0, 1247, 16, 1000, 10, 100, log, std::cout, permutations, false);
+		average_test(100, 100, 0, 0, 1247, 16, 100, 10, 0, log, std::cout, permutations, false);
 
 		log.close();
 	}
@@ -2370,17 +2370,25 @@ void average_predefined_test(std::string path = "\\average_test\\debug_stats",
 
 int main(){
 
-	//average_predefined_test();
+	std::cout << "NOTE: make sure the STATS_PATH is configured and all directories exist\n\n";
 
-	//array_ctxt_predefined_test();
+	std::cout << "Starting the first test, where random operations will be applied between a fixed amount of ciphertexts\n"
+		<< "Stats will be saved in " << STATS_PATH + STATS_AVGTEST_PATH_SUFFIX << '\n'
+		<< "To plot them, call average_test_plot function from plotter.py (dectime parameter - whether you want to plot decryption times in the same graph or not)\n" 
+		<< "NOTE: plotter.py needs to be in the same directory in which the result files are located\n\n";
 
-	//average_m_predefined_test();
+	average_predefined_test(STATS_AVGTEST_PATH_SUFFIX + "\\stats", true, false);
 
-	//multiple_array_ctxt_predefined_tests("\\array_ctxt_test\\multiple_tests\\debug");
+	std::cout << "First test done\n\n";
 
-	//multiple_average_predefined_tests("\\average_test\\multiple_tests\\release");
+	std::cout << "Starting the second test, where the addition and multiplication times are measured separately, on small ciphertexts\n"
+		<< "Stats will be saved in " << STATS_PATH + STATS_ARRTEST_PATH_SUFFIX << '\n'
+		<< "To plot them, call array_ctxt_tests_plot from plotter.py (op parameter - Addition or Multiplication)\n"
+		<< "NOTE: plotter.py needs to be in the same directory in which the result files are located\n\n";
 
-	average_predefined_test("\\average_test\\release_noperm_nomerging_stats", false, false);
-	
+	array_ctxt_predefined_test(STATS_ARRTEST_PATH_SUFFIX + "\\stats", true);
+
+	std::cout << "Second test done\n\n";
+
     return 0;
 }

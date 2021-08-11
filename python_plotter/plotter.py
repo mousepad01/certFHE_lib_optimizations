@@ -58,7 +58,7 @@ def array_ctxt_tests_plot(op, legend):
     plt_legend = []
 
     for file in files:
-        if "debug" in file or "release" in file:
+        if "debug" in file or "release" in file or "stats" in file:
 
             __plot_test(file)
             plt_legend.append(file)
@@ -86,7 +86,7 @@ def average_tests_plot(dectime, legend):
 
         rounds_per_epoch = ROUNDS_PER_TEST // EPOCH_CNT
 
-        to_plot_x = [f"{CS_CNT} ctxt"]
+        to_plot_x = [f"e 0, {CS_CNT} ctxt"]
         plt.xlabel(f'{rounds_per_epoch} operations (+, *, perm) per step        n = 1247, s = 16')
 
         current_cs_cnt = CS_CNT
@@ -95,7 +95,7 @@ def average_tests_plot(dectime, legend):
             if DEL_FACTOR > 0:
                 current_cs_cnt -= current_cs_cnt // DEL_FACTOR
 
-            to_plot_x.append(f"{current_cs_cnt} ctxt")
+            to_plot_x.append(f"e {e}, {current_cs_cnt} ctxt")
 
         tests = tests[1:]
 
@@ -141,7 +141,7 @@ def average_tests_plot(dectime, legend):
     plt_legend = []
 
     for file in files:
-        if "debug" in file or "release" in file or "_stats" in file:
+        if "debug" in file or "release" in file or "stats" in file:
             
             try:
                 __plot_test(file)
@@ -158,7 +158,7 @@ def average_tests_plot(dectime, legend):
         plt.legend(plt_legend)
     plt.show()
 
-#array_ctxt_tests_plot("Addition", legend=False)
-#array_ctxt_tests_plot("Multiplication", legend=False)
+#array_ctxt_tests_plot("Addition", legend=True)
+#array_ctxt_tests_plot("Multiplication", legend=True)
 
-average_tests_plot(dectime=False, legend=True)
+average_tests_plot(dectime=True, legend=True)
