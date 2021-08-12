@@ -500,9 +500,13 @@ namespace certFHE {
 
 	uint64_t CCC::decrypt(const SecretKey & sk) {
 
-		/*static int testv = 0;
-		testv += 1;
-		std::cout << "decrypt in CCC " << testv << '\n';*/
+		if (OPValues::decryption_cache) {
+
+			auto cache_entry = CNODE::decryption_cached_values.find(this);
+
+			if (cache_entry != CNODE::decryption_cached_values.end())
+				return (uint64_t)cache_entry->second;
+		}
 
 		uint64_t dec = 0;
 
@@ -620,6 +624,9 @@ namespace certFHE {
 
 			delete[] args;
 		}
+
+		if (OPValues::decryption_cache)
+			CNODE::decryption_cached_values[this] = (unsigned char)dec;
 
 		return dec;
 	}

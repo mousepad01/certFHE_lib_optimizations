@@ -1494,7 +1494,11 @@ void average_thrfct_test(certFHE::SecretKey & sk, certFHE::Permutation & perm,
 
 					temp = cs[i]->applyPermutation(perm);
 
+					certFHE::CNODE::clear_decryption_cache();
+
 					pp = sk.decrypt(*cs[i]).getValue() & 0x01;
+
+					certFHE::CNODE::clear_decryption_cache();
 
 					if (val[i] != pp) {
 
@@ -1512,6 +1516,8 @@ void average_thrfct_test(certFHE::SecretKey & sk, certFHE::Permutation & perm,
 				}
 			}
 
+			certFHE::CNODE::clear_decryption_cache();
+
 			for (int pos = 0; pos < max_index; pos++) {
 
 				uint64_t p = sk.decrypt(*cs[pos]).getValue() & 0x01;
@@ -1525,6 +1531,8 @@ void average_thrfct_test(certFHE::SecretKey & sk, certFHE::Permutation & perm,
 					out_mutex.unlock();
 				}
 			}
+
+			certFHE::CNODE::clear_decryption_cache();
 
 			int to_delete_cnt = 0;
 			if (DEL_FACTOR > 0)
@@ -1833,15 +1841,17 @@ void average_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 
 									t_acc += t;
 
+									certFHE::CNODE::clear_decryption_cache();
+
 									pp = sk.decrypt(*cs[i]).getValue() & 0x01;
+
+									certFHE::CNODE::clear_decryption_cache();
 
 									if (val[i] != pp) {
 
 										out << "WRONG decryption on permuted ctxt; should be " << val[i] << ", decrypted " << pp << '\n';
 										out.flush();
 									}
-
-									certFHE::CNODE::clear_decryption_cache();
 
 									break;
 
@@ -1856,6 +1866,8 @@ void average_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 							double t_acc_dec = 0;
 							double t_dec;
 
+							certFHE::CNODE::clear_decryption_cache();
+
 							for (int pos = 0; pos < max_index; pos++) {
 
 								timer.start();
@@ -1868,6 +1880,8 @@ void average_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 								t_acc_dec += t_dec;
 
 								if (p != val[pos]) {
+
+									std::cout << "WRONG decryption; should be " << val[pos] << ", decrypted " << p << '\n';
 
 									out << "WRONG decryption; should be " << val[pos] << ", decrypted " << p << '\n';
 									out.flush();

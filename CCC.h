@@ -11,7 +11,7 @@ namespace certFHE {
 	**/
 	class CCC : public CNODE {
 
-	public:
+	protected:
 
 		/**
 		 * Ciphertext as uint64_t array
@@ -111,6 +111,9 @@ namespace certFHE {
 
 		// Other
 
+		friend class COP;
+		friend class CMUL;
+		friend class CADD;
 		friend class Ciphertext;
 	};
 
