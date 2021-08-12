@@ -311,7 +311,7 @@ namespace certFHE {
 		else {
 
 			Threadpool <Args *> * threadpool = Library::getThreadpool();
-			uint64_t thread_count = threadpool->THR_CNT;
+			uint64_t thread_count = threadpool->get_threadcount();
 
 			AddArgs * args = new AddArgs[thread_count];
 
@@ -433,7 +433,7 @@ namespace certFHE {
 		else {
 
 			Threadpool <Args *> * threadpool = Library::getThreadpool();
-			uint64_t thread_count = threadpool->THR_CNT;
+			uint64_t thread_count = threadpool->get_threadcount();
 
 			uint64_t q;
 			uint64_t r;
@@ -558,7 +558,7 @@ namespace certFHE {
 		else {
 
 			Threadpool <Args *> * threadpool = Library::getThreadpool();
-			uint64_t thread_count = threadpool->THR_CNT;
+			uint64_t thread_count = threadpool->get_threadcount();
 
 			uint64_t q;
 			uint64_t r;
@@ -686,7 +686,7 @@ namespace certFHE {
 		else {
 
 			Threadpool <Args *> * threadpool = Library::getThreadpool();
-			uint64_t thread_count = threadpool->THR_CNT;
+			uint64_t thread_count = threadpool->get_threadcount();
 
 			uint64_t q;
 			uint64_t r;
