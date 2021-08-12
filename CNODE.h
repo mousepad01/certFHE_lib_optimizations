@@ -16,13 +16,13 @@ namespace certFHE {
 	**/
 	class CNODE {
 
-	public:
+	protected:
 
 		static std::unordered_map <CNODE *, unsigned char> decryption_cached_values;
 
 		/**
 		 * certFHE context
-		 * ASSUMED to be te SAME 
+		 * ASSUMED to have the exact same values for its attributes
 		 * on EVERY NODE that interacts with this node
 		 * (currently, checks done only in Ciphertext class)
 		**/
@@ -76,7 +76,7 @@ namespace certFHE {
 		virtual void upstream_merging() = 0;
 
 		/**
-		 * This function tries to shorten de depth of some chains 
+		 * This function tries to shorten the depth of some chains 
 		 * that formed (mostly) after upstream_merging calls
 		 * (when the node refers to a single upstream node and so on)
 		**/
@@ -105,6 +105,8 @@ namespace certFHE {
 		**/
 		void try_delete();
 
+	public:
+
 		/**
 		 * Method used to clear the decryption cache
 		 * Should ALWAYS BE CALLED between decryptions, if additions or multiplications are being performed
@@ -113,11 +115,13 @@ namespace certFHE {
 
 		// Other
 
+		friend class CNODE_disjoint_set;
 		friend class CNODE_list;
 		friend class CCC;
 		friend class COP;
 		friend class CADD;
 		friend class CMUL;
+		friend class Ciphertext;
 	};
 }
 
