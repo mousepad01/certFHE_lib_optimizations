@@ -13,12 +13,12 @@ namespace certFHE{
     class Permutation{
 
         uint64_t * permutation;			// vector used to store permutation
-		CtxtInversion * inversions;		// permutation as inversions on a default len chunk -- for optimized permutation op --
+		PermInversion * inversions;		// permutation as inversions on a default len chunk -- for optimized permutation op --
         
 		uint64_t length;				// size of permutation vector
 		uint64_t inversions_cnt;		// number of inversions
 
-		Permutation(const uint64_t * perm, const uint64_t len, uint64_t inv_cnt, CtxtInversion * invs);
+		Permutation(const uint64_t * perm, const uint64_t len, uint64_t inv_cnt, const PermInversion * invs);
 
     public:
 
@@ -32,7 +32,7 @@ namespace certFHE{
         /**
          * Custom constructor - generates a random permutation of size len
         **/
-        Permutation(const uint64_t len);
+        Permutation(uint64_t len);
 
         Permutation(const Permutation & perm);
 
@@ -46,8 +46,7 @@ namespace certFHE{
 
 		void setLength(uint64_t len) { this->length = len; }
 		void setInversionsCnt(uint64_t inv_cnt) { this->inversions_cnt = inversions_cnt; }
-		void setPermutation(uint64_t * perm,uint64_t len);
-		void setPermutation(uint64_t * perm, uint64_t len, uint64_t inv_cnt, CtxtInversion * invs);
+		void setPermutation(const uint64_t * perm, uint64_t len, uint64_t inv_cnt, const PermInversion * invs);
 
 		/**
 		 * DO NOT DELETE THE RETUNING POINTER
@@ -57,7 +56,7 @@ namespace certFHE{
 		/**
 		 * DO NOT DELETE THE RETUNING POINTER
 		**/
-		CtxtInversion * getInversions() const { return this->inversions; }
+		PermInversion * getInversions() const { return this->inversions; }
 
         /**
          * Friend class for operator <<
@@ -81,8 +80,8 @@ namespace certFHE{
          * @param[in] permB: the second permutation to combine
          * @return value : a permutatuion with value equal to this o permB
         **/
-       Permutation operator + (const Permutation & permB) const;
-       Permutation & operator += (const Permutation & permB);
+       Permutation operator + (const Permutation & other) const;
+       Permutation & operator += (const Permutation & other);
     };
 
 

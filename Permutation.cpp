@@ -22,7 +22,7 @@ namespace certFHE{
 
 		uint64_t this_invcnt = this->inversions_cnt;
 
-		CtxtInversion * inverseInvs = new CtxtInversion[this_invcnt];
+		PermInversion * inverseInvs = new PermInversion[this_invcnt];
 		for (int i = 0; i < this_invcnt; i++)
 			inverseInvs[i] = this->inversions[this_invcnt - 1 - i];
     
@@ -82,7 +82,7 @@ namespace certFHE{
 		uint64_t this_invcnt = this->inversions_cnt;
 		uint64_t other_invcnt = other.inversions_cnt;
 
-		CtxtInversion * resultInvs = new CtxtInversion[this_invcnt + other_invcnt];
+		PermInversion * resultInvs = new PermInversion[this_invcnt + other_invcnt];
 		int i;
 
 		for (i = 0; i < this_invcnt; i++)
@@ -111,7 +111,7 @@ namespace certFHE{
 		uint64_t this_invcnt = this->inversions_cnt;
 		uint64_t other_invcnt = other.inversions_cnt;
 
-		CtxtInversion * thisNewInvs = new CtxtInversion[this_invcnt + other_invcnt];
+		PermInversion * thisNewInvs = new PermInversion[this_invcnt + other_invcnt];
 		int i;
 
 		for (i = 0; i < this_invcnt; i++)
@@ -133,21 +133,7 @@ namespace certFHE{
 
 #pragma region Getters and setters
 
-	void Permutation::setPermutation(uint64_t * perm, uint64_t len) {
-
-		if (this->permutation != nullptr)
-			delete [] this->permutation;
-		
-		this->permutation = new uint64_t [len];
-		this->length = len;
-
-		for(uint64_t i = 0; i < len; i++)
-			this->permutation[i] = perm[i];
-
-		this->inversions = nullptr;
-	}
-
-	void Permutation::setPermutation(uint64_t * perm, uint64_t len, uint64_t inv_cnt, CtxtInversion * invs) {
+	void Permutation::setPermutation(const uint64_t * perm, uint64_t len, uint64_t inv_cnt, const PermInversion * invs) {
 
 		if (this->permutation != nullptr)
 			delete[] this->permutation;
@@ -156,7 +142,7 @@ namespace certFHE{
 			delete[] this->inversions;
 
 		this->permutation = new uint64_t[len];
-		this->inversions = new CtxtInversion[inv_cnt];
+		this->inversions = new PermInversion[inv_cnt];
 
 		this->length = len;
 		this->inversions_cnt = inv_cnt;
@@ -181,10 +167,10 @@ namespace certFHE{
 		this->inversions = nullptr;
 	}
 
-	Permutation::Permutation(const uint64_t len) {
+	Permutation::Permutation(uint64_t len) {
 
 		this->permutation = new uint64_t[len];
-		this->inversions = new CtxtInversion[len]; // allocating for maximum number of inversions
+		this->inversions = new PermInversion[len]; // allocating for maximum number of inversions
 
 		this->length = len;
 		this->inversions_cnt = 0;
@@ -235,10 +221,10 @@ namespace certFHE{
 #endif
 	}
 
-	Permutation::Permutation(const uint64_t * perm, const uint64_t len, uint64_t inv_cnt, CtxtInversion * invs) {
+	Permutation::Permutation(const uint64_t * perm, const uint64_t len, uint64_t inv_cnt, const PermInversion * invs) {
 
 		this->permutation = new uint64_t[len];
-		this->inversions = new CtxtInversion[inv_cnt];
+		this->inversions = new PermInversion[inv_cnt];
 
 		this->length = len;
 		this->inversions_cnt = inv_cnt;
@@ -256,10 +242,10 @@ namespace certFHE{
 		this->inversions_cnt = perm.getInversionsCnt();
 
 		this->permutation = new uint64_t[this->length];
-		this->inversions = new CtxtInversion[this->inversions_cnt];
+		this->inversions = new PermInversion[this->inversions_cnt];
 
 		uint64_t * _perm = perm.getPermutation();
-		CtxtInversion * _invs = perm.getInversions();
+		PermInversion * _invs = perm.getInversions();
 
 		for(uint64_t i = 0; i < this->length; i++)
 			this->permutation[i] = _perm[i];

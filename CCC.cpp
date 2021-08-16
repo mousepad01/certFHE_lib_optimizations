@@ -232,7 +232,7 @@ namespace certFHE {
 
 		PermArgs * args = (PermArgs *)raw_args;
 
-		CtxtInversion * perm_invs = args->perm_invs;
+		PermInversion * perm_invs = args->perm_invs;
 		uint64_t inv_cnt = args->inv_cnt;
 		uint64_t * ctxt = args->ctxt;
 		uint64_t * res = args->res;
@@ -633,7 +633,7 @@ namespace certFHE {
 
 	CNODE * CCC::permute(const Permutation & perm, bool force_deep_copy) {
 
-		CtxtInversion * invs = perm.getInversions();
+		PermInversion * invs = perm.getInversions();
 		uint64_t inv_cnt = perm.getInversionsCnt();
 
 		uint64_t deflen_cnt = this->deflen_count;
