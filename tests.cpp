@@ -1352,85 +1352,6 @@ void average_rndloaded_predefined_test(std::string path_sufix = "\\average_test\
 	}
 }
 
-/*void multiple_average_rndloaded_predefined_tests(std::string path) {
-
-	// changing OPValues parameters in current implementation
-
-	int rnd = 0;
-
-	int ARR1_CNT = 1;
-	int ARR2_CNT = 1;
-	int ARR3_CNT = 1;
-	int ARR4_CNT = 1;
-	int ARR5_CNT = 1;
-
-	int TOTAL_CNT = ARR1_CNT * ARR2_CNT * ARR3_CNT * ARR4_CNT * ARR5_CNT;
-
-	uint64_t max_ccc_val_arr[] = { (uint64_t)2048 };
-	uint64_t max_cadd_merge_val_arr[] = { (uint64_t)4096 * 4096 };
-	uint64_t max_cmul_merge_val_arr[] = { (uint64_t)4096 * 4096 * 4096 };
-	bool always_def_mul_val_arr[] = { true, false };
-	bool rem_dupl_val_arr[] = { true, false };
-	bool shorten_on_rec_val_arr[] = { true, false };
-
-	for (int i = 0; i < ARR1_CNT; i++) {
-
-		certFHE::OPValues::max_ccc_deflen_size = max_ccc_val_arr[i];
-
-		for (int j = 0; j < ARR2_CNT; j++) {
-
-			certFHE::OPValues::max_cadd_merge_size = max_cadd_merge_val_arr[j];
-			certFHE::OPValues::max_cmul_merge_size = max_cmul_merge_val_arr[j];
-
-			for (int k = 0; k < ARR3_CNT; k++) {
-
-				certFHE::OPValues::always_default_multiplication = always_def_mul_val_arr[k];
-
-				for (int p = 0; p < ARR4_CNT; p++) {
-
-					certFHE::OPValues::remove_duplicates_onadd = rem_dupl_val_arr[p];
-					certFHE::OPValues::remove_duplicates_onmul = rem_dupl_val_arr[p];
-
-					for (int q = 0; q < ARR5_CNT; q++) {
-
-						certFHE::OPValues::shorten_on_recursive_cadd_merging = shorten_on_rec_val_arr[q];
-						certFHE::OPValues::shorten_on_recursive_cmul_merging = shorten_on_rec_val_arr[q];
-
-						char maxccc[21];
-						sprintf_s(maxccc, 21, "%llu", certFHE::OPValues::max_ccc_deflen_size);
-
-						char maxcaddm[21];
-						sprintf_s(maxcaddm, 21, "%llu", certFHE::OPValues::max_cadd_merge_size);
-
-						char maxcmulm[21];
-						sprintf_s(maxcmulm, 21, "%llu", certFHE::OPValues::max_cmul_merge_size);
-
-						char adefm[6];
-						sprintf_s(adefm, 6, "%s", certFHE::OPValues::always_default_multiplication ? "true" : "false");
-
-						char remdupl[6];
-						sprintf_s(remdupl, 6, "%s", certFHE::OPValues::remove_duplicates_onadd ? "true" : "false");
-
-						char shrec[6];
-						sprintf_s(shrec, 6, "%s", certFHE::OPValues::shorten_on_recursive_cadd_merging ? "true" : "false");
-
-						std::string path_tmp = path + "_" + maxccc + "_" + maxcaddm + "_" + maxcmulm
-							+ "_" + adefm + "_" + remdupl + "_" + shrec;
-
-						rnd += 1;
-						if (rnd == TOTAL_CNT)
-							average_rndloaded_predefined_test(path_tmp, true, false);
-						else
-							average_rndloaded_predefined_test(path_tmp, false, false);
-					}
-
-				}
-
-			}
-		}
-	}
-}*/
-
 void average_thrfct_test(certFHE::SecretKey & sk, certFHE::Permutation & perm,
 	certFHE::Ciphertext ** cs, int * val,
 	std::ostream & out, std::mutex & out_mutex,
@@ -2303,13 +2224,13 @@ void average_predefined_test(std::string path_sufix = "\\average_test\\debug_sta
 	}
 }
 
-int main(){
+void old_implementation_compare_statistics_tests() {
 
 	std::cout << "NOTE: make sure the STATS_PATH is configured and all directories exist\n\n";
 
 	std::cout << "Starting the first test, where random operations will be applied between a fixed amount of ciphertexts\n"
 		<< "Stats will be saved in " << STATS_PATH << '\n'
-		<< "To plot them, call average_test_plot function from plotter.py (dectime parameter - whether you want to plot decryption times in the same graph or not)\n" 
+		<< "To plot them, call average_test_plot function from plotter.py (dectime parameter - whether you want to plot decryption times in the same graph or not)\n"
 		<< "NOTE: plotter.py needs to be in the same directory in which the result files are located\n\n";
 
 	average_predefined_test("stats", true, false);
@@ -2324,6 +2245,11 @@ int main(){
 	array_ctxt_predefined_test("stats", true);
 
 	std::cout << "Second test done\n\n";
+}
+
+int main(){
+
+	//old_implementation_compare_statistics_tests();
 
     return 0;
 }
