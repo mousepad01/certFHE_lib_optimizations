@@ -1,9 +1,11 @@
-#ifndef TIMER_H
-#define TIMER_H
+#ifndef TIMER_OLD_H
+#define TIMER_OLD_H
 
-#include "utils.h"
+#include "utils_old.h"
 
-namespace certFHE
+using namespace std;
+
+namespace certFHE_old
 {
   /**
    * Basic timer to measure operations
@@ -12,12 +14,12 @@ namespace certFHE
 
     private:
 
-      std::string name;
+      string name;
 
       std::chrono::duration<double> chronometer;
 
       std::chrono::high_resolution_clock::time_point  start_fingerprint = std::chrono::high_resolution_clock::now();
-      std::chrono::high_resolution_clock::time_point  stop_fingerprint = std::chrono::high_resolution_clock::now();
+      std::chrono::high_resolution_clock::time_point  stop_fingerprint =std::chrono::high_resolution_clock::now();
       
     public:
 
@@ -25,7 +27,7 @@ namespace certFHE
        * Default/Simple constructor
        * @param[in] name: Name of the timer
       **/
-      Timer(std::string name = "Default timer");
+      Timer(string name = "Default timer");
 
       /**
        * Destructor
@@ -42,7 +44,7 @@ namespace certFHE
       **/
 
       /**
-       * Stop and return the timer
+       * Stop and returm the timer
        * @return value: the measured time in miliseconds
       **/
       double stop();

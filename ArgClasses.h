@@ -6,7 +6,7 @@
 namespace certFHE{
 
 	/**
-	 * Base structure used for passing arguments
+	 * Base structure used for passing arguments to CCC multithreading functions
 	**/
 	class Args {
 
@@ -22,7 +22,7 @@ namespace certFHE{
 	};
 
 	/**
-	 * Structure for addition multithreading function
+	 * Structure for CCC addition multithreading function
 	**/
 	class AddArgs : public Args {
 
@@ -42,7 +42,7 @@ namespace certFHE{
 	};
 
 	/*
-	 * Structure for multiplication multithreading function
+	 * Structure for CCC multiplication multithreading function
 	*/
 	class MulArgs : public Args{
 
@@ -64,7 +64,7 @@ namespace certFHE{
 	};
 
 	/*
-	 * Structure for decryption multithreading function
+	 * Structure for CCC decryption multithreading function
 	*/
 	class DecArgs : public Args {
 
@@ -79,15 +79,16 @@ namespace certFHE{
 		uint64_t fst_deflen_pos;
 		uint64_t snd_deflen_pos;
 
-		uint64_t * decrypted;
+		uint64_t decrypted;
 
 		~DecArgs(){}
 	};
 
 	/**
 	 * Structure for retaining permutations as inversions
+	 * relative to a default length CCC stored in a uint64_t array
 	**/
-	class CtxtInversion {
+	class PermInversion {
 
 	public:
 
@@ -98,16 +99,17 @@ namespace certFHE{
 	};
 
 	/*
-	 * Structure for permuting multithreading function
+	 * Structure for CCC permuting multithreading function
 	*/
 	class PermArgs : public Args {
 
 	public:
 
-		CtxtInversion * perm_invs;
+		PermInversion * perm_invs;
 		uint64_t inv_cnt;
 
 		uint64_t * ctxt;
+		uint64_t * res;
 
 		uint64_t fst_deflen_pos;
 		uint64_t snd_deflen_pos;

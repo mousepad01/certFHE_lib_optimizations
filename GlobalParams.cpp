@@ -1,12 +1,35 @@
 #include "GlobalParams.h"
+#include "Context.h"
+#include "Ciphertext.h"
+#include "Timer.h"
+#include "SecretKey.h"
+#include "Plaintext.h"
+#include "Permutation.h"
 
-namespace certFHE{
+namespace certFHE {
 
-#pragma region OPTValues definitions
+#pragma region OPValues definitions
 
-	uint64_t OPTValues::max_ccc_deflen_size = 256;
-	bool OPTValues::remove_duplicates_onadd = true;
-	bool OPTValues::remove_duplicates_onmul = true;
+	uint64_t OPValues::max_ccc_deflen_size = 2048;
+	uint64_t OPValues::max_cadd_merge_size = 4096 * 4096;
+	uint64_t OPValues::max_cmul_merge_size = (uint64_t)4096 * 4096 * 4096;
+
+	bool OPValues::decryption_cache = true;
+
+	/**
+	 * all these parameters set to some specific value
+	 * can perform way better than with other configurations in some cases, and vice versa
+	**/
+
+	bool OPValues::always_default_multiplication = true;
+
+	bool OPValues::remove_duplicates_onadd = true;
+	bool OPValues::remove_duplicates_onmul = true;
+
+	bool OPValues::shorten_on_recursive_cadd_merging = true;
+	bool OPValues::shorten_on_recursive_cmul_merging = true;
+
+	bool OPValues::no_merging = false;
 
 #pragma endregion
 
@@ -78,7 +101,7 @@ namespace certFHE{
 
 		MTValues::cpy_m_threshold = (uint64_t)1 << threshold_log;
 	}
-		
+
 	void MTValues::__dec_m_threshold_autoselect(const Context & context) {
 
 		const int MAX_L_LOG = 15;
@@ -90,6 +113,25 @@ namespace certFHE{
 		memset(observed_sequential, 0, MAX_L_LOG * sizeof(double));
 
 		SecretKey sk(context);
+
+		/**
+		 * Thresholds are determined on operations on CCC objects,
+		 * so the environment is temporarily adapted to test these operations
+		 * on any given size
+		**/
+
+		bool old_remove_duplicates_onadd = OPValues::remove_duplicates_onadd;
+		bool old_remove_duplicates_onmul = OPValues::remove_duplicates_onmul;
+		uint64_t old_max_ccc_deflen_size = OPValues::max_ccc_deflen_size;
+		uint64_t old_max_cadd_merge_size = OPValues::max_cadd_merge_size;
+		uint64_t old_max_cmul_merge_size = OPValues::max_cmul_merge_size;
+
+		OPValues::remove_duplicates_onadd = false;
+		OPValues::remove_duplicates_onmul = false;
+
+		OPValues::max_ccc_deflen_size = -1;
+		OPValues::max_cadd_merge_size = -1;
+		OPValues::max_cmul_merge_size = -1;
 
 		for (uint64_t ts = 0; ts < AUTOSELECT_TEST_CNT; ts++) {
 
@@ -134,6 +176,13 @@ namespace certFHE{
 			}
 		}
 
+		OPValues::remove_duplicates_onadd = old_remove_duplicates_onadd;
+		OPValues::remove_duplicates_onmul = old_remove_duplicates_onmul;
+
+		OPValues::max_ccc_deflen_size = old_max_ccc_deflen_size;
+		OPValues::max_cadd_merge_size = old_max_cadd_merge_size;
+		OPValues::max_cmul_merge_size = old_max_cmul_merge_size;
+
 		//for (int threshold_log = 1; threshold_log < MAX_L_LOG; threshold_log++)
 			//std::cout << observed_multithreading[threshold_log] << " " << observed_sequential[threshold_log] << '\n';
 
@@ -157,6 +206,19 @@ namespace certFHE{
 		memset(observed_sequential, 0, MAX_L_LOG * sizeof(double));
 
 		SecretKey sk(context);
+
+		bool old_remove_duplicates_onadd = OPValues::remove_duplicates_onadd;
+		bool old_remove_duplicates_onmul = OPValues::remove_duplicates_onmul;
+		uint64_t old_max_ccc_deflen_size = OPValues::max_ccc_deflen_size;
+		uint64_t old_max_cadd_merge_size = OPValues::max_cadd_merge_size;
+		uint64_t old_max_cmul_merge_size = OPValues::max_cmul_merge_size;
+
+		OPValues::remove_duplicates_onadd = false;
+		OPValues::remove_duplicates_onmul = false;
+
+		OPValues::max_ccc_deflen_size = -1;
+		OPValues::max_cadd_merge_size = -1;
+		OPValues::max_cmul_merge_size = -1;
 
 		for (uint64_t ts = 0; ts < AUTOSELECT_TEST_CNT; ts++) {
 
@@ -237,6 +299,13 @@ namespace certFHE{
 			}
 		}
 
+		OPValues::remove_duplicates_onadd = old_remove_duplicates_onadd;
+		OPValues::remove_duplicates_onmul = old_remove_duplicates_onmul;
+
+		OPValues::max_ccc_deflen_size = old_max_ccc_deflen_size;
+		OPValues::max_cadd_merge_size = old_max_cadd_merge_size;
+		OPValues::max_cmul_merge_size = old_max_cmul_merge_size;
+
 		//for (int threshold_log = 2; threshold_log < MAX_L_LOG; threshold_log++)
 			//std::cout << observed_multithreading[threshold_log] << " " << observed_sequential[threshold_log] << '\n';
 
@@ -260,6 +329,19 @@ namespace certFHE{
 		memset(observed_sequential, 0, MAX_L_LOG * sizeof(double));
 
 		SecretKey sk(context);
+
+		bool old_remove_duplicates_onadd = OPValues::remove_duplicates_onadd;
+		bool old_remove_duplicates_onmul = OPValues::remove_duplicates_onmul;
+		uint64_t old_max_ccc_deflen_size = OPValues::max_ccc_deflen_size;
+		uint64_t old_max_cadd_merge_size = OPValues::max_cadd_merge_size;
+		uint64_t old_max_cmul_merge_size = OPValues::max_cmul_merge_size;
+
+		OPValues::remove_duplicates_onadd = false;
+		OPValues::remove_duplicates_onmul = false;
+
+		OPValues::max_ccc_deflen_size = -1;
+		OPValues::max_cadd_merge_size = -1;
+		OPValues::max_cmul_merge_size = -1;
 
 		for (uint64_t ts = 0; ts < AUTOSELECT_TEST_CNT; ts++) {
 
@@ -332,6 +414,13 @@ namespace certFHE{
 			}
 		}
 
+		OPValues::remove_duplicates_onadd = old_remove_duplicates_onadd;
+		OPValues::remove_duplicates_onmul = old_remove_duplicates_onmul;
+
+		OPValues::max_ccc_deflen_size = old_max_ccc_deflen_size;
+		OPValues::max_cadd_merge_size = old_max_cadd_merge_size;
+		OPValues::max_cmul_merge_size = old_max_cmul_merge_size;
+
 		//for (int threshold_log = 6; threshold_log < MAX_L_LOG; threshold_log += 2)
 			//std::cout << observed_multithreading[threshold_log] << " " << observed_sequential[threshold_log] << '\n';
 
@@ -355,6 +444,19 @@ namespace certFHE{
 		memset(observed_sequential, 0, MAX_L_LOG * sizeof(double));
 
 		SecretKey sk(context);
+
+		bool old_remove_duplicates_onadd = OPValues::remove_duplicates_onadd;
+		bool old_remove_duplicates_onmul = OPValues::remove_duplicates_onmul;
+		uint64_t old_max_ccc_deflen_size = OPValues::max_ccc_deflen_size;
+		uint64_t old_max_cadd_merge_size = OPValues::max_cadd_merge_size;
+		uint64_t old_max_cmul_merge_size = OPValues::max_cmul_merge_size;
+
+		OPValues::remove_duplicates_onadd = false;
+		OPValues::remove_duplicates_onmul = false;
+
+		OPValues::max_ccc_deflen_size = -1;
+		OPValues::max_cadd_merge_size = -1;
+		OPValues::max_cmul_merge_size = -1;
 
 		for (uint64_t ts = 0; ts < AUTOSELECT_TEST_CNT; ts++) {
 
@@ -405,6 +507,13 @@ namespace certFHE{
 			}
 
 		}
+
+		OPValues::remove_duplicates_onadd = old_remove_duplicates_onadd;
+		OPValues::remove_duplicates_onmul = old_remove_duplicates_onmul;
+
+		OPValues::max_ccc_deflen_size = old_max_ccc_deflen_size;
+		OPValues::max_cadd_merge_size = old_max_cadd_merge_size;
+		OPValues::max_cmul_merge_size = old_max_cmul_merge_size;
 
 		//for (int threshold_log = 1; threshold_log < MAX_L_LOG; threshold_log++)
 			//std::cout << observed_multithreading[threshold_log] << " " << observed_sequential[threshold_log] << '\n';

@@ -1,7 +1,7 @@
 #include "CNODE_list.h"
 
 namespace certFHE {
-
+	
 	CNODE_list * CNODE_list::pop_current_node() {
 
 		CNODE_list * to_return = this->next;
@@ -20,6 +20,8 @@ namespace certFHE {
 			this->current->try_delete();
 			this->current = 0;
 		}
+
+		delete this;
 
 		return to_return;
 	}

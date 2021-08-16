@@ -1,15 +1,22 @@
+#ifndef UTILS_H
+#define UTILS_H
+
 #define BIT(X) X & 0x01
-#define MODPOW32(x) ((x) & 4294967295)
-#define MOD32(x) ((x) & 31)
-#define ROTR32(x, n) ((x >> MOD32(n)) | ((x << (32 - MOD32(n))) & 4294967295))
 
-#ifndef MSVC_COMPILER_LOCAL_MACRO
-#define MSVC_COMPILER_LOCAL_MACRO (_MSC_VER && !__INTEL_COMPILER)
-#endif
+/**
+ * Regarding Ciphertext class, current implementation is threadsafe (without manual synchronization)
+ * only when manipulating ciphertexts with no common internal node
+ * (they were obtained from totally different ciphertexts, and no operation was performed between them)
+ * Setting this macro to true enables support for these cases, 
+ * although this might slow down (by a significant amount) all operations on all ciphertexts
+ * NOTE: deepcopies are not considered related (they can be safely used in a multithreading context in any case)
+ * NOTE: when operating on ciphertext with only CCC as nodes, implementation IS THREADSAFE
+**/
+#define CERTFHE_MULTITHREADING_EXTENDED_SUPPORT true
 
-#ifndef GPP_COMPILER_LOCAL_MACRO
-#define GPP_COMPILER_LOCAL_MACRO __GNUC__
-#endif
+#define MSVC_COMPILER_LOCAL_CERTFHE_MACRO (_MSC_VER && !__INTEL_COMPILER)
+
+#define GPP_COMPILER_LOCAL_CERTFHE_MACRO __GNUC__
 
 #include <stdio.h>
 #include <iostream>
@@ -17,7 +24,7 @@
 
 #include <immintrin.h>
 
-#if MSVC_COMPILER_LOCAL_MACRO
+#if MSVC_COMPILER_LOCAL_CERTFHE_MACRO
 #include <intrin.h>
 #endif
 
@@ -30,9 +37,12 @@
 #include <bitset>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 #include <condition_variable>
 #include <mutex>
 #include <thread>
 #include <functional>
 #include <queue>
+
+#endif

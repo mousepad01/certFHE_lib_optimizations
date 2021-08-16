@@ -4,22 +4,22 @@ namespace certFHE{
 
 #pragma region Library class
 
-	Threadpool <Args *> * Library::threadpool = NULL;
+	Threadpool <Args *> * Library::threadpool = 0;
 
-	void Library::initializeLibrary(bool initPools)
-	{
+	void Library::initializeLibrary(bool initPools) {
+
 		//Introducing local time as seed for further pseudo random generator calls
-		srand((unsigned int)time(NULL));
+		srand((unsigned int)time(0));
 
 		if (initPools == true) 
 			Library::threadpool = Threadpool <Args *> ::make_threadpool();
 		else
-			Library::threadpool = NULL;
+			Library::threadpool = 0;
 	}
 
 	Threadpool <Args *> * Library::getThreadpool() {
 
-		if(Library::threadpool == NULL)
+		if(Library::threadpool == 0)
 			Library::threadpool = Threadpool <Args *> ::make_threadpool();
 
 		return Library::threadpool;
@@ -29,44 +29,45 @@ namespace certFHE{
 
 #pragma region Helper class
 
-	bool Helper::exists(const uint64_t*v,const uint64_t len,const uint64_t value)
-	{
+	bool Helper::exists(const uint64_t * v, const uint64_t len, const uint64_t value) {
+
 		for (uint64_t i = 0; i < len; i++)
 			if (v[i] == value)
 				return true;
 
 		return false;
-
 	}
 
 	void Helper::u64_chunk_cpy(Args * raw_args) {
 
-	U64CpyArgs * args = (U64CpyArgs *)raw_args;
+		U64CpyArgs * args = (U64CpyArgs *)raw_args;
 
-	const uint64_t * src = args->src;
-	uint64_t * dest = args->dest;
-	uint64_t snd_u64_pos = args->snd_u64_pos;
+		const uint64_t * src = args->src;
+		uint64_t * dest = args->dest;
+		uint64_t snd_u64_pos = args->snd_u64_pos;
 
-	for (uint64_t i = args->fst_u64_pos; i < snd_u64_pos; i++)
-		dest[i] = src[i];
+		for (uint64_t i = args->fst_u64_pos; i < snd_u64_pos; i++)
+			dest[i] = src[i];
 		
-	{
-		std::lock_guard <std::mutex> lock(args->done_mutex);
+		{
+			std::lock_guard <std::mutex> lock(args->done_mutex);
 
-		args->task_is_done = true;
-		args->done.notify_all(); 
-	}
+			args->task_is_done = true;
+			args->done.notify_all(); 
+		}
 	}
 
 	void Helper::u64_multithread_cpy(const uint64_t * src, uint64_t * dest, uint64_t to_cpy_len) {
 
 		Threadpool <Args *> * threadpool = Library::getThreadpool();
-		uint64_t thread_count = threadpool->THR_CNT;
+		uint64_t thread_count = threadpool->get_threadcount();
 
 		uint64_t q;
 		uint64_t r;
 
 		uint64_t worker_cnt;
+
+		// trying to split workload as even as possible
 
 		if (thread_count >= to_cpy_len) {
 

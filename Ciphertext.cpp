@@ -1,779 +1,987 @@
 #include "Ciphertext.h"
 #include "GlobalParams.h"
-#include "Threadpool.hpp"
+#include "Threadpool.h"
+#include "SecretKey.h"
+#include "Permutation.h"
+#include "Plaintext.h"
+#include "Context.h"
+#include "CMUL.h"
+#include "CADD.h"
 
-//using namespace certFHE;
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
+#include "CNODE_disjoint_set.h"
+#endif
 
 namespace certFHE{
 
 #pragma region Public methods
 
-	void chunk_permute(Args * raw_args) {
+	Plaintext Ciphertext::decrypt(const SecretKey & sk) const {
 
-		PermArgs * args = (PermArgs *)raw_args;
+		return Plaintext(this->decrypt_raw(sk));
+	}
 
-		CtxtInversion * perm_invs = args->perm_invs;
-		uint64_t inv_cnt = args->inv_cnt;
-		uint64_t * ctxt = args->ctxt;
-		uint64_t default_len = args->default_len;
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
 
-		uint64_t snd_deflen_pos = args->snd_deflen_pos;
+	uint64_t Ciphertext::decrypt_raw(const SecretKey & sk) const {
 
-		for (uint64_t i = args->fst_deflen_pos; i < snd_deflen_pos; i++) {
+		if (this->concurrency_guard == 0)
+			throw std::runtime_error("concurrency guard cannot be null");
 
-			uint64_t * current_chunk = ctxt + i * default_len;
+		std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
 
-			for (uint64_t k = 0; k < inv_cnt; k++) {
+		if (this->node == 0)
+			throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
-				uint64_t fst_u64_ch = perm_invs[k].fst_u64_ch;
-				uint64_t snd_u64_ch = perm_invs[k].snd_u64_ch;
-				uint64_t fst_u64_r = perm_invs[k].fst_u64_r;
-				uint64_t snd_u64_r = perm_invs[k].snd_u64_r;
+		if (*this->node->context != *sk.getContext())
+			throw std::runtime_error("ciphertext and secret key do not have the same context");
 
-#if MSVC_COMPILER_LOCAL_MACRO_WORSE
+		uint64_t dec = this->node->decrypt(sk);
+		return dec;
+	}
 
-				//unsigned char val_i = _bittest64((const __int64 *)current_chunk + fst_u64_ch, fst_u64_r);
-				//unsigned char val_j = _bittest64((const __int64 *)current_chunk + snd_u64_ch, snd_u64_r);
+	Ciphertext Ciphertext::applyPermutation(const Permutation & permutation) {
 
-				unsigned char val_i = _bextr_u64(current_chunk[fst_u64_ch], fst_u64_r, 1);
-				unsigned char val_j = _bextr_u64(current_chunk[snd_u64_ch], snd_u64_r, 1);
+		if (this->concurrency_guard == 0)
+			throw std::runtime_error("concurrency guard cannot be null");
+
+		// guard locked inside copy constructor
+		Ciphertext permuted_ciphertext(*this);
+
+		std::scoped_lock <std::mutex> lock(permuted_ciphertext.concurrency_guard->get_root()->mtx);
+
+		if (permuted_ciphertext.node == 0)
+			throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+		CNODE * permuted = permuted_ciphertext.node->permute(permutation, true);
+
+		permuted_ciphertext.node->try_delete();
+		permuted_ciphertext.node = permuted;
+
+		return permuted_ciphertext;
+	}
+
+	void Ciphertext::applyPermutation_inplace(const Permutation & permutation) {
+
+		if (this->concurrency_guard == 0)
+			throw std::runtime_error("concurrency guard cannot be null");
+
+		std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+
+		if (this->node == 0)
+			throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+		CNODE * permuted = this->node->permute(permutation, false);
+
+		this->node->try_delete();
+		this->node = permuted;
+	}
+
+	Ciphertext Ciphertext::make_deep_copy() const {
+
+		if (this->concurrency_guard == 0)
+			throw std::runtime_error("concurrency guard cannot be null");
+
+		std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+
+		if (this->node == 0)
+			throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+		Ciphertext deepcopy;
+		deepcopy.node = this->node->make_deep_copy();
+
+		return deepcopy;
+	}
 
 #else
 
-				unsigned char val_i = (current_chunk[fst_u64_ch] >> fst_u64_r) & 0x01;
-				unsigned char val_j = (current_chunk[snd_u64_ch] >> snd_u64_r) & 0x01;
+	uint64_t Ciphertext::decrypt_raw(const SecretKey & sk) const {
+
+		if (this->node == 0)
+			throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+		if (*this->node->context != *sk.getContext())
+			throw std::runtime_error("ciphertext and secret key do not have the same context");
+
+		uint64_t dec = this->node->decrypt(sk);
+		return dec;
+	}
+
+	Ciphertext Ciphertext::applyPermutation(const Permutation & permutation) {
+
+		if (this->node == 0)
+			throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+		Ciphertext permuted_ciphertext(*this);
+
+		CNODE * permuted = permuted_ciphertext.node->permute(permutation, true);
+
+		permuted_ciphertext.node->try_delete();
+		permuted_ciphertext.node = permuted;
+
+		return permuted_ciphertext;
+	}
+
+	void Ciphertext::applyPermutation_inplace(const Permutation & permutation) {
+
+		if (this->node == 0)
+			throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+		CNODE * permuted = this->node->permute(permutation, false);
+		
+		this->node->try_delete();
+		this->node = permuted;
+	}
+
+	Ciphertext Ciphertext::make_deep_copy() const {
+
+		if (this->node == 0)
+			throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+		Ciphertext deepcopy;
+		deepcopy.node = this->node->make_deep_copy();
+
+		return deepcopy;
+	}
 
 #endif
-
-				if (val_i)
-					current_chunk[snd_u64_ch] |= (uint64_t)1 << snd_u64_r;
-				else
-					current_chunk[snd_u64_ch] &= ~((uint64_t)1 << snd_u64_r);
-
-				if (val_j)
-					current_chunk[fst_u64_ch] |= (uint64_t)1 << fst_u64_r;
-				else
-					current_chunk[fst_u64_ch] &= ~((uint64_t)1 << fst_u64_r);
-			}
-		}
-
-		{
-			std::lock_guard <std::mutex> lock(args->done_mutex);
-
-			args->task_is_done = true;
-			args->done.notify_all();
-		}
-	}
-
-	// TODO: get permutation as inversion product to optimise memory used 
-	//			when doing the permutation
-	void Ciphertext::applyPermutation_inplace(const Permutation& permutation)
-	{
-
-		CtxtInversion * invs = permutation.getInversions();
-		uint64_t inv_cnt = permutation.getInversionsCnt();
-
-		uint64_t len = this->len;
-		uint64_t default_len = this->certFHEcontext->getDefaultN();
-
-		uint64_t deflen_cnt = len / default_len;
-
-		if (deflen_cnt < MTValues::perm_m_threshold) {
-
-			for (uint64_t i = 0; i < deflen_cnt; i++) {
-
-				uint64_t * current_chunk = this->v + i * default_len;
-
-				for (uint64_t k = 0; k < inv_cnt; k++) {
-
-					uint64_t fst_u64_ch = invs[k].fst_u64_ch;
-					uint64_t snd_u64_ch = invs[k].snd_u64_ch;
-					uint64_t fst_u64_r = invs[k].fst_u64_r;
-					uint64_t snd_u64_r = invs[k].snd_u64_r;
-
-	#if GPP_COMPILER_LOCAL_MACRO
-
-					unsigned char val_i = (current_chunk[fst_u64_ch] >> fst_u64_r) & 0x01;
-					unsigned char val_j = (current_chunk[snd_u64_ch] >> snd_u64_r) & 0x01;
-
-	#elif MSVC_COMPILER_LOCAL_MACRO
-
-					unsigned char val_i = _bittest64((const __int64 *)current_chunk + fst_u64_ch, fst_u64_r);
-					unsigned char val_j = _bittest64((const __int64 *)current_chunk + snd_u64_ch, snd_u64_r);
-
-	#endif
-
-					if (val_i)
-						current_chunk[snd_u64_ch] |= (uint64_t)1 << snd_u64_r;
-					else
-						current_chunk[snd_u64_ch] &= ~((uint64_t)1 << snd_u64_r);
-
-					if (val_j)
-						current_chunk[fst_u64_ch] |= (uint64_t)1 << fst_u64_r;
-					else
-						current_chunk[fst_u64_ch] &= ~((uint64_t)1 << fst_u64_r);
-				}
-			}
-		}
-		else {
-
-			Threadpool <Args *> * threadpool = Library::getThreadpool();
-			uint64_t thread_count = threadpool->THR_CNT;
-
-			uint64_t q;
-			uint64_t r;
-
-			uint64_t worker_cnt;
-
-			if (thread_count >= deflen_cnt) {
-
-				q = 1;
-				r = 0;
-
-				worker_cnt = deflen_cnt;
-			}
-			else {
-
-				q = deflen_cnt / thread_count;
-				r = deflen_cnt % thread_count;
-
-				worker_cnt = thread_count;
-			}
-
-			PermArgs * args = new PermArgs[worker_cnt];
-
-			uint64_t prevchnk = 0;
-
-			for (uint64_t thr = 0; thr < worker_cnt; thr++) {
-
-				args[thr].perm_invs = invs;
-				args[thr].inv_cnt = inv_cnt;
-
-				args[thr].ctxt = this->v;
-
-				args[thr].fst_deflen_pos = prevchnk;
-				args[thr].snd_deflen_pos = prevchnk + q;
-
-				if (r > 0) {
-
-					args[thr].snd_deflen_pos += 1;
-					r -= 1;
-				}
-				prevchnk = args[thr].snd_deflen_pos;
-
-				args[thr].default_len = default_len;
-
-				threadpool->add_task(&chunk_permute, args + thr);
-			}
-
-			for (uint64_t thr = 0; thr < worker_cnt; thr++) {
-
-				std::unique_lock <std::mutex> lock(args[thr].done_mutex);
-
-				args[thr].done.wait(lock, [thr, args] {
-					return args[thr].task_is_done;
-				});
-			}
-
-			delete[] args;
-		}
-	}
-
-	Ciphertext Ciphertext::applyPermutation(const Permutation& permutation)
-	{
-		Ciphertext newCiphertext(*this);
-		newCiphertext.applyPermutation_inplace(permutation);
-		return newCiphertext;
-	}
-
-	uint64_t Ciphertext::size()
-	{
-		uint64_t size = 0;
-		size += sizeof(this->certFHEcontext);
-		size += sizeof(this->len);
-		size += sizeof(this->v);
-
-		size += this->len * 2 * sizeof(uint64_t);
-		return size;
-	}
 
 #pragma endregion
 
 #pragma region Private methods
 
-	void chunk_add(Args * raw_args) {
+	CNODE * Ciphertext::add(CNODE * fst, CNODE * snd) {
 
-		AddArgs * args = (AddArgs *)raw_args;
+		CADD * addition_result = new CADD(fst->context);
 
-		uint64_t * result = args->result;
-		uint64_t * fst_chunk = args->fst_chunk;
-		uint64_t * snd_chunk = args->snd_chunk;
-		uint64_t fst_len = args->fst_len;
+		/**
+		 * From now on, fst and snd nodes
+		 * are referenced inside mul_result
+		 * so the reference count increases for both of them
+		**/
+		fst->downstream_reference_count += 1;
+		snd->downstream_reference_count += 1;
 
-	#ifdef __AVX2__WORSE  // no visible performance improvement
+		addition_result->nodes->insert_next_element(fst);
+		addition_result->nodes->insert_next_element(snd);
 
-		uint64_t i = args->res_fst_deflen_pos;
-		uint64_t res_snd_deflen_pos = args->res_snd_deflen_pos;
+		addition_result->deflen_count = fst->deflen_count + snd->deflen_count;
 
-		uint64_t fst_for_limit = fst_len < res_snd_deflen_pos ? fst_len : res_snd_deflen_pos;
+		addition_result->upstream_merging();
 
-		for (i; i + 4 <= fst_for_limit; i += 4) {
+		/**
+		 * Shorten any chain of nodes formed during upstream merging
+		**/
+		CNODE * shortened = addition_result->upstream_shortening();
+		if (shortened != 0) {
 
-			__m256i avx_fst_chunk = _mm256_loadu_si256((const __m256i *)(fst_chunk + i));
-			_mm256_storeu_si256((__m256i *)(result + i), avx_fst_chunk);
+			addition_result->try_delete();
+			return shortened;
 		}
 
-		for (i; i < fst_for_limit; i++)
-			result[i] = fst_chunk[i];
-
-		for (i; i + 4 <= res_snd_deflen_pos; i += 4) {
-
-			__m256i avx_snd_chunk = _mm256_loadu_si256((const __m256i *)(snd_chunk + i - fst_len));
-			_mm256_store_si256((__m256i *)(result + i), avx_snd_chunk);
-		}
-
-		for (i; i < res_snd_deflen_pos; i++)
-			result[i] = snd_chunk[i - fst_len];
-
-	#else
-
-		uint64_t res_snd_deflen_pos = args->res_snd_deflen_pos;
-
-		for (uint64_t i = args->res_fst_deflen_pos; i < res_snd_deflen_pos; i++)
-
-			if (i < fst_len)
-				result[i] = fst_chunk[i];
-			else
-				result[i] = snd_chunk[i - fst_len];
-
-	#endif
-
-		{
-			std::lock_guard <std::mutex> lock(args->done_mutex);
-
-			args->task_is_done = true;
-			args->done.notify_all();
-		}
+		return addition_result;
 	}
 
-	uint64_t* Ciphertext::add(uint64_t* c1, uint64_t* c2, uint64_t len1, uint64_t len2, uint64_t &newlen) const
-	{
-		uint64_t* res = new uint64_t[len1 + len2];
-		newlen = len1 + len2;
+	CNODE * Ciphertext::multiply(CNODE * fst, CNODE * snd) {
 
-		if (newlen < MTValues::add_m_threshold) {
+		CMUL * mul_result = new CMUL(fst->context);
 
-			for (uint64_t i = 0; i < len1; i++)
-				res[i] = c1[i];
+		/**
+		 * From now on, fst and snd nodes 
+		 * are referenced inside mul_result
+		 * so the reference count increases for both of them
+		**/
+		fst->downstream_reference_count += 1;
+		snd->downstream_reference_count += 1;
 
-			for (uint64_t i = 0; i < len2; i++)
-				res[i + len1] = c2[i];
+		mul_result->nodes->insert_next_element(fst);
+		mul_result->nodes->insert_next_element(snd);
 
-		}
-		else {
+		mul_result->deflen_count = fst->deflen_count * snd->deflen_count;
 
-			Threadpool <Args *> * threadpool = Library::getThreadpool();
-			uint64_t thread_count = threadpool->THR_CNT;
+		mul_result->upstream_merging();
 
-			AddArgs * args = new AddArgs[thread_count];
+		/**
+		 * Shorten any chain of nodes formed during upstream merging
+		**/
+		CNODE * shortened = mul_result->upstream_shortening();
+		if (shortened != 0) {
 
-			uint64_t r = newlen % thread_count;
-			uint64_t q = newlen / thread_count;
-
-			uint64_t prevchnk = 0;
-
-			for (uint64_t thr = 0; thr < thread_count; thr++) {
-
-				args[thr].fst_chunk = c1;
-				args[thr].snd_chunk = c2;
-
-				args[thr].result = res;
-
-				args[thr].res_fst_deflen_pos = prevchnk;
-				args[thr].res_snd_deflen_pos = prevchnk + q;
-
-				if (r > 0) {
-
-					args[thr].res_snd_deflen_pos += 1;
-					r -= 1;
-				}
-				prevchnk = args[thr].res_snd_deflen_pos;
-
-				args[thr].fst_len = len1;
-
-				threadpool->add_task(&chunk_add, args + thr);
-			}
-
-			for (uint64_t thr = 0; thr < thread_count; thr++) {
-
-				std::unique_lock <std::mutex> lock(args[thr].done_mutex);
-
-				args[thr].done.wait(lock, [thr, args] {
-					return args[thr].task_is_done;
-				});
-			}
-
-			delete[] args;
+			mul_result->try_delete();
+			return shortened;
 		}
 
-		return res;
-	}
-
-	uint64_t* Ciphertext::defaultN_multiply(uint64_t* c1, uint64_t* c2, uint64_t len) const
-	{
-		uint64_t* res = new uint64_t[len];
-		for (uint64_t i = 0; i < len; i++)
-			res[i] = c1[i] & c2[i];
-
-		return res;
-	}
-
-	void chunk_multiply(Args * raw_args) {
-
-		MulArgs * args = (MulArgs *)raw_args;
-
-		uint64_t * result = args->result;
-		uint64_t * fst_chunk = args->fst_chunk;
-		uint64_t * snd_chunk = args->snd_chunk;
-		uint64_t snd_chlen = args->snd_chlen;
-		uint64_t default_len = args->default_len;
-
-		uint64_t res_snd_deflen_pos = args->res_snd_deflen_pos;
-		uint64_t res_fst_deflen_pos = args->res_fst_deflen_pos;
-
-		for (uint64_t i = args->res_fst_deflen_pos; i < res_snd_deflen_pos; i++) {
-
-			uint64_t fst_ch_i = (i / snd_chlen) * default_len;
-			uint64_t snd_ch_j = (i % snd_chlen) * default_len;
-
-#ifdef __AVX512F__
-
-			uint64_t k = 0;
-			for (; k + 8 <= default_len; k += 8) {
-
-				__m512i avx_fst_chunk = _mm512_loadu_si512((const void *)(fst_chunk + fst_ch_i + k));
-				__m512i avx_snd_chunk = _mm512_loadu_si512((const void *)(snd_chunk + snd_ch_j + k));
-				__m512i avx_result = _mm512_and_si512(avx_fst_chunk, avx_snd_chunk);
-
-				_mm512_storeu_si512((void *)(result + i * default_len + k), avx_result);
-			}
-
-			for (; k < default_len; k++)
-				result[i * default_len + k] = fst_chunk[fst_ch_i + k] & snd_chunk[snd_ch_j + k];
-
-#elif __AVX2__
-
-			uint64_t k = 0;
-			for (; k + 4 <= default_len; k += 4) {
-
-				__m256i avx_fst_chunk = _mm256_loadu_si256((const __m256i *)(fst_chunk + fst_ch_i + k));
-				__m256i avx_snd_chunk = _mm256_loadu_si256((const __m256i *)(snd_chunk + snd_ch_j + k));
-				__m256i avx_result = _mm256_and_si256(avx_fst_chunk, avx_snd_chunk);
-
-				_mm256_storeu_si256((__m256i *)(result + i * default_len + k), avx_result);
-			}
-
-			for(; k < default_len; k++)
-				result[i * default_len + k] = fst_chunk[fst_ch_i + k] & snd_chunk[snd_ch_j + k];
-
-#else	
-
-			for (uint64_t k = 0; k < default_len; k++)
-				result[i * default_len + k] = fst_chunk[fst_ch_i + k] & snd_chunk[snd_ch_j + k];
-
-#endif
-		}
-
-		{
-			std::lock_guard <std::mutex> lock(args->done_mutex);
-
-			args->task_is_done = true;
-			args->done.notify_all();
-		}
-	}
-
-	uint64_t* Ciphertext::multiply(const Context& ctx, uint64_t *c1, uint64_t*c2, uint64_t len1, uint64_t len2, uint64_t& newlen) const
-	{
-		newlen = len1;
-
-		uint64_t _defaultLen = ctx.getDefaultN();
-		if (len1 == _defaultLen)
-			if (len1 == len2)
-				return defaultN_multiply(c1, c2, len1);
-
-		newlen = (len1 / _defaultLen * len2 / _defaultLen) * _defaultLen;
-
-		uint64_t* res = new uint64_t[newlen];
-		uint64_t times1 = len1 / _defaultLen;
-		uint64_t times2 = len2 / _defaultLen;
-
-		uint64_t res_defChunks_len = times1 * times2;
-
-		if (newlen < MTValues::mul_m_threshold) {
-
-			for (uint64_t i = 0; i < res_defChunks_len; i++) {
-
-				uint64_t fst_ch_i = (i / times2) * _defaultLen;
-				uint64_t snd_ch_j = (i % times2) * _defaultLen;
-
-#ifdef __AVX512F__
-
-				uint64_t k = 0;
-				for (; k + 4 <= _defaultLen; k += 4) {
-
-					__m512i avx_c1 = _mm512_loadu_si512((const void *)(c1 + fst_ch_i + k));
-					__m512i avx_c2 = _mm512_loadu_si512((const void *)(c2 + snd_ch_j + k));
-					__m512i avx_res = _mm512_and_si512(avx_c1, avx_c2);
-
-					_mm512_storeu_si512((void *)(res + i * _defaultLen + k), avx_res);
-				}
-
-				for (; k < _defaultLen; k++)
-					res[i * _defaultLen + k] = c1[fst_ch_i + k] & c2[snd_ch_j + k];
-
-#elif __AVX2__
-
-				uint64_t k = 0;
-				for (; k + 4 <= _defaultLen; k += 4) {
-
-					__m256i avx_c1 = _mm256_loadu_si256((const __m256i *)(c1 + fst_ch_i + k));
-					__m256i avx_c2 = _mm256_loadu_si256((const __m256i *)(c2 + snd_ch_j + k));
-					__m256i avx_res = _mm256_and_si256(avx_c1, avx_c2);
-
-					_mm256_storeu_si256((__m256i *)(res + i * _defaultLen + k), avx_res);
-				}
-
-				for (; k < _defaultLen; k++)
-					res[i * _defaultLen + k] = c1[fst_ch_i + k] & c2[snd_ch_j + k];
-
-#else
-
-				for (uint64_t k = 0; k < _defaultLen; k++)
-					res[i * _defaultLen + k] = c1[fst_ch_i + k] & c2[snd_ch_j + k];
-
-#endif
-			}
-		}
-		else {
-
-			Threadpool <Args *> * threadpool = Library::getThreadpool();
-			uint64_t thread_count = threadpool->THR_CNT;
-
-			uint64_t q;
-			uint64_t r;
-
-			uint64_t worker_cnt;
-
-			if (thread_count >= res_defChunks_len) {
-
-				q = 1;
-				r = 0;
-
-				worker_cnt = res_defChunks_len;
-			}
-			else {
-
-				q = res_defChunks_len / thread_count;
-				r = res_defChunks_len % thread_count;
-
-				worker_cnt = thread_count;
-			}
-
-			MulArgs * args = new MulArgs[worker_cnt];
-
-			uint64_t prevchnk = 0;
-
-			for (uint64_t thr = 0; thr < worker_cnt; thr++) {
-
-				args[thr].fst_chunk = c1;
-				args[thr].snd_chunk = c2;
-
-				args[thr].result = res;
-
-				args[thr].res_fst_deflen_pos = prevchnk;
-				args[thr].res_snd_deflen_pos = prevchnk + q;
-
-				if (r > 0) {
-
-					args[thr].res_snd_deflen_pos += 1;
-					r -= 1;
-				}
-				prevchnk = args[thr].res_snd_deflen_pos;
-
-				args[thr].snd_chlen = times2;
-
-				args[thr].default_len = _defaultLen;
-
-				threadpool->add_task(&chunk_multiply, args + thr);
-			}
-
-			for (uint64_t thr = 0; thr < worker_cnt; thr++) {
-
-				std::unique_lock <std::mutex> lock(args[thr].done_mutex);
-
-				args[thr].done.wait(lock, [thr, args] {
-					return args[thr].task_is_done;
-				});
-			}
-
-			delete[] args;
-		}
-
-		return res;
+		return mul_result;
 	}
 
 #pragma endregion
 
 #pragma region Operators
 
-	std::ostream & operator<<(std::ostream &out, const Ciphertext &c)
-	{
-		uint64_t* _v = c.getValues();
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
 
-		uint64_t u64_length = c.getLen();
-		uint64_t n = c.certFHEcontext->getN();
+	Ciphertext Ciphertext::operator + (const Ciphertext & c) const {
 
-		uint64_t current_bitlen;
-		if (n > 64)
-			current_bitlen = 64;
-		else
-			current_bitlen = n;
+		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
+			throw std::runtime_error("concurrency guard cannot be null");
 
-		for (uint64_t step = 0; step < u64_length; step++) {
+		std::mutex & this_mtx = this->concurrency_guard->get_root()->mtx;
+		std::mutex & c_mtx = c.concurrency_guard->get_root()->mtx;
 
-			for (uint64_t b = 0; b < current_bitlen; b++) 
-				out << (char)(0x30 | ((_v[step] >> (63 - b)) & 0x01));
-
-			if (current_bitlen < 64)
-				break;
+		if (&this_mtx != &c_mtx) {
 			
-			current_bitlen = (64 < n - current_bitlen) ? 64 : (n - current_bitlen);
-			n -= current_bitlen;
+			std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
 
+			if (c.node == 0 || this->node == 0)
+				throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+			if (*this->node->context != *c.node->context)
+				throw std::runtime_error("ciphertexts do not have the same context");
+
+			CNODE * addition_result;
+			Ciphertext add_result_c;
+
+			CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+			CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
+			/**
+			 * When two ctxt refer to a CCC, operations are performed directly
+			 * NOTE: the result CCC is always a different one, so there is no need for concurrency_guard union
+			**/
+			if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+				addition_result = CCC::add(ccc_thisnode, ccc_othernode);
+
+			else {
+
+				/**
+				 * The called method will treat arguments as different nodes
+				 * So the reference count temporarily increases
+				 * (although not necessary ???)
+				**/
+				if (this->node == c.node)
+					this->node->downstream_reference_count += 1;
+
+				addition_result = Ciphertext::add(this->node, c.node);
+
+				if (this->node == c.node)
+					this->node->downstream_reference_count -= 1;
+
+				add_result_c.concurrency_guard->set_union(this->concurrency_guard);
+				add_result_c.concurrency_guard->set_union(c.concurrency_guard);
+			}
+
+			add_result_c.node = addition_result;
+			return add_result_c;
 		}
-		out << '\n';
+		else {
+			
+			std::scoped_lock <std::mutex> lock(this_mtx);
+
+			if (c.node == 0 || this->node == 0)
+				throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+			if (*this->node->context != *c.node->context)
+				throw std::runtime_error("ciphertexts do not have the same context");
+
+			CNODE * addition_result;
+			Ciphertext add_result_c;
+
+			CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+			CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
+			/**
+			 * When two ctxt refer to a CCC, operations are performed directly
+			**/
+			if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+				addition_result = CCC::add(ccc_thisnode, ccc_othernode);
+
+			else {
+
+				/**
+				 * The called method will treat arguments as different nodes
+				 * So the reference count temporarily increases
+				 * (although not necessary ???)
+				**/
+				if (this->node == c.node)
+					this->node->downstream_reference_count += 1;
+
+				addition_result = Ciphertext::add(this->node, c.node);
+
+				if (this->node == c.node)
+					this->node->downstream_reference_count -= 1;
+
+				add_result_c.concurrency_guard->set_union(this->concurrency_guard);
+			}
+
+			add_result_c.node = addition_result;
+			return add_result_c;
+		}
+	}
+
+	Ciphertext Ciphertext::operator * (const Ciphertext & c) const {
+
+		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
+			throw std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
+
+		std::mutex & this_mtx = this->concurrency_guard->get_root()->mtx;
+		std::mutex & c_mtx = c.concurrency_guard->get_root()->mtx;
+
+		if (&this_mtx != &c_mtx) {
+
+			std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
+
+			if (c.node == 0 || this->node == 0)
+				throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+			if (*this->node->context != *c.node->context)
+				throw std::runtime_error("ciphertexts do not have the same context");
+
+			CNODE * mul_result;
+			Ciphertext mul_result_c;
+
+			CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+			CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
+			if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+				mul_result = CCC::multiply(ccc_thisnode, ccc_othernode);
+
+			else {
+
+				if (this->node == c.node)
+					this->node->downstream_reference_count += 1;
+
+				mul_result = Ciphertext::multiply(this->node, c.node);
+
+				if (this->node == c.node)
+					this->node->downstream_reference_count -= 1;
+
+				mul_result_c.concurrency_guard->set_union(this->concurrency_guard);
+				mul_result_c.concurrency_guard->set_union(c.concurrency_guard);
+			}
+
+			mul_result_c.node = mul_result;
+			return mul_result_c;
+		}
+		else {
+
+			std::scoped_lock <std::mutex> lock(this_mtx);
+
+			if (c.node == 0 || this->node == 0)
+				throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+			if (*this->node->context != *c.node->context)
+			throw std::runtime_error("ciphertexts do not have the same context");
+
+			CNODE * mul_result;
+			Ciphertext mul_result_c;
+
+			CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+			CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
+			if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+				mul_result = CCC::multiply(ccc_thisnode, ccc_othernode);
+
+			else {
+
+				if (this->node == c.node)
+					this->node->downstream_reference_count += 1;
+
+				mul_result = Ciphertext::multiply(this->node, c.node);
+
+				if (this->node == c.node)
+					this->node->downstream_reference_count -= 1;
+
+				mul_result_c.concurrency_guard->set_union(this->concurrency_guard);
+			}
+
+			mul_result_c.node = mul_result;
+			return mul_result_c;
+		}
+
+		
+	}
+
+	Ciphertext & Ciphertext::operator += (const Ciphertext & c) {
+
+		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
+			throw std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
+
+		std::mutex & this_mtx = this->concurrency_guard->get_root()->mtx;
+		std::mutex & c_mtx = c.concurrency_guard->get_root()->mtx;
+
+		if (&this_mtx != &c_mtx) {
+
+			std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
+
+			if (c.node == 0 || this->node == 0)
+				throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+			if (*this->node->context != *c.node->context)
+				throw std::runtime_error("ciphertexts do not have the same context");
+
+			CNODE * addition_result;
+
+			CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+			CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
+			if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+				addition_result = CCC::add(ccc_thisnode, ccc_othernode);
+
+			else {
+
+				if (this->node == c.node)
+					this->node->downstream_reference_count += 1;
+
+				addition_result = Ciphertext::add(this->node, c.node);
+
+				if (this->node == c.node)
+					this->node->downstream_reference_count -= 1;
+
+				this->concurrency_guard->set_union(c.concurrency_guard);
+			}
+
+			this->node->try_delete();
+			this->node = addition_result;
+
+			return *this;
+		}
+		else {
+
+			std::scoped_lock <std::mutex> lock(this_mtx);
+
+			if (c.node == 0 || this->node == 0)
+				throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+			if (*this->node->context != *c.node->context)
+				throw std::runtime_error("ciphertexts do not have the same context");
+
+			CNODE * addition_result;
+
+			CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+			CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
+			if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+				addition_result = CCC::add(ccc_thisnode, ccc_othernode);
+
+			else {
+
+				if (this->node == c.node)
+					this->node->downstream_reference_count += 1;
+
+				addition_result = Ciphertext::add(this->node, c.node);
+
+				if (this->node == c.node)
+					this->node->downstream_reference_count -= 1;
+			}
+
+			this->node->try_delete();
+			this->node = addition_result;
+
+			return *this;
+		}
+
+		
+	}
+
+	Ciphertext & Ciphertext::operator *= (const Ciphertext & c) {
+
+		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
+			throw std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
+
+		std::mutex & this_mtx = this->concurrency_guard->get_root()->mtx;
+		std::mutex & c_mtx = c.concurrency_guard->get_root()->mtx;
+
+		if (&this_mtx != &c_mtx) {
+
+			std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
+
+			if (c.node == 0 || this->node == 0)
+				throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+			if (*this->node->context != *c.node->context)
+				throw std::runtime_error("ciphertexts do not have the same context");
+
+			CNODE * mul_result;
+
+			CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+			CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
+			if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+				mul_result = CCC::multiply(ccc_thisnode, ccc_othernode);
+
+			else {
+
+				if (this->node == c.node)
+					this->node->downstream_reference_count += 1;
+
+				mul_result = Ciphertext::multiply(this->node, c.node);
+
+				if (this->node == c.node)
+					this->node->downstream_reference_count -= 1;
+
+				this->concurrency_guard->set_union(c.concurrency_guard);
+			}
+
+			this->node->try_delete();
+			this->node = mul_result;
+
+			return *this;
+		}
+		else {
+
+			std::scoped_lock <std::mutex> lock(this_mtx);
+
+			if (c.node == 0 || this->node == 0)
+				throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+			if (*this->node->context != *c.node->context)
+				throw std::runtime_error("ciphertexts do not have the same context");
+
+			CNODE * mul_result;
+
+			CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+			CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
+			if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+				mul_result = CCC::multiply(ccc_thisnode, ccc_othernode);
+
+			else {
+
+				if (this->node == c.node)
+					this->node->downstream_reference_count += 1;
+
+				mul_result = Ciphertext::multiply(this->node, c.node);
+
+				if (this->node == c.node)
+					this->node->downstream_reference_count -= 1;
+			}
+
+			this->node->try_delete();
+			this->node = mul_result;
+
+			return *this;
+		}
+
+		
+	}
+
+	std::ostream & operator << (std::ostream & out, const Ciphertext & c) {
+
+		if (c.concurrency_guard == 0) 
+			throw std::runtime_error("concurrency guard cannot be null");
+
+		std::scoped_lock <std::mutex> lock(c.concurrency_guard->get_root()->mtx);
+
+		if (c.node == 0)
+			out << "EMPTY CIPHERTEXT";
+
+		CCC * ccc_node = dynamic_cast <CCC *> (c.node);
+		if (ccc_node != 0)
+			out << *ccc_node << '\n';
+
+		else {
+
+			COP * cop_node = dynamic_cast <COP *> (c.node);
+			if (cop_node != 0)
+				out << *cop_node << '\n';
+		}
+
+		return out;
+	}
+	
+	Ciphertext & Ciphertext::operator = (const Ciphertext & c) {
+
+		if (this->node != 0 && c.node != 0 && *this->node->context != *c.node->context)
+			throw std::runtime_error("ciphertexts do not have the same context");
+
+		if (this->concurrency_guard == 0 || c.concurrency_guard == 0)
+			throw std::runtime_error("concurrency guard cannot be null");
+
+		std::mutex & this_mtx = this->concurrency_guard->get_root()->mtx;
+		std::mutex & c_mtx = c.concurrency_guard->get_root()->mtx;
+
+		if (&this_mtx != &c_mtx) {
+
+			CNODE_disjoint_set * removed;
+
+			{
+				std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
+
+				if (this->node != 0)
+					this->node->try_delete();
+
+				if (c.node != 0)
+					c.node->downstream_reference_count += 1;
+
+				this->node = c.node;
+
+				removed = this->concurrency_guard->remove_from_set();
+
+				this->concurrency_guard = new CNODE_disjoint_set(this);
+				this->concurrency_guard->set_union(c.concurrency_guard);
+			}
+
+			delete removed;
+
+			return *this;
+		}
+		else
+			return *this;
+	}
+	
+	Ciphertext & Ciphertext::operator = (Ciphertext && c) {
+
+		if (this->node != 0 && c.node != 0 && *this->node->context != *c.node->context)
+			throw std::runtime_error("ciphertexts do not have the same context");
+		
+		if (this->concurrency_guard == 0 || c.concurrency_guard == 0)
+			throw std::runtime_error("concurrency guard cannot be null");
+
+		CNODE_disjoint_set * removed;
+
+		{	
+			std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+
+			if (this->node != 0)
+				this->node->try_delete();
+
+			removed = this->concurrency_guard->remove_from_set();
+
+			this->node = c.node;
+			this->concurrency_guard = c.concurrency_guard;
+			this->concurrency_guard->current = this;
+
+			c.node = 0;
+			c.concurrency_guard = 0;
+		}
+		
+		delete removed;
+		
+		return *this;
+	}
+
+#else
+
+	Ciphertext Ciphertext::operator + (const Ciphertext & c) const {
+
+		if (c.node == 0 || this->node == 0)
+			throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+		if (*this->node->context != *c.node->context)
+			throw std::runtime_error("ciphertexts do not have the same context");
+
+		CNODE * addition_result;
+
+		CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+		CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
+		/**
+		 * When two ctxt refer to a CCC, operations are performed directly
+		**/
+		if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+			addition_result = CCC::add(ccc_thisnode, ccc_othernode);
+
+		else 
+			addition_result = Ciphertext::add(this->node, c.node);
+
+		Ciphertext add_result_c;
+		add_result_c.node = addition_result;
+
+		return add_result_c;
+	}
+
+	Ciphertext Ciphertext::operator * (const Ciphertext & c) const {
+
+		if (c.node == 0 || this->node == 0)
+			throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+		if (*this->node->context != *c.node->context)
+			throw std::runtime_error("ciphertexts do not have the same context");
+
+		CNODE * mul_result;
+
+		CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+		CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
+		/**
+		 * When two ctxt refer to a CCC, operations are performed directly
+		**/
+		if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+			mul_result = CCC::multiply(ccc_thisnode, ccc_othernode);
+
+		else 
+			mul_result = Ciphertext::multiply(this->node, c.node);
+
+		Ciphertext mul_result_c;
+		mul_result_c.node = mul_result;
+
+		return mul_result_c;
+	}
+
+	Ciphertext & Ciphertext::operator += (const Ciphertext & c) {
+
+		if (c.node == 0 || this->node == 0)
+			throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+		if (*this->node->context != *c.node->context)
+			throw std::runtime_error("ciphertexts do not have the same context");
+
+		CNODE * addition_result;
+
+		CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+		CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
+		/**
+		 * When two ctxt refer to a CCC, operations are performed directly
+		**/
+		if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+			addition_result = CCC::add(ccc_thisnode, ccc_othernode);
+
+		else 
+			addition_result = Ciphertext::add(this->node, c.node);
+
+		this->node->try_delete();
+		this->node = addition_result;
+
+		return *this;
+	}
+
+	Ciphertext & Ciphertext::operator *= (const Ciphertext & c) {
+
+		if (c.node == 0 || this->node == 0)
+			throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+		if (*this->node->context != *c.node->context)
+			throw std::runtime_error("ciphertexts do not have the same context");
+
+		CNODE * mul_result;
+
+		CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
+		CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
+
+		/**
+		 * When two ctxt refer to a CCC, operations are performed directly
+		**/
+		if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
+			mul_result = CCC::multiply(ccc_thisnode, ccc_othernode);
+
+		else 
+			mul_result = Ciphertext::multiply(this->node, c.node);
+
+		this->node->try_delete();
+		this->node = mul_result;
+
+		return *this;
+	}
+
+	std::ostream & operator << (std::ostream & out, const Ciphertext & c) {
+
+		if (c.node == 0)
+			out << "EMPTY CIPHERTEXT";
+
+		CCC * ccc_node = dynamic_cast <CCC *> (c.node);
+		if (ccc_node != 0)
+			out << *ccc_node << '\n';
+
+		else {
+
+			COP * cop_node = dynamic_cast <COP *> (c.node);
+			if (cop_node != 0)
+				out << *cop_node << '\n';
+		}
 
 		return out;
 	}
 
-	Ciphertext Ciphertext::operator+(const Ciphertext& c) const {
+	Ciphertext & Ciphertext::operator = (const Ciphertext & c) {
 
-		uint64_t newlen = this->len + c.getLen();
+		if (this->node != 0 && c.node != 0 && *this->node->context != *c.node->context)
+			throw std::runtime_error("ciphertexts do not have the same context");
 
-		uint64_t len2 = c.getLen();
+		if (&c == this)
+			return *this;
 
-		uint64_t outlen = 0;
-		uint64_t* _values = add(this->v, c.v, this->len, len2, outlen);
+		if (this->node != 0)
+			this->node->try_delete();
 
-		Ciphertext result;
+		if (c.node != 0)
+			c.node->downstream_reference_count += 1;
 
-		result.len = newlen;
-		result.v = _values;
-		result.certFHEcontext = new Context(*this->certFHEcontext);
-
-		return result;
-	}
-
-	Ciphertext Ciphertext::operator*(const Ciphertext& c) const
-	{
-		uint64_t len2 = c.getLen();
-		uint64_t *valuesSecondOperand = c.getValues();
-
-		uint64_t newlen = 0;
-		uint64_t * _values = multiply(this->getContext(), this->v, valuesSecondOperand, this->len, len2, newlen);
-
-		Ciphertext result;
-
-		result.len = newlen;
-		result.v = _values;
-		result.certFHEcontext = new Context(*this->certFHEcontext);
-
-		return result;
-	}
-
-	Ciphertext& Ciphertext::operator+=(const Ciphertext& c)
-	{
-		uint64_t newlen = this->len + c.getLen();
-
-		uint64_t len2 = c.getLen();
-
-		uint64_t outlen = 0;
-		uint64_t* _values = add(this->v, c.v, this->len, len2, outlen);
-
-		if (this->v != nullptr)
-			delete[] this->v;
-
-		this->v = _values;
-		this->len = newlen;
+		this->node = c.node;
 
 		return *this;
 	}
 
-	Ciphertext& Ciphertext::operator*=(const Ciphertext& c)
-	{
-		uint64_t len2 = c.getLen();
-		uint64_t *valuesSecondOperand = c.getValues();
+	Ciphertext & Ciphertext::operator = (Ciphertext && c) {
 
-		uint64_t newlen = 0;
-		uint64_t * _values = multiply(this->getContext(), this->v, valuesSecondOperand, this->len, len2, newlen);
+		if (this->node != 0 && c.node != 0 && *this->node->context != *c.node->context)
+			throw std::runtime_error("ciphertexts do not have the same context");
 
-		if (this->v != nullptr)
-			delete[] this->v;
+		if (this->node != 0)
+			this->node->try_delete();
 
-		this->v = _values;
-		this->len = newlen;
-
-		return *this;
-
-	}
-
-	Ciphertext& Ciphertext::operator=(const Ciphertext& c)
-	{
-		if (this->v != nullptr)
-			delete[] this->v;
-
-		if (this->certFHEcontext != nullptr)
-			delete this->certFHEcontext;
-
-		this->len = c.getLen();
-		this->v = new uint64_t[this->len];
-
-		if (c.certFHEcontext != nullptr)
-			this->certFHEcontext = new Context(*c.certFHEcontext);
-		else
-			this->certFHEcontext = nullptr;
-
-		uint64_t* _v = c.getValues();
-
-		uint64_t u64_len = this->len;
-
-		if (u64_len < MTValues::cpy_m_threshold)
-			for (uint64_t i = 0; i < u64_len; i++)
-				this->v[i] = _v[i];
-		else
-			Helper::u64_multithread_cpy(_v, this->v, u64_len);
+		this->node = c.node;
+		c.node = 0;
 
 		return *this;
 	}
 
-	Ciphertext& Ciphertext::operator=(Ciphertext && c)
-	{
-		if (this->v != nullptr)
-			delete[] this->v;
-
-		if (this->certFHEcontext != nullptr)
-			delete this->certFHEcontext;
-
-		this->len = c.len;
-		this->v = c.v;
-		this->certFHEcontext = c.certFHEcontext;
-
-		c.v = nullptr;
-		c.certFHEcontext = nullptr;
-
-		return *this;
-	}
+#endif
 
 #pragma endregion
 
 #pragma region Constructors and destructor
 
-	Ciphertext::Ciphertext()
-	{
-		this->v = nullptr;
-		this->len = 0;
-		this->certFHEcontext = nullptr;
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
+
+	Ciphertext::Ciphertext() : node(0), concurrency_guard(new CNODE_disjoint_set(this)) {}
+
+	Ciphertext::Ciphertext(const Plaintext & plaintext, const SecretKey & sk) {
+
+		uint64_t * raw_ctxt = sk.encrypt_raw(plaintext);
+		this->node = new CCC(sk.getContext(), raw_ctxt, 1);
+
+		this->concurrency_guard = new CNODE_disjoint_set(this);
 	}
 
-	Ciphertext::Ciphertext(const uint64_t* V, const uint64_t len, const Context * context) : Ciphertext()
-	{
-		this->len = len;
-		this->v = new uint64_t[len];
+	Ciphertext::Ciphertext(const void * plaintext, const SecretKey & sk) {
 
-		if (len < MTValues::cpy_m_threshold)
-			for (uint64_t i = 0; i < len; i++)
-				this->v[i] = V[i];
+		uint64_t * raw_ctxt = sk.encrypt_raw(plaintext);
+		this->node = new CCC(sk.getContext(), raw_ctxt, 1);
 
+		this->concurrency_guard = new CNODE_disjoint_set(this);
+	}
+
+	Ciphertext::Ciphertext(const Ciphertext & ctxt) {
+
+		if (ctxt.concurrency_guard == 0)
+			throw std::runtime_error("concurrency guard cannot be null");
+
+		std::scoped_lock <std::mutex> lock(ctxt.concurrency_guard->get_root()->mtx);
+
+		if (ctxt.node != 0) {
+
+			ctxt.node->downstream_reference_count += 1;
+
+			this->node = ctxt.node;
+
+			this->concurrency_guard = new CNODE_disjoint_set(this);
+			this->concurrency_guard->set_union(ctxt.concurrency_guard);
+		}
 		else
-			Helper::u64_multithread_cpy(V, this->v, len);
-			
-		if (context != nullptr)
-			this->certFHEcontext = new Context(*context);
-	}
-
-	Ciphertext::Ciphertext(const Ciphertext & ctxt) : Ciphertext(ctxt.v, ctxt.len, ctxt.certFHEcontext)
-	{
-
+			this->node = 0;
 	}
 
 	Ciphertext::Ciphertext(Ciphertext && ctxt) {
 
-		this->v = ctxt.v;
-		this->len = ctxt.len;
-		this->certFHEcontext = ctxt.certFHEcontext;
+		this->node = ctxt.node;
+		this->concurrency_guard = ctxt.concurrency_guard;
+		this->concurrency_guard->current = this;
 
-		ctxt.v = nullptr;
-		ctxt.certFHEcontext = nullptr;
+		ctxt.node = 0;
+		ctxt.concurrency_guard = 0;
 	}
 
-	Ciphertext::~Ciphertext()
-	{
+	Ciphertext::~Ciphertext() {
+		
+		if (this->concurrency_guard != 0) {
+			
+			CNODE_disjoint_set * removed;
+			
+			{
+				std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
 
-		if (this->v != nullptr)
-		{
-			delete[] this->v;
-			this->v = nullptr;
+				if (this->node != 0)
+					this->node->try_delete();
+
+				removed = this->concurrency_guard->remove_from_set();
+			}
+
+			/**
+			 * In the case the set only has one element, the lock needs to be released 
+			 * before it can be deleted with the entire node
+			 * so the delete statement is outside the scoped_lock scope
+			**/
+			delete removed;
 		}
-
-		if (this->certFHEcontext != nullptr)
-		{
-			delete certFHEcontext;
-			certFHEcontext = nullptr;
-		}
-
-		this->len = 0;
+		else if (this->node != 0)
+			std::cout << "concurrency guard is null but node is not null (check the rest of the code)";
 	}
 
+#else
+
+	Ciphertext::Ciphertext() : node(0) {}
+
+	Ciphertext::Ciphertext(const Plaintext & plaintext, const SecretKey & sk) {
+
+		uint64_t * raw_ctxt = sk.encrypt_raw(plaintext);
+		this->node = new CCC(sk.getContext(), raw_ctxt, 1);
+	}
+
+	Ciphertext::Ciphertext(const void * plaintext, const SecretKey & sk) {
+
+		uint64_t * raw_ctxt = sk.encrypt_raw(plaintext);
+		this->node = new CCC(sk.getContext(), raw_ctxt, 1);
+	}
+
+	Ciphertext::Ciphertext(const Ciphertext & ctxt) {
+
+		if (ctxt.node != 0)
+			ctxt.node->downstream_reference_count += 1;
+
+		this->node = ctxt.node;
+	}
+
+	Ciphertext::Ciphertext(Ciphertext && ctxt) {
+
+		this->node = ctxt.node;
+		ctxt.node = 0;
+	}
+
+	Ciphertext::~Ciphertext() {
+
+		if (this->node != 0)
+			this->node->try_delete();
+	}
+
+#endif
+	
 #pragma endregion
 
-#pragma region Getters and Setters
+#pragma region Getters
 
-	void Ciphertext::setValues(const uint64_t * V, const uint64_t length)
-	{
-		this->len = length;
+	uint64_t Ciphertext::getLen() const {
 
-		if (this->v != nullptr)
-			delete[] this->v;
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
 
-		this->v = new uint64_t[length];
+		if (this->concurrency_guard == 0)
+			throw std::runtime_error("concurrency guard cannot be null");
 
-		if (length < MTValues::cpy_m_threshold)
-			for (uint64_t i = 0; i < length; i++)
-				this->v[i] = V[i];
-		else
-			Helper::u64_multithread_cpy(V, this->v, len);
+		std::scoped_lock <std::mutex>(this->concurrency_guard->get_root()->mtx);
+
+#endif
+
+		if (this->node == 0)
+			throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+		return this->node->getDeflenCnt();
 	}
 
-	uint64_t  Ciphertext::getLen() const
-	{
-		return this->len;
-	}
+	Context Ciphertext::getContext() const {
 
-	uint64_t* Ciphertext::getValues() const
-	{
-		return this->v;
-	}
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
 
-	void Ciphertext::setContext(const Context& context)
-	{
-		if (this->certFHEcontext != nullptr)
-			delete certFHEcontext;
-		certFHEcontext = new Context(context);
-	}
+		if (this->concurrency_guard == 0)
+			throw std::runtime_error("concurrency guard cannot be null");
 
-	Context Ciphertext::getContext() const
-	{
-		return *(this->certFHEcontext);
+		std::scoped_lock <std::mutex>(this->concurrency_guard->get_root()->mtx);
+
+#endif
+
+		if (this->node == 0)
+			throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+		return this->node->getContext();
 	}
 
 #pragma endregion
