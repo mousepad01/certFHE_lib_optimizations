@@ -77,7 +77,7 @@ namespace certFHE{
 		this->node = permuted;
 	}
 
-	Ciphertext Ciphertext::make_deep_copy() {
+	Ciphertext Ciphertext::make_deep_copy() const {
 
 		if (this->concurrency_guard == 0)
 			throw std::runtime_error("concurrency guard cannot be null");
@@ -88,7 +88,7 @@ namespace certFHE{
 			throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
 		Ciphertext deepcopy;
-		this->node = this->node->make_deep_copy();
+		deepcopy.node = this->node->make_deep_copy();
 
 		return deepcopy;
 	}
@@ -133,13 +133,13 @@ namespace certFHE{
 		this->node = permuted;
 	}
 
-	Ciphertext Ciphertext::make_deep_copy() {
+	Ciphertext Ciphertext::make_deep_copy() const {
 
 		if (this->node == 0)
 			throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
 		Ciphertext deepcopy;
-		this->node = this->node->make_deep_copy();
+		deepcopy.node = this->node->make_deep_copy();
 
 		return deepcopy;
 	}

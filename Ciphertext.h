@@ -125,7 +125,7 @@ namespace certFHE{
 			* (usually when one of them was obtained by applying an operation on the other)
 			* @return value: new ciphertext
 		**/
-		Ciphertext make_deep_copy();
+		Ciphertext make_deep_copy() const;
 
 		/**
 			* Method for decrypting current ciphertext
