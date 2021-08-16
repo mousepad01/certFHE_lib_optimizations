@@ -76,7 +76,7 @@ namespace certFHE {
          * @param[in] ciphertext: ciphertext to be decrypted 
          * @return value: decrypted plaintext
         **/
-		Plaintext decrypt(Ciphertext & ciphertext); 
+		Plaintext decrypt(const Ciphertext & ciphertext) const; 
 
         /**
          * Apply the permutation on current secret key
@@ -117,12 +117,12 @@ namespace certFHE {
         /**
          * DO NOT DELETE THIS POINTER
         **/
-		uint64_t* getKey() const { return this->s; }
+		uint64_t * getKey() const { return this->s; }
 
 		/**
 		 * DO NOT DELETE THIS POINTER
 		**/
-		uint64_t* getMaskKey() const { return this->s_mask; }
+		uint64_t * getMaskKey() const { return this->s_mask; }
 
     };
 

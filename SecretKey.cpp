@@ -121,7 +121,7 @@ namespace certFHE{
 		return Ciphertext(plaintext, *this); 
 	}
 
-	Plaintext SecretKey::decrypt(Ciphertext & ciphertext) {
+	Plaintext SecretKey::decrypt(const Ciphertext & ciphertext) const {
 
 		return ciphertext.decrypt(*this); 
 	}

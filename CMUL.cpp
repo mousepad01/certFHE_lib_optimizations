@@ -4,6 +4,9 @@
 namespace certFHE {
 
 	void CMUL::upstream_merging() {
+		
+		if (OPValues::no_merging)
+			return;
 
 		CNODE_list * thisnodes = this->nodes->next; // skipping dummy element
 
@@ -51,12 +54,8 @@ namespace certFHE {
 					CNODE_list * thisnodes_aux = this->nodes->next;
 					while (thisnodes_aux != 0)
 						thisnodes_aux = thisnodes_aux->pop_current_node();
-					
-					/*
-					COP * merged_cop = dynamic_cast<COP *>(merged);  // useless ?
-					while (merged_cop->nodes->next != 0) // useless ?
-						merged_cop->nodes->next->pop_current_node(); // useless ?
-					*/
+
+					merged->try_delete();
 
 					return;
 				}
@@ -98,17 +97,29 @@ namespace certFHE {
 
 	uint64_t CMUL::decrypt(const SecretKey & sk) {
 
+		if (OPValues::decryption_cache) {
+
+			auto cache_entry = CNODE::decryption_cached_values.find(this);
+
+			if (cache_entry != CNODE::decryption_cached_values.end())
+				return (uint64_t)cache_entry->second;
+		}
+
 		CNODE_list * thisnodes = this->nodes->next;
 
 		if (thisnodes == 0 || thisnodes->current == 0)
 			return 0;
 
 		uint64_t rez = 1;
+
 		while (thisnodes != 0 && thisnodes->current != 0) {
 
 			rez &= thisnodes->current->decrypt(sk);
 			thisnodes = thisnodes->next;
 		}
+
+		if (OPValues::decryption_cache)
+			CNODE::decryption_cached_values[this] = (unsigned char)rez;
 
 		return rez;
 	}
@@ -169,49 +180,6 @@ namespace certFHE {
 
 		return to_permute;
 	}
-
-	/*CNODE * CMUL::upstream_merging(CNODE * fst, CNODE * snd) {
-
-		int fst_type = fst->getclass();
-		int snd_type = snd->getclass();
-
-		if (fst_type == 0) {
-
-			if(snd_type == 0)
-				return CMUL::__upstream_merging((CCC *)fst, (CCC *)snd);
-
-			else if(snd_type == 1)
-				return CMUL::__upstream_merging((CADD *)snd, (CCC *)fst);
-
-			else
-				return CMUL::__upstream_merging((CMUL *)snd, (CCC *)fst);
-
-		}
-		else if (fst_type == 1) {
-
-			if (snd_type == 0)
-				return CMUL::__upstream_merging((CADD *)fst, (CCC *)snd);
-
-			else if (snd_type == 1)
-				return CMUL::__upstream_merging((CADD *)fst, (CADD *)snd);
-
-			else
-				return CMUL::__upstream_merging((CADD *)fst, (CMUL *)snd);
-		}
-		else {
-
-			if (snd_type == 0)
-				return CMUL::__upstream_merging((CMUL *)fst, (CCC *)snd);
-
-			else if (snd_type == 1)
-				return CMUL::__upstream_merging((CADD *)snd, (CMUL *)fst);
-
-			else
-				return CMUL::__upstream_merging((CMUL *)fst, (CMUL *)snd);
-		}
-
-		return 0;
-	}*/
 
 	CNODE * CMUL::upstream_merging(CNODE * fst, CNODE * snd) {
 
@@ -281,8 +249,10 @@ namespace certFHE {
 
 		return 0;
 	}
-
+	//
 	CNODE * CMUL::__upstream_merging(CADD * fst, CADD * snd) { 
+
+		//return 0;
 
 		/**
 		 * Check maximum operation size for when to try to merge or not
@@ -386,10 +356,10 @@ namespace certFHE {
 
 		return distributed_mul;
 	}
-
+	//
 	CNODE * CMUL::__upstream_merging(CADD * fst, CMUL * snd) { 
 
-		// almost identical to upstream merging (CADD, CCC) ?
+		//return 0;
 		
 		/**
 		 * Check maximum operation size for when to try to merge or not
@@ -610,8 +580,10 @@ namespace certFHE {
 
 		return merged;
 	}
-
+	//
 	CNODE * CMUL::__upstream_merging(CADD * fst, CCC * snd) { 
+
+		//return 0;
 		
 		/**
 		 * Check maximum operation size for when to try to merge or not

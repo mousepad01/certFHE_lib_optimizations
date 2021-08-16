@@ -69,6 +69,24 @@ namespace certFHE {
 		 * Same observation as for shorten_on_recursive_cadd_merging
 		**/
 		static bool shorten_on_recursive_cmul_merging;
+
+		/**
+		 * Used (only) in decryption methods to avoid decrypting more than once the same CNODEs,
+		 * so it is meaningless for the system that only processes ctxt, 
+		 * but it is almost always useful (even necessary in some cases) for those who decrypt the ciphertexts
+		 * NOTE: if the party that decrypts the ctxt, for any reason, also does operations,
+		 *		 the cache should be CLEARED MANUALLY (by calling CNODE::clear_decryption_cache method)
+		 *		 otherwise, inconsistencies (wrong decryptions) may appear
+		**/
+		static bool decryption_cache;
+
+		/**
+		 * Absolutely no merging takes place
+		 * In some situations this will mean significantly more memory is consumed
+		 * and the decryption / deepcopy / permutation will be significantly more slower,
+		 * but the addition / multiplication times will be faster
+		**/
+		static bool no_merging;
 	};
 
 	/**

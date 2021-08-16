@@ -232,7 +232,7 @@ namespace certFHE {
 
 		PermArgs * args = (PermArgs *)raw_args;
 
-		CtxtInversion * perm_invs = args->perm_invs;
+		PermInversion * perm_invs = args->perm_invs;
 		uint64_t inv_cnt = args->inv_cnt;
 		uint64_t * ctxt = args->ctxt;
 		uint64_t * res = args->res;
@@ -311,7 +311,7 @@ namespace certFHE {
 		else {
 
 			Threadpool <Args *> * threadpool = Library::getThreadpool();
-			uint64_t thread_count = threadpool->THR_CNT;
+			uint64_t thread_count = threadpool->get_threadcount();
 
 			AddArgs * args = new AddArgs[thread_count];
 
@@ -433,7 +433,7 @@ namespace certFHE {
 		else {
 
 			Threadpool <Args *> * threadpool = Library::getThreadpool();
-			uint64_t thread_count = threadpool->THR_CNT;
+			uint64_t thread_count = threadpool->get_threadcount();
 
 			uint64_t q;
 			uint64_t r;
@@ -500,9 +500,13 @@ namespace certFHE {
 
 	uint64_t CCC::decrypt(const SecretKey & sk) {
 
-		/*static int testv = 0;
-		testv += 1;
-		std::cout << "decrypt in CCC " << testv << '\n';*/
+		if (OPValues::decryption_cache) {
+
+			auto cache_entry = CNODE::decryption_cached_values.find(this);
+
+			if (cache_entry != CNODE::decryption_cached_values.end())
+				return (uint64_t)cache_entry->second;
+		}
 
 		uint64_t dec = 0;
 
@@ -558,7 +562,7 @@ namespace certFHE {
 		else {
 
 			Threadpool <Args *> * threadpool = Library::getThreadpool();
-			uint64_t thread_count = threadpool->THR_CNT;
+			uint64_t thread_count = threadpool->get_threadcount();
 
 			uint64_t q;
 			uint64_t r;
@@ -621,12 +625,15 @@ namespace certFHE {
 			delete[] args;
 		}
 
+		if (OPValues::decryption_cache)
+			CNODE::decryption_cached_values[this] = (unsigned char)dec;
+
 		return dec;
 	}
 
 	CNODE * CCC::permute(const Permutation & perm, bool force_deep_copy) {
 
-		CtxtInversion * invs = perm.getInversions();
+		PermInversion * invs = perm.getInversions();
 		uint64_t inv_cnt = perm.getInversionsCnt();
 
 		uint64_t deflen_cnt = this->deflen_count;
@@ -686,7 +693,7 @@ namespace certFHE {
 		else {
 
 			Threadpool <Args *> * threadpool = Library::getThreadpool();
-			uint64_t thread_count = threadpool->THR_CNT;
+			uint64_t thread_count = threadpool->get_threadcount();
 
 			uint64_t q;
 			uint64_t r;

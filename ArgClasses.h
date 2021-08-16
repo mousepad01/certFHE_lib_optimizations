@@ -88,7 +88,7 @@ namespace certFHE{
 	 * Structure for retaining permutations as inversions
 	 * relative to a default length CCC stored in a uint64_t array
 	**/
-	class CtxtInversion {
+	class PermInversion {
 
 	public:
 
@@ -105,7 +105,7 @@ namespace certFHE{
 
 	public:
 
-		CtxtInversion * perm_invs;
+		PermInversion * perm_invs;
 		uint64_t inv_cnt;
 
 		uint64_t * ctxt;

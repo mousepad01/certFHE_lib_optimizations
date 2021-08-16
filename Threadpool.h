@@ -18,6 +18,8 @@ namespace certFHE {
 		static Threadpool <T> * threadpool;
 		static bool initialized;
 
+		int thread_count;
+
 		std::vector <std::thread *> * threads;
 		std::queue <std::function <void(T)>> tasks;
 		std::queue <T> tasks_args;
@@ -35,16 +37,16 @@ namespace certFHE {
 
 	public:
 
-		/*
-		Thread count 
-		*/
-		static int THR_CNT;
-
 		/**
 		 * Explicitly set the threadcount
 		 * (threads will be closed / created depending on the situation)
 		**/
 		void set_threadcount(const int new_threadcount);
+
+		/**
+		 * Getter for thread_count value
+		**/
+		int get_threadcount();
 
 		/**
 		 * Creating the threadpool
@@ -61,9 +63,6 @@ namespace certFHE {
 		**/
 		void close();
 	};
-
-	template <typename T>
-	int Threadpool <T>::THR_CNT = 0;
 
 	template <typename T>
 	Threadpool <T> * Threadpool <T>::threadpool = 0;
@@ -88,7 +87,7 @@ namespace certFHE {
 				/**
 				 * For creating new threads
 				**/
-				for (int i = Threadpool <T>::THR_CNT; i < new_threadcount; i++) {
+				for (int i = this->thread_count; i < new_threadcount; i++) {
 
 					this->threads->push_back(new std::thread(&Threadpool<T>::wait_for_tasks, this));
 				}
@@ -96,7 +95,7 @@ namespace certFHE {
 				/**
 				 * For removing excess threads
 				**/
-				for (int i = new_threadcount; i < Threadpool <T>::THR_CNT; i++) {
+				for (int i = new_threadcount; i < this->thread_count; i++) {
 
 					this->closed->insert(this->threads->at(i)->get_id());
 				}
@@ -105,20 +104,22 @@ namespace certFHE {
 
 			this->tasks_condition.notify_all();
 
-			for (int i = new_threadcount; i < Threadpool <T>::THR_CNT; i++)
+			for (int i = new_threadcount; i < this->thread_count; i++)
 				this->threads->at(i)->join();
 		}
 		
-		Threadpool <T>::THR_CNT = new_threadcount;
+		this->thread_count = new_threadcount;
 	}
+
+	template <typename T>
+	int Threadpool <T>::get_threadcount() { return this->thread_count; }
 
 	template <typename T>
 	Threadpool <T>::Threadpool(){
 
-		if(Threadpool <T>::THR_CNT == 0)
-			Threadpool <T>::THR_CNT = std::thread::hardware_concurrency() != 0 ? std::thread::hardware_concurrency() : 12;
+		this->thread_count = std::thread::hardware_concurrency() != 0 ? std::thread::hardware_concurrency() : 12;
 
-		threads = new std::vector <std::thread *>(Threadpool <T>::THR_CNT);
+		threads = new std::vector <std::thread *>(this->thread_count);
 		closed = new std::unordered_set <std::thread::id>();
 
 		all_closed = false;
@@ -136,7 +137,7 @@ namespace certFHE {
 
 			Threadpool <T>::initialized = true;
 
-			for (int i = 0; i < THR_CNT; i++) 
+			for (int i = 0; i < created->thread_count; i++) 
 				created->threads->at(i) = new std::thread(&Threadpool<T>::wait_for_tasks, created);	
 		}
 
@@ -209,7 +210,7 @@ namespace certFHE {
 
 		this->tasks_condition.notify_all();
 
-		for (int i = 0; i < THR_CNT; i++)
+		for (int i = 0; i < this->thread_count; i++)
 			this->threads->at(i)->join();
 
 		Threadpool <T>::initialized = false;

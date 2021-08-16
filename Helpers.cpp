@@ -60,7 +60,7 @@ namespace certFHE{
 	void Helper::u64_multithread_cpy(const uint64_t * src, uint64_t * dest, uint64_t to_cpy_len) {
 
 		Threadpool <Args *> * threadpool = Library::getThreadpool();
-		uint64_t thread_count = threadpool->THR_CNT;
+		uint64_t thread_count = threadpool->get_threadcount();
 
 		uint64_t q;
 		uint64_t r;

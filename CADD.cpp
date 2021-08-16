@@ -4,6 +4,9 @@
 namespace certFHE {
 
 	void CADD::upstream_merging() {
+		
+		if (OPValues::no_merging)
+			return;
 
 		CNODE_list * thisnodes = this->nodes->next; // skipping dummy element
 
@@ -73,6 +76,8 @@ namespace certFHE {
 					else
 						node_j = node_j->pop_current_node();
 
+					merged->try_delete();
+
 					continue;
 				}
 
@@ -110,9 +115,13 @@ namespace certFHE {
 
 	uint64_t CADD::decrypt(const SecretKey & sk) {
 
-		/*static int testv = 0;
-		testv += 1;
-		std::cout << "decrypt in CADD " << testv << '\n';*/
+		if (OPValues::decryption_cache) {
+
+			auto cache_entry = CNODE::decryption_cached_values.find(this);
+
+			if (cache_entry != CNODE::decryption_cached_values.end())
+				return (uint64_t)cache_entry->second;
+		}
 
 		CNODE_list * thisnodes = this->nodes->next;
 
@@ -120,11 +129,15 @@ namespace certFHE {
 			return 0;
 
 		uint64_t rez = 0;
+
 		while (thisnodes != 0 && thisnodes->current != 0) {
 
 			rez ^= thisnodes->current->decrypt(sk);
 			thisnodes = thisnodes->next;
 		}
+		
+		if (OPValues::decryption_cache)
+			CNODE::decryption_cached_values[this] = (unsigned char)rez;
 
 		return rez;
 	}
@@ -185,49 +198,6 @@ namespace certFHE {
 
 		return to_permute;
 	}
-
-	/*CNODE * CADD::upstream_merging(CNODE * fst, CNODE * snd) {
-
-		int fst_type = fst->getclass();
-		int snd_type = snd->getclass();
-
-		if (fst_type == 0) {
-
-			if (snd_type == 0)
-				return CADD::__upstream_merging((CCC *)fst, (CCC *)snd);
-
-			else if (snd_type == 1)
-				return CADD::__upstream_merging((CADD *)snd, (CCC *)fst);
-
-			else
-				return CADD::__upstream_merging((CMUL *)snd, (CCC *)fst);
-
-		}
-		else if (fst_type == 1) {
-
-			if (snd_type == 0)
-				return CADD::__upstream_merging((CADD *)fst, (CCC *)snd);
-
-			else if (snd_type == 1)
-				return CADD::__upstream_merging((CADD *)fst, (CADD *)snd);
-
-			else
-				return CADD::__upstream_merging((CADD *)fst, (CMUL *)snd);
-		}
-		else {
-
-			if (snd_type == 0)
-				return CADD::__upstream_merging((CMUL *)fst, (CCC *)snd);
-
-			else if (snd_type == 1)
-				return CADD::__upstream_merging((CADD *)snd, (CMUL *)fst);
-
-			else
-				return CADD::__upstream_merging((CMUL *)fst, (CMUL *)snd);
-		}
-
-		return 0;
-	}*/
 
 	CNODE * CADD::upstream_merging(CNODE * fst, CNODE * snd) {
 
@@ -306,7 +276,7 @@ namespace certFHE {
 
 		CNODE_list * nodes_fst = fst->nodes->next; // skipping dummy elements
 		CNODE_list * nodes_snd = snd->nodes->next;
-
+		
 		/**
 		 * When one of the input nodes is empty
 		 * return the other one
@@ -492,7 +462,7 @@ namespace certFHE {
 		return merged;
 
 	}
-
+	
 	CNODE * CADD::__upstream_merging(CMUL * fst, CMUL * snd) { 
 		
 		return 0;
@@ -547,7 +517,7 @@ namespace certFHE {
 
 		return merged;
 	}
-
+	
 	CNODE * CADD::__upstream_merging(CCC * fst, CCC * snd) { 
 		
 		if (fst->deflen_count + snd->deflen_count > OPValues::max_ccc_deflen_size)
@@ -556,7 +526,7 @@ namespace certFHE {
 		else
 			return CCC::add(fst, snd);
 	}
-
+	
 	CNODE * CADD::__upstream_merging(CMUL * fst, CCC * snd) { 
 		
 		return 0;
