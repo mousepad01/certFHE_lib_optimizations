@@ -5,7 +5,7 @@
  * Macro to enable CUDA for CCC operations on ciphertext array chunks:
  * addition, multiplication, etc
 **/
-#define CERTFHE_USE_CUDA true
+#define CERTFHE_USE_CUDA false
 
 #if CERTFHE_USE_CUDA
 

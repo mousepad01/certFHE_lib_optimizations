@@ -5,9 +5,7 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
-#include <stdio.h>
 #include <iostream>
-#include <math.h>
 
 const int MAX_BLOCK_PER_GRID_COUNT = 65535;
 const int MAX_THREADS_PER_BLOCK = 1024;
@@ -47,14 +45,20 @@ __host__ void CUDA_chiphertext_multiply(uint64_t deflen_to_uint64, uint64_t resu
 	cudaMalloc(&VRAM_fst, fst_deflen_cnt * deflen_to_uint64 * sizeof(uint64_t));
 	cudaMalloc(&VRAM_snd, snd_deflen_cnt * deflen_to_uint64 * sizeof(uint64_t));
 
-	cudaMemcpy(result, VRAM_result, result_deflen_cnt * deflen_to_uint64 * sizeof(uint64_t), cudaMemcpyHostToDevice);
+	cudaMemcpy(VRAM_result, result, result_deflen_cnt * deflen_to_uint64 * sizeof(uint64_t), cudaMemcpyHostToDevice);
+	cudaMemcpy(VRAM_fst, fst, fst_deflen_cnt * deflen_to_uint64 * sizeof(uint64_t), cudaMemcpyHostToDevice);
+	cudaMemcpy(VRAM_snd, snd, snd_deflen_cnt * deflen_to_uint64 * sizeof(uint64_t), cudaMemcpyHostToDevice);
 
-	int threads_per_block = result_deflen_cnt > MAX_BLOCK_PER_GRID_COUNT ? 1024 : 512;
+	int threads_per_block = result_deflen_cnt > MAX_THREADS_PER_BLOCK ? MAX_THREADS_PER_BLOCK : result_deflen_cnt;
 
-	ctxt_multiply_kernel <<< result_deflen_cnt, threads_per_block >>> (deflen_to_uint64, result_deflen_cnt, snd_deflen_cnt, result, fst, snd);
+	int block_cnt = result_deflen_cnt / MAX_THREADS_PER_BLOCK;
+	if (result_deflen_cnt % MAX_THREADS_PER_BLOCK)
+		block_cnt += 1;
+
+	ctxt_multiply_kernel <<< block_cnt, threads_per_block >>> (deflen_to_uint64, result_deflen_cnt, snd_deflen_cnt, VRAM_result, VRAM_fst, VRAM_snd);
 	cudaDeviceSynchronize();
 
-	cudaMemcpy(VRAM_result, result, result_deflen_cnt * deflen_to_uint64 * sizeof(uint64_t), cudaMemcpyDeviceToHost);
+	cudaMemcpy(result, VRAM_result, result_deflen_cnt * deflen_to_uint64 * sizeof(uint64_t), cudaMemcpyDeviceToHost);
 
 	cudaFree(VRAM_result);
 	cudaFree(VRAM_fst);

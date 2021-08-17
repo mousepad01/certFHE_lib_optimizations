@@ -362,8 +362,8 @@ namespace certFHE {
 		uint64_t deflen_to_u64 = fst->context->getDefaultN();
 		uint64_t * fst_c = fst->ctxt;
 		uint64_t * snd_c = snd->ctxt;
-
-		if (fst->deflen_count == 1 && snd->deflen_count == 1) {
+		//TO ELIMINATE THE FALSE AFTER DEBUG !!!!!!!!!
+		if (false && fst->deflen_count == 1 && snd->deflen_count == 1) {
 
 			uint64_t * res = new uint64_t[deflen_to_u64];
 
@@ -390,7 +390,6 @@ namespace certFHE {
 		if (res_u64_cnt >= GPUValues::mul_gpu_threshold) {
 
 			CUDA_chiphertext_multiply(deflen_to_u64, res_deflen_cnt, fst_deflen_cnt, snd_deflen_cnt, res, fst_c, snd_c);
-
 			return mul_result;
 		}
 #endif

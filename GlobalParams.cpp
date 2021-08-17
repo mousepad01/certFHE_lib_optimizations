@@ -822,7 +822,7 @@ namespace certFHE {
 #if CERTFHE_USE_CUDA
 #pragma region GPUValues
 
-	uint64_t GPUValues::mul_gpu_threshold = 0;
+	uint64_t GPUValues::mul_gpu_threshold = 32;
 
 	uint64_t GPUValues::dec_gpu_threshold = 0;
 
