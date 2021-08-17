@@ -252,7 +252,7 @@ namespace certFHE {
 				uint64_t fst_u64_r = perm_invs[k].fst_u64_r;
 				uint64_t snd_u64_r = perm_invs[k].snd_u64_r;
 
-#if MSVC_COMPILER_LOCAL_CERTFHE_MACRO_WORSE
+#if CERTFHE_MSVC_COMPILER_MACRO_WORSE
 
 				//unsigned char val_i = _bittest64((const __int64 *)current_chunk + fst_u64_ch, fst_u64_r);
 				//unsigned char val_j = _bittest64((const __int64 *)current_chunk + snd_u64_ch, snd_u64_r);
@@ -384,6 +384,16 @@ namespace certFHE {
 		res = new uint64_t[res_u64_cnt];
 
 		mul_result = new CCC(fst->context, res, fst->deflen_count * snd->deflen_count);
+
+#if CERTFHE_USE_CUDA
+
+		if (res_u64_cnt >= GPUValues::mul_gpu_threshold) {
+
+			CUDA_chiphertext_multiply(deflen_to_u64, res_deflen_cnt, fst_deflen_cnt, snd_deflen_cnt, res, fst_c, snd_c);
+
+			return mul_result;
+		}
+#endif
 
 		if (res_u64_cnt < MTValues::mul_m_threshold) {
 
@@ -663,7 +673,7 @@ namespace certFHE {
 					uint64_t fst_u64_r = invs[k].fst_u64_r;
 					uint64_t snd_u64_r = invs[k].snd_u64_r;
 
-#if MSVC_COMPILER_LOCAL_CERTFHE_MACRO
+#if CERTFHE_MSVC_COMPILER_MACRO
 
 					//unsigned char val_i = _bittest64((const __int64 *)current_chunk + fst_u64_ch, fst_u64_r);
 					//unsigned char val_j = _bittest64((const __int64 *)current_chunk + snd_u64_ch, snd_u64_r);

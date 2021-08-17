@@ -5,6 +5,7 @@
 #include "SecretKey.h"
 #include "Plaintext.h"
 #include "Permutation.h"
+#include "utils.h"
 
 namespace certFHE {
 
@@ -817,6 +818,18 @@ namespace certFHE {
 	}
 
 #pragma endregion
+
+#if CERTFHE_USE_CUDA
+#pragma region GPUValues
+
+	uint64_t GPUValues::mul_gpu_threshold = 0;
+
+	uint64_t GPUValues::dec_gpu_threshold = 0;
+
+	uint64_t GPUValues::perm_gpu_threshold = 0;
+
+#pragma endregion
+#endif
 
 }
 

@@ -2233,7 +2233,7 @@ void old_implementation_compare_statistics_tests() {
 		<< "To plot them, call average_test_plot function from plotter.py (dectime parameter - whether you want to plot decryption times in the same graph or not)\n"
 		<< "NOTE: plotter.py needs to be in the same directory in which the result files are located\n\n";
 
-	average_predefined_test("stats", true, false);
+	average_predefined_test("statsGPU", true, false);
 
 	std::cout << "First test done\n\n";
 
@@ -2242,14 +2242,14 @@ void old_implementation_compare_statistics_tests() {
 		<< "To plot them, call array_ctxt_tests_plot from plotter.py (op parameter - Addition or Multiplication)\n"
 		<< "NOTE: plotter.py needs to be in the same directory in which the result files are located\n\n";
 
-	array_ctxt_predefined_test("stats", true);
+	array_ctxt_predefined_test("statsGPU", true);
 
 	std::cout << "Second test done\n\n";
 }
 
 int main(){
 
-	//old_implementation_compare_statistics_tests();
+	old_implementation_compare_statistics_tests();
 
     return 0;
 }

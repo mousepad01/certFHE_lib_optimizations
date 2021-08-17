@@ -161,6 +161,37 @@ namespace certFHE {
 		static void m_threshold_autoselect(const Context & context, bool cache_in_file = true, std::string cache_file_name = "m_thrsh_cache.bin");
 	};
 
+
+#if CERTFHE_USE_CUDA
+
+	/**
+	 * Class for gpu usage threshold values
+	 * and their management
+	**/
+	class GPUValues {
+
+	public:
+
+		/**
+		 * Minimum threshold for using GPU for CCC chunk MULTIPLICATION
+		 * measured in default len multiples
+		**/
+		static uint64_t mul_gpu_threshold;
+
+		/**
+		 * Minimum threshold for using GPU for CCC chunk DECRYPTION
+		 * measured in default len multiples
+		**/
+		static uint64_t dec_gpu_threshold;
+
+		/**
+		 * Minimum threshold for using GPU for CCC chunk PERMUTATION
+		 * measured in default len multiples
+		**/
+		static uint64_t perm_gpu_threshold;
+	};
+
+#endif
 }
 
 #endif
