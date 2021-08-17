@@ -300,7 +300,7 @@ namespace certFHE {
 
 		uint64_t * res = new uint64_t[res_u64_cnt];
 		
-		if (res_u64_cnt < MTValues::add_m_threshold) {
+		if (fst->deflen_count + snd->deflen_count < MTValues::add_m_threshold) {
 
 			for (uint64_t i = 0; i < fst_u64_cnt; i++)
 				res[i] = fst_c[i];
@@ -387,14 +387,14 @@ namespace certFHE {
 
 #if CERTFHE_USE_CUDA
 
-		if (res_u64_cnt >= GPUValues::mul_gpu_threshold) {
+		if (res_deflen_cnt >= GPUValues::mul_gpu_threshold) {
 
 			CUDA_chiphertext_multiply(deflen_to_u64, res_deflen_cnt, fst_deflen_cnt, snd_deflen_cnt, res, fst_c, snd_c);
 			return mul_result;
 		}
 #endif
 
-		if (res_u64_cnt < MTValues::mul_m_threshold) {
+		if (res_deflen_cnt < MTValues::mul_m_threshold) {
 
 			for (uint64_t i = 0; i < res_deflen_cnt; i++) {
 

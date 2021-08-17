@@ -1769,7 +1769,7 @@ void average_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 									certFHE::CNODE::clear_decryption_cache();
 
 									if (val[i] != pp) {
-
+										
 										out << "WRONG decryption on permuted ctxt; should be " << val[i] << ", decrypted " << pp << '\n';
 										out.flush();
 									}
@@ -1802,7 +1802,7 @@ void average_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 
 								if (p != val[pos]) {
 
-									//std::cout << "WRONG decryption; should be " << val[pos] << ", decrypted " << p << '\n';
+									std::cout << "WRONG decryption; should be " << val[pos] << ", decrypted " << p << '\n';
 
 									out << "WRONG decryption; should be " << val[pos] << ", decrypted " << p << '\n';
 									out.flush();
