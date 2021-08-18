@@ -1,4 +1,4 @@
-#include "gpu_processing_support.h"
+#include "CUDA_interface.h"
 
 #if CERTFHE_USE_CUDA
 
@@ -8,8 +8,10 @@
 
 #include <iostream>
 
-const int MAX_BLOCK_PER_GRID_COUNT = 65535;
-const int MAX_THREADS_PER_BLOCK = 1024;
+static const int MAX_BLOCK_PER_GRID_COUNT = 65535;
+static const int MAX_THREADS_PER_BLOCK = 1024;
+
+/****************** GPU KERNEL FUNCTIONS ******************/
 
 /**
  * Device function
@@ -30,7 +32,6 @@ __global__ static void ctxt_multiply_kernel(uint64_t deflen_to_uint64, uint64_t 
 			result[i + result_deflen_i * deflen_to_uint64] = fst[i + fst_deflen_i] & snd[i + snd_deflen_i];
 	}
 }
-
 /**
  * Device function
  * Each thread operates on default length chunks
@@ -52,6 +53,23 @@ __global__ static void ctxt_decrypt_kernel(uint64_t deflen_to_uint64, uint64_t t
 	}
 }
 
+/****************** CUDA INTERFACE METHODS ******************/
+
+__host__ void CUDA_interface::init_CUDA_interface() {
+
+	int device;
+
+	cudaGetDevice(&device);
+	cudaDeviceSynchronize();
+
+	cudaDeviceProp device_props;
+	cudaGetDeviceProperties(&device_props, device);
+
+	//CUDA_interface::asyncEngineCount = device_props.asyncEngineCount;
+
+	//std::cout << device_props.asyncEngineCount << " engines\n";
+}
+
 // TODO
 __host__ uint64_t * CUDA_interface::RAM_TO_VRAM_ciphertext_copy(uint64_t * ram_address, uint64_t size_to_copy, bool delete_original, bool sync) { return 0; }
 
@@ -61,9 +79,9 @@ __host__ uint64_t * CUDA_interface::VRAM_TO_RAM_ciphertext_copy(uint64_t * vram_
 // TODO
 __host__ uint64_t * CUDA_interface::VRAM_TO_VRAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool delete_original, bool sync) { return 0; }
 
-// TODO
-__host__ void CUDA_interface::VRAM_delete_ciphertext(uint64_t * vram_address) { }
+__host__ void CUDA_interface::VRAM_delete_ciphertext(uint64_t * vram_address) { cudaFree(vram_address); }
 
+// TODO
 __host__ void CUDA_interface::VRAM_VRAM_chiphertext_multiply(uint64_t deflen_to_uint64, uint64_t result_deflen_cnt, uint64_t fst_deflen_cnt, uint64_t snd_deflen_cnt,
 	uint64_t * result, const uint64_t * fst, const uint64_t * snd) {
 
@@ -95,6 +113,7 @@ __host__ void CUDA_interface::VRAM_VRAM_chiphertext_multiply(uint64_t deflen_to_
 	cudaFree(VRAM_snd);
 }
 
+// TODO
 __host__ int CUDA_interface::VRAM_ciphertext_decrpytion(uint64_t deflen_to_uint64, uint64_t to_decrypt_deflen_cnt, const uint64_t * to_decrypt, const uint64_t * sk_mask) {
 
 	uint64_t * VRAM_to_decrypt;

@@ -1,8 +1,9 @@
-#ifndef GPU_PROCESSING_SUPPORT_H
-#define GPU_PROCESSING_SUPPORT_H
+#ifndef CUDA_INTERFACE_H
+#define CUDA_INTERFACE_H
 
 /**
  * Macro to enable(parametrized) CUDA for CCC operations and storage on VRAM
+ * !!!!!!!!!! CURRENTLY SUPPORTS ONLY ONE DEVICE !!!!!!!!!!
 **/
 #define CERTFHE_USE_CUDA true
 
@@ -11,10 +12,18 @@
 #include <stdint.h>
 
 /**
+ * !!!!!!!!!! CURRENTLY SUPPORTS ONLY ONE DEVICE !!!!!!!!!!
+ *
  * Class that provides (the complete) interface for any GPU operation or Video RAM manipulation
  * inside the certFHE namespace 
 **/
 class CUDA_interface {
+
+	/**
+	 * Properties of the device in cause - CURRENTLY SUPPORTS ONLY ONE DEVICE
+	 * asyncEngineCount - number of copy streams
+	**/
+	static int asyncEngineCount;
 
 public:
 
@@ -25,6 +34,12 @@ public:
 	 *		  -> in this class (only), ciphertext generally refers to raw ciphertext array chunk,
 	 *			 stored in either RAM or VRAM
 	**/
+
+	/**
+	 * Function that initializez the CUDA interface
+	 * Should be called (currently and only) from Library class
+	**/
+	static void init_CUDA_interface();
 
 	/**
 	 * allocate VRAM and copy values to it from RAM

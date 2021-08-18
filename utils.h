@@ -19,9 +19,9 @@
 #define CERTFHE_GPP_COMPILER_MACRO __GNUC__
 
 /**
- * MACRO to ENABLE/DISABLE use of GPU found inside gpu_processing_support.h
+ * MACRO to ENABLE/DISABLE use of GPU found inside CUDA_interface.h
 **/
-#include "gpu_processing_support.h"
+#include "CUDA_interface.h"
 
 #include <stdio.h>
 #include <iostream>

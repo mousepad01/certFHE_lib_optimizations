@@ -60,19 +60,16 @@ namespace certFHE {
 	}
 
 	CCC::~CCC() {
-		
-		if (this->on_GPU) {
 
-			
-		}
-		else {
+		if (this->ctxt != 0) {
 
-			if (this->ctxt != 0)
-				delete[] ctxt;
+			if (this->on_GPU) 
+				CUDA_interface::VRAM_delete_ciphertext(this->ctxt);
 			else
-				std::cout << "CCC ctxt pointer should never be null (check the rest of the code)";
+				delete[] ctxt;
 		}
-		
+		else
+			std::cout << "CCC ctxt pointer should never be null (check the rest of the code)";
 	}
 
 #else
