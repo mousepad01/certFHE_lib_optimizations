@@ -16,8 +16,28 @@ namespace certFHE {
 		/**
 		 * Ciphertext as uint64_t array
 		 * Check GlobalParams for parametrization of its length
+		 * If CERTFHE_USE_CUDA is defined, this pointer may refer to GPU VRAM 
+		 * This is the only commection to the data stored in GPU VRAM
+		 * (any other object or data is stored in host RAM)
 		**/
 		uint64_t * ctxt; 
+
+#if CERTFHE_USE_CUDA
+
+		/**
+		 * true -> the ctxt pointer OF THE SAME OBJECT points to GPU VRAM
+		 *		-> the decryption or inplace permutation is done by the GPU 
+		 *		-> if GPU_VRAM_MAX_SIZE is not yet reached, and at least one of operands have this flag set, the multiplication, permutation or addition result is also on GPU VRAM
+		 *		-> if GPU_VRAM_MAX_SIZE is reached, the result of multiplication, addition, or permutation is stored on CPU RAM
+		 *
+		 * false -> the ctxt pointer points to RAM
+		 *		 -> if result is smaller than GPU_USAGE_THRESHOLD, and all the operands (1/2) have this flag false, everything is done py the CPU
+		 *		 -> other cases explained for on_GPU == true
+		 *		
+		**/
+		bool on_GPU;
+
+#endif
 
 		// Constructors - destructors
 

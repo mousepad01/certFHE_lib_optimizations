@@ -15,8 +15,8 @@ const int MAX_THREADS_PER_BLOCK = 1024;
  * Device function
  * Each thread operates on default length chunks
 **/
-__global__ void ctxt_multiply_kernel(uint64_t deflen_to_uint64, uint64_t result_deflen_cnt, uint64_t snd_deflen_cnt,
-	uint64_t * result, const uint64_t * fst, const uint64_t * snd) {
+__global__ static void ctxt_multiply_kernel(uint64_t deflen_to_uint64, uint64_t result_deflen_cnt, uint64_t snd_deflen_cnt,
+											uint64_t * result, const uint64_t * fst, const uint64_t * snd) {
 
 	int result_deflen_offset = blockDim.x * blockIdx.x + threadIdx.x;
 	int result_deflen_stride = blockDim.x * gridDim.x;
@@ -31,8 +31,12 @@ __global__ void ctxt_multiply_kernel(uint64_t deflen_to_uint64, uint64_t result_
 	}
 }
 
-__global__ void ctxt_decrypt_kernel(uint64_t deflen_to_uint64, uint64_t to_decrypt_deflen_cnt, const uint64_t * to_decrypt, const uint64_t * sk_mask,
-									int * decryption_result) {
+/**
+ * Device function
+ * Each thread operates on default length chunks
+**/
+__global__ static void ctxt_decrypt_kernel(uint64_t deflen_to_uint64, uint64_t to_decrypt_deflen_cnt, const uint64_t * to_decrypt, const uint64_t * sk_mask,
+											int * decryption_result) {
 
 	int to_decrypt_deflen_offset = blockDim.x * blockIdx.x + threadIdx.x;
 	int to_decrypt_deflen_stride = blockDim.x * gridDim.x;
@@ -48,11 +52,19 @@ __global__ void ctxt_decrypt_kernel(uint64_t deflen_to_uint64, uint64_t to_decry
 	}
 }
 
-/**
- * called from CCC class, linked with extern specifier
- * receives as argument the WHOLE ciphertexts
-**/
-__host__ void CUDA_chiphertext_multiply(uint64_t deflen_to_uint64, uint64_t result_deflen_cnt, uint64_t fst_deflen_cnt, uint64_t snd_deflen_cnt,
+// TODO
+__host__ uint64_t * CUDA_interface::RAM_TO_VRAM_ciphertext_copy(uint64_t * ram_address, uint64_t size_to_copy, bool delete_original, bool sync) { return 0; }
+
+// TODO
+__host__ uint64_t * CUDA_interface::VRAM_TO_RAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool delete_original, bool sync) { return 0; }
+
+// TODO
+__host__ uint64_t * CUDA_interface::VRAM_TO_VRAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool delete_original, bool sync) { return 0; }
+
+// TODO
+__host__ void CUDA_interface::VRAM_delete_ciphertext(uint64_t * vram_address) { }
+
+__host__ void CUDA_interface::VRAM_VRAM_chiphertext_multiply(uint64_t deflen_to_uint64, uint64_t result_deflen_cnt, uint64_t fst_deflen_cnt, uint64_t snd_deflen_cnt,
 	uint64_t * result, const uint64_t * fst, const uint64_t * snd) {
 
 	uint64_t * VRAM_result;
@@ -83,7 +95,7 @@ __host__ void CUDA_chiphertext_multiply(uint64_t deflen_to_uint64, uint64_t resu
 	cudaFree(VRAM_snd);
 }
 
-__host__ int CUDA_ciphertext_decrpytion(uint64_t deflen_to_uint64, uint64_t to_decrypt_deflen_cnt, const uint64_t * to_decrypt, const uint64_t * sk_mask) {
+__host__ int CUDA_interface::VRAM_ciphertext_decrpytion(uint64_t deflen_to_uint64, uint64_t to_decrypt_deflen_cnt, const uint64_t * to_decrypt, const uint64_t * sk_mask) {
 
 	uint64_t * VRAM_to_decrypt;
 	uint64_t * VRAM_sk_mask;

@@ -820,13 +820,29 @@ namespace certFHE {
 #pragma endregion
 
 #if CERTFHE_USE_CUDA
-#pragma region GPUValues
+#pragma region GPUValues definitions
 
-	uint64_t GPUValues::mul_gpu_threshold = -1;
+	/**
+	 * Minimum threshold for using GPU for processing and its video RAM for storage
+	 * measured in default length multiples
+	**/
+	uint64_t GPUValues::gpu_deflen_threshold;
 
-	uint64_t GPUValues::dec_gpu_threshold = 32;
+	/**
+	 * Current quantity of video RAM used for storing ciphertext chunks
+	 * measured in default length multiples
+	**/
+	uint64_t GPUValues::gpu_current_vram_deflen_usage;
 
-	uint64_t GPUValues::perm_gpu_threshold = 32;
+	/**
+	 * Maximum quantity of video RAM used for storing ciphertext chunks
+	 * measured in default length multiples
+	 * For every copy, permutation, allocation or operation result
+	 * if the default length + current gpu vram usage is GREATER that this value
+	 * (at least before executing the operation)
+	 * it will be stored on host RAM
+	**/
+	uint64_t GPUValues::gpu_max_vram_deflen_usage;
 
 #pragma endregion
 #endif

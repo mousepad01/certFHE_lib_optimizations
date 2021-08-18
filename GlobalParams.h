@@ -165,30 +165,33 @@ namespace certFHE {
 #if CERTFHE_USE_CUDA
 
 	/**
-	 * Class for gpu usage threshold values
-	 * and their management
+	 * Class for (CUDA ONLY) GPU usage parameter values
 	**/
 	class GPUValues {
 
 	public:
 
 		/**
-		 * Minimum threshold for using GPU for CCC chunk MULTIPLICATION
-		 * measured in default len multiples
+		 * Minimum threshold for using GPU for processing and its video RAM for storage
+		 * measured in default length multiples
 		**/
-		static uint64_t mul_gpu_threshold;
+		static uint64_t gpu_deflen_threshold;
+		
+		/**
+		 * Current quantity of video RAM used for storing ciphertext chunks
+		 * measured in default length multiples
+		**/
+		static uint64_t gpu_current_vram_deflen_usage;
 
 		/**
-		 * Minimum threshold for using GPU for CCC chunk DECRYPTION
-		 * measured in default len multiples
+		 * Maximum quantity of video RAM used for storing ciphertext chunks
+		 * measured in default length multiples
+		 * For every copy, permutation, allocation or operation result
+		 * if the default length + current gpu vram usage is GREATER that this value
+		 * (at least before executing the operation)
+		 * it will be stored on host RAM
 		**/
-		static uint64_t dec_gpu_threshold;
-
-		/**
-		 * Minimum threshold for using GPU for CCC chunk PERMUTATION
-		 * measured in default len multiples
-		**/
-		static uint64_t perm_gpu_threshold;
+		static uint64_t gpu_max_vram_deflen_usage;
 	};
 
 #endif
