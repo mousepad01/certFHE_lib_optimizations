@@ -824,9 +824,9 @@ namespace certFHE {
 
 	uint64_t GPUValues::mul_gpu_threshold = -1;
 
-	uint64_t GPUValues::dec_gpu_threshold = 0;
+	uint64_t GPUValues::dec_gpu_threshold = 32;
 
-	uint64_t GPUValues::perm_gpu_threshold = 0;
+	uint64_t GPUValues::perm_gpu_threshold = 32;
 
 #pragma endregion
 #endif

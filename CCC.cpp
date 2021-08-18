@@ -362,8 +362,8 @@ namespace certFHE {
 		uint64_t deflen_to_u64 = fst->context->getDefaultN();
 		uint64_t * fst_c = fst->ctxt;
 		uint64_t * snd_c = snd->ctxt;
-		//TO ELIMINATE THE FALSE AFTER DEBUG !!!!!!!!!
-		if (false && fst->deflen_count == 1 && snd->deflen_count == 1) {
+	
+		if (fst->deflen_count == 1 && snd->deflen_count == 1) {
 
 			uint64_t * res = new uint64_t[deflen_to_u64];
 
@@ -524,6 +524,19 @@ namespace certFHE {
 
 		uint64_t * sk_mask = sk.getMaskKey();
 		uint64_t * ctxt = this->ctxt;
+
+#if CERTFHE_USE_CUDA
+
+		if (deflen_cnt >= GPUValues::dec_gpu_threshold) {
+
+			dec = (uint64_t)CUDA_ciphertext_decrpytion(deflen_to_u64, deflen_cnt, ctxt, sk_mask);
+
+			if (OPValues::decryption_cache)
+				CNODE::decryption_cached_values[this] = (unsigned char)dec;
+
+			return dec;
+		}
+#endif
 
 		if (deflen_cnt < MTValues::dec_m_threshold) {
 

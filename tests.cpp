@@ -1653,7 +1653,7 @@ void average_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 
 				timer.start();
 
-				certFHE::MTValues::m_threshold_autoselect(context, false);
+				certFHE::MTValues::m_threshold_autoselect(context);// , false);
 
 				out << timer.stop() << " " << TIME_MEASURE_UNIT << "\n";
 				timer.reset();
@@ -1801,8 +1801,6 @@ void average_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 								t_acc_dec += t_dec;
 
 								if (p != val[pos]) {
-
-									std::cout << "WRONG decryption; should be " << val[pos] << ", decrypted " << p << '\n';
 
 									out << "WRONG decryption; should be " << val[pos] << ", decrypted " << p << '\n';
 									out.flush();
@@ -2218,7 +2216,7 @@ void average_predefined_test(std::string path_sufix = "\\average_test\\debug_sta
 
 		std::fstream log(STATS_PATH + "averagetest_" + path_sufix + ".txt", std::ios::out);
 
-		average_test(100, 90, 0, 0, 1247, 16, 100, 10, 0, log, std::cout, permutations, false);
+		average_test(10000, 90, 0, 0, 1247, 16, 100, 10, 0, log, std::cout, permutations, false);
 
 		log.close();
 	}
@@ -2233,7 +2231,7 @@ void old_implementation_compare_statistics_tests() {
 		<< "To plot them, call average_test_plot function from plotter.py (dectime parameter - whether you want to plot decryption times in the same graph or not)\n"
 		<< "NOTE: plotter.py needs to be in the same directory in which the result files are located\n\n";
 
-	average_predefined_test("statsGPU", false, false);
+	average_predefined_test("noGPU_stats", false, false);
 
 	std::cout << "First test done\n\n";
 
