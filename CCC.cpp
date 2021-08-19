@@ -4,7 +4,7 @@ namespace certFHE {
 
 #if CERTFHE_USE_CUDA
 
-	CCC::CCC(Context * context, uint64_t * ctxt, uint64_t deflen_cnt) : CNODE(context) {
+	CCC::CCC(Context * context, uint64_t * ctxt, uint64_t deflen_cnt, bool ctxt_on_gpu, bool allocate_on_gpu) : CNODE(context) {
 
 		if (deflen_cnt > OPValues::max_ccc_deflen_size) {
 
@@ -13,20 +13,28 @@ namespace certFHE {
 
 			throw std::invalid_argument("ERROR creating CCC node: deflen exceeds limit");
 		}
+		else if (ctxt_on_gpu){
+
+			this->deflen_count = deflen_cnt;
+
+			if (allocate_on_gpu && this->deflen_count + GPUValues::gpu_current_vram_deflen_usage < GPUValues::gpu_max_vram_deflen_usage)
+
+				this->ctxt = CUDA_interface::VRAM_TO_VRAM_ciphertext_copy(ctxt, deflen_cnt, false);
+
+			else
+				this->ctxt = CUDA_interface::VRAM_TO_RAM_ciphertext_copy(ctxt, deflen_cnt, false);
+		}
 		else {
 
 			this->deflen_count = deflen_cnt;
 
-			if(this->deflen_count < GPUValues::gpu_deflen_threshold ||
-				this->deflen_count + GPUValues::gpu_current_vram_deflen_usage < GPUValues::gpu_max_vram_deflen_usage)
+			if (allocate_on_gpu && this->deflen_count + GPUValues::gpu_current_vram_deflen_usage < GPUValues::gpu_max_vram_deflen_usage)
 
-				this->ctxt = ctxt;
-			
-			else 
 				this->ctxt = CUDA_interface::RAM_TO_VRAM_ciphertext_copy(ctxt, deflen_cnt, false);
-
+				
+			else
+				this->ctxt = ctxt;
 		}
-
 	}
 
 	CCC::CCC(const CCC & other) : CNODE(other) {
@@ -36,6 +44,12 @@ namespace certFHE {
 			if (other.on_GPU && (other.deflen_count + GPUValues::gpu_current_vram_deflen_usage < GPUValues::gpu_max_vram_deflen_usage)) {
 
 				this->ctxt = CUDA_interface::VRAM_TO_VRAM_ciphertext_copy(other.ctxt, other.deflen_count, false);
+			}
+			else if (other.on_GPU){
+
+				uint64_t u64_length = this->deflen_count * this->context->getDefaultN();
+
+				this->ctxt = CUDA_interface::VRAM_TO_RAM_ciphertext_copy(other.ctxt, u64_length, false);
 			}
 			else {
 

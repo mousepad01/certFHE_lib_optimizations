@@ -42,7 +42,12 @@ namespace certFHE {
 		// Constructors - destructors
 
 		CCC() = delete;
+
+#if CERTFHE_USE_CUDA
+		CCC(Context * context, uint64_t * ctxt, uint64_t deflen_cnt, bool ctxt_on_gpu, bool allocate_on_gpu);
+#else
 		CCC(Context * context, uint64_t * ctxt, uint64_t deflen_cnt);
+#endif
 
 		CCC(const CCC & other);
 		CCC(const CCC && other);
