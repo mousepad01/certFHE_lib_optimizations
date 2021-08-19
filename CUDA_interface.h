@@ -19,12 +19,6 @@
 **/
 class CUDA_interface {
 
-	/**
-	 * Properties of the device in cause - CURRENTLY SUPPORTS ONLY ONE DEVICE
-	 * asyncEngineCount - number of copy streams
-	**/
-	static int asyncEngineCount;
-
 public:
 
 	/**
@@ -36,43 +30,28 @@ public:
 	**/
 
 	/**
-	 * Function that initializez the CUDA interface
+	 * Function that initializez the CUDA internal interface
 	 * Should be called (currently and only) from Library class
 	**/
 	static void init_CUDA_interface();
 
 	/**
 	 * allocate VRAM and copy values to it from RAM
-	 * this function ASSUMES the pointer from which to copy is on RAM
-	 * returns VRAM address inside uint64_t value
-	 * delete_original -> deallocate original buffer
-	 * sync -> wait for the operations to be done before exit or not
-	 *
-	 * NOTE: this function does NOT check vram usage upper limit,
-	 * checks should be done by the caller
+	 * calls the method with the same name from CUDA_internal_interface with sync always true
 	**/
-	static uint64_t * RAM_TO_VRAM_ciphertext_copy(uint64_t * ram_address, uint64_t size_to_copy, bool delete_original, bool sync);
+	static uint64_t * RAM_TO_VRAM_ciphertext_copy(uint64_t * ram_address, uint64_t size_to_copy, bool delete_original);
 
 	/**
 	 * allocate RAM and copy values to it from VRAM
-	 * this function ASSUMES the pointer from which to copy is on VRAM
-	 * returns RAM address inside uint64_t value
-	 * delete_original -> deallocate original buffer
-	 * sync -> wait for the operations to be done before exit or not
+	 * calls the method with the same name from CUDA_internal_interface with sync always true
 	**/
-	static uint64_t * VRAM_TO_RAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool delete_original, bool sync);
+	static uint64_t * VRAM_TO_RAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool delete_original);
 
 	/**
 	 * allocate VRAM and copy values to it from VRAM
-	 * this function ASSUMES the pointer from which to copy is on VRAM
-	 * returns VRAM address inside uint64_t value
-	 * delete_original -> deallocate original buffer
-	 * sync -> wait for the operations to be done before exit or not
-	 *
-	 * NOTE: this function does NOT check vram usage upper limit, 
-	 * checks should be done by the caller
+	 * calls the method with the same name from CUDA_internal_interface with sync always true
 	**/
-	static uint64_t * VRAM_TO_VRAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool delete_original, bool sync);
+	static uint64_t * VRAM_TO_VRAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool delete_original);
 
 	/**
 	 * Wrapper around cudaFree, that deallocates memory from VRAM
@@ -84,7 +63,6 @@ public:
 		uint64_t * result, const uint64_t * fst, const uint64_t * snd);
 
 	static int VRAM_ciphertext_decrpytion(uint64_t deflen_to_uint64, uint64_t to_decrypt_deflen_cnt, const uint64_t * to_decrypt, const uint64_t * sk_mask);
-
 };
 
 #endif
