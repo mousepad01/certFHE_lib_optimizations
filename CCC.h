@@ -37,6 +37,16 @@ namespace certFHE {
 		**/
 		bool on_GPU;
 
+		/**
+		 * Method that does exactly what CCC::add does with CERTFHE_USE_CUDA macro set to false
+		**/
+		static CCC * CPU_add(CCC * fst, CCC * snd);
+
+		/**
+		 * Method that does exactly what CCC::multiply does with CERTFHE_USE_CUDA macro set to false
+		**/
+		static CCC * CPU_multiply(CCC * fst, CCC * snd);
+
 #endif
 
 		// Constructors - destructors

@@ -77,8 +77,12 @@ namespace certFHE {
 
 		if (this->ctxt != 0) {
 
-			if (this->on_GPU) 
+			if (this->on_GPU) {
+
 				CUDA_interface::VRAM_delete_ciphertext(this->ctxt);
+				GPUValues::gpu_current_vram_deflen_usage -= this->deflen_count;
+			}
+				
 			else
 				delete[] ctxt;
 		}
@@ -377,7 +381,7 @@ namespace certFHE {
 
 #if CERTFHE_USE_CUDA
 
-	CCC * CCC::add(CCC * fst, CCC * snd) {
+	CCC * CCC::CPU_add(CCC * fst, CCC * snd) {
 
 		uint64_t deflen_to_u64 = fst->context->getDefaultN();
 
@@ -444,10 +448,10 @@ namespace certFHE {
 			delete[] args;
 		}
 
-		return new CCC(fst->context, res, res_u64_cnt / deflen_to_u64);
+		return new CCC(fst->context, res, res_u64_cnt / deflen_to_u64, false, false);
 	}
 
-	CCC * CCC::multiply(CCC * fst, CCC * snd) {
+	CCC * CCC::CPU_multiply(CCC * fst, CCC * snd) {
 
 		uint64_t deflen_to_u64 = fst->context->getDefaultN();
 		uint64_t * fst_c = fst->ctxt;
@@ -460,7 +464,7 @@ namespace certFHE {
 			for (uint64_t i = 0; i < deflen_to_u64; i++)
 				res[i] = fst_c[i] & snd_c[i];
 
-			return new CCC(fst->context, res, 1);
+			return new CCC(fst->context, res, 1, false, false);
 		}
 
 		uint64_t res_u64_cnt = (fst->deflen_count * snd->deflen_count) * deflen_to_u64;
@@ -473,14 +477,7 @@ namespace certFHE {
 
 		res = new uint64_t[res_u64_cnt];
 
-		mul_result = new CCC(fst->context, res, fst->deflen_count * snd->deflen_count);
-
-		// TODO
-		/*if (res_deflen_cnt >= GPUValues::mul_gpu_threshold) {
-
-			CUDA_chiphertext_multiply(deflen_to_u64, res_deflen_cnt, fst_deflen_cnt, snd_deflen_cnt, res, fst_c, snd_c);
-			return mul_result;
-		}*/
+		mul_result = new CCC(fst->context, res, fst->deflen_count * snd->deflen_count, false, false);
 
 		if (res_deflen_cnt < MTValues::mul_m_threshold) {
 
@@ -595,6 +592,109 @@ namespace certFHE {
 		return mul_result;
 	}
 
+	CCC * CCC::add(CCC * fst, CCC * snd) {
+
+		if (!fst->on_GPU && !snd->on_GPU) {
+
+			if (fst->deflen_count + snd->deflen_count < GPUValues::gpu_deflen_threshold ||
+				fst->deflen_count + snd->deflen_count + GPUValues::gpu_current_vram_deflen_usage >= GPUValues::gpu_max_vram_deflen_usage)
+
+				return CCC::CPU_add(fst, snd);
+
+			else {
+
+				uint64_t deflen_to_u64 = fst->context->getDefaultN();
+
+				uint64_t fst_u64_cnt = fst->deflen_count * deflen_to_u64;
+				uint64_t snd_u64_cnt = snd->deflen_count * deflen_to_u64;
+				uint64_t res_u64_cnt = fst_u64_cnt + snd_u64_cnt;
+
+				uint64_t * res = CUDA_interface::RAM_RAM_VRAM_chiphertext_addition(deflen_to_u64, fst->deflen_count, snd->deflen_count, fst->ctxt, snd->ctxt);
+
+				GPUValues::gpu_current_vram_deflen_usage += fst->deflen_count + snd->deflen_count;
+
+				return new CCC(fst->context, res, res_u64_cnt / deflen_to_u64, true, true);
+			}
+				
+		}
+		else if (fst->on_GPU ^ snd->on_GPU) {
+
+			if (fst->on_GPU)
+				std::swap(fst, snd);
+
+			if (fst->deflen_count + snd->deflen_count + GPUValues::gpu_current_vram_deflen_usage >= GPUValues::gpu_max_vram_deflen_usage) {
+
+				uint64_t * ram_fst_ctxt = CUDA_interface::VRAM_TO_RAM_ciphertext_copy(fst->ctxt, fst->deflen_count, false);
+
+				CCC ram_fst(fst->context, ram_fst_ctxt, fst->deflen_count, false, false);
+
+				return CCC::CPU_add(&ram_fst, snd);
+			}
+			else {
+
+				uint64_t deflen_to_u64 = fst->context->getDefaultN();
+
+				uint64_t fst_u64_cnt = fst->deflen_count * deflen_to_u64;
+				uint64_t snd_u64_cnt = snd->deflen_count * deflen_to_u64;
+				uint64_t res_u64_cnt = fst_u64_cnt + snd_u64_cnt;
+
+				uint64_t * res = CUDA_interface::RAM_VRAM_VRAM_chiphertext_addition(deflen_to_u64, fst->deflen_count, snd->deflen_count, fst->ctxt, snd->ctxt);
+
+				GPUValues::gpu_current_vram_deflen_usage += fst->deflen_count + snd->deflen_count;
+
+				return new CCC(fst->context, res, res_u64_cnt / deflen_to_u64, true, true);
+			}
+		}
+		else if (fst->on_GPU && snd->on_GPU) {
+
+			if (fst->deflen_count + snd->deflen_count + GPUValues::gpu_current_vram_deflen_usage >= GPUValues::gpu_max_vram_deflen_usage) {
+
+				uint64_t * ram_fst_ctxt = CUDA_interface::VRAM_TO_RAM_ciphertext_copy(fst->ctxt, fst->deflen_count, false);
+				uint64_t * ram_snd_ctxt = CUDA_interface::VRAM_TO_RAM_ciphertext_copy(snd->ctxt, snd->deflen_count, false);
+
+				CCC ram_fst(fst->context, ram_fst_ctxt, fst->deflen_count, false, false);
+				CCC ram_snd(snd->context, ram_fst_ctxt, snd->deflen_count, false, false);
+
+				return CCC::CPU_add(&ram_fst, &ram_snd);
+			}
+			else {
+
+				uint64_t deflen_to_u64 = fst->context->getDefaultN();
+
+				uint64_t fst_u64_cnt = fst->deflen_count * deflen_to_u64;
+				uint64_t snd_u64_cnt = snd->deflen_count * deflen_to_u64;
+				uint64_t res_u64_cnt = fst_u64_cnt + snd_u64_cnt;
+
+				uint64_t * res = CUDA_interface::VRAM_VRAM_VRAM_chiphertext_addition(deflen_to_u64, fst->deflen_count, snd->deflen_count, fst->ctxt, snd->ctxt);
+
+				GPUValues::gpu_current_vram_deflen_usage += fst->deflen_count + snd->deflen_count;
+
+				return new CCC(fst->context, res, res_u64_cnt / deflen_to_u64, true, true);
+			}
+		}
+	}
+
+	// TODO
+	CCC * CCC::multiply(CCC * fst, CCC * snd) {
+
+		if (!fst->on_GPU && !snd->on_GPU) {
+
+
+		}
+		else if (fst->on_GPU ^ snd->on_GPU) {
+
+			if (fst->on_GPU)
+				std::swap(fst, snd);
+
+
+		}
+		else if (fst->on_GPU && snd->on_GPU) {
+
+
+		}
+	}
+
+	// TODO
 	uint64_t CCC::decrypt(const SecretKey & sk) {
 
 		if (OPValues::decryption_cache) {

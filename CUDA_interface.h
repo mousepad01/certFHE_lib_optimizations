@@ -39,7 +39,6 @@ public:
 	 *																				X, Y, Z = RAM / VRAM
 	**/
 
-
 	/**
 	 * Function that initializez the CUDA internal interface
 	 * Should be called (currently and only) from Library class
