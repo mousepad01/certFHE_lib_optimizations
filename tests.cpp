@@ -2249,7 +2249,5 @@ int main(){
 
 	//old_implementation_compare_statistics_tests();
 
-	CUDA_interface::init_CUDA_interface();
-
     return 0;
 }

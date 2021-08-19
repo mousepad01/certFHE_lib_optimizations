@@ -21,9 +21,9 @@ namespace certFHE {
 				this->deflen_count + GPUValues::gpu_current_vram_deflen_usage < GPUValues::gpu_max_vram_deflen_usage)
 
 				this->ctxt = ctxt;
-
+			
 			else 
-				this->ctxt = CUDA_interface::RAM_TO_VRAM_ciphertext_copy(ctxt, deflen_cnt, false, true);
+				this->ctxt = CUDA_interface::RAM_TO_VRAM_ciphertext_copy(ctxt, deflen_cnt, false);
 
 		}
 
@@ -35,7 +35,7 @@ namespace certFHE {
 
 			if (other.on_GPU && (other.deflen_count + GPUValues::gpu_current_vram_deflen_usage < GPUValues::gpu_max_vram_deflen_usage)) {
 
-				this->ctxt = CUDA_interface::VRAM_TO_VRAM_ciphertext_copy(other.ctxt, other.deflen_count, false, true);
+				this->ctxt = CUDA_interface::VRAM_TO_VRAM_ciphertext_copy(other.ctxt, other.deflen_count, false);
 			}
 			else {
 

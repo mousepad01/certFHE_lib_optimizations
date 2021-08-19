@@ -99,6 +99,8 @@ __host__ uint64_t * CUDA_interface::RAM_TO_VRAM_ciphertext_copy(uint64_t * ram_a
 
 	if (delete_original)
 		delete[] ram_address;
+
+	return to_return;
 }
 
 __host__ uint64_t * CUDA_interface::VRAM_TO_RAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool delete_original) {
@@ -198,17 +200,45 @@ __host__ void CUDA_internal_interface::VRAM_delete_ciphertext(uint64_t * vram_ad
 __host__ uint64_t * CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy(uint64_t * ram_address, uint64_t size_to_copy, bool sync) {
 
 	uint64_t * vram_address;
-	cudaMalloc(&vram_address, size_to_copy);
+	cudaMalloc(&vram_address, size_to_copy * sizeof(uint64_t));
 
-	cudaHostRegister(ram_address, size_to_copy, 0);
+	cudaHostRegister(ram_address, size_to_copy * sizeof(uint64_t), 0);
 
-	for (int i = 0; i < streams_cnt; i++) 
-		cudaMemcpyAsync(vram_address, ram_address, size_to_copy, cudaMemcpyHostToDevice, streams[i]);
-	
-	if (sync) {
+	if (size_to_copy < streams_cnt) {
 
-		cudaDeviceSynchronize();
-		cudaHostUnregister(ram_address);
+		cudaMemcpyAsync(vram_address, ram_address, size_to_copy * sizeof(uint64_t), cudaMemcpyHostToDevice, streams[0]); // NOT the default stream, but the first created
+
+		if (sync) {
+
+			cudaStreamSynchronize(streams[0]);
+			cudaHostUnregister(ram_address);
+		}
+	}
+	else {
+
+		/**
+		 * streams_cnt - 1 (non default) streams will copy the same quantity
+		 * the last (non default) stream will also copy the remaining quantity
+		**/
+
+		size_t offset = 0;
+		size_t qty_per_stream = size_to_copy / streams_cnt;
+		size_t remainder_qty = size_to_copy % streams_cnt;
+
+		for (int i = 0; i < streams_cnt - 1; i++) {
+
+			cudaMemcpyAsync(vram_address + offset, ram_address + offset, qty_per_stream * sizeof(uint64_t), cudaMemcpyHostToDevice, streams[i]);
+			offset += qty_per_stream * sizeof(uint64_t);
+		}
+		cudaMemcpyAsync(vram_address + offset, ram_address + offset, (remainder_qty + qty_per_stream) * sizeof(uint64_t), cudaMemcpyHostToDevice, streams[streams_cnt - 1]);
+
+		if (sync) {
+
+			for (int i = 0; i < streams_cnt; i++)
+				cudaStreamSynchronize(streams[i]);
+
+			cudaHostUnregister(ram_address);
+		}	
 	}
 
 	return vram_address;
@@ -217,15 +247,43 @@ __host__ uint64_t * CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy(uint64_
 __host__ uint64_t * CUDA_internal_interface::VRAM_TO_RAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool sync) { 
 
 	uint64_t * ram_address = new uint64_t[size_to_copy];
-	cudaHostRegister(ram_address, size_to_copy, 0);
+	cudaHostRegister(ram_address, size_to_copy * sizeof(uint64_t), 0);
 
-	for (int i = 0; i < streams_cnt; i++)
-		cudaMemcpyAsync(ram_address, vram_address, size_to_copy, cudaMemcpyDeviceToHost, streams[i]);
+	if (size_to_copy < streams_cnt) {
 
-	if (sync) {
+		cudaMemcpyAsync(ram_address, vram_address, size_to_copy * sizeof(uint64_t), cudaMemcpyDeviceToHost, streams[0]); // NOT the default stream, but the first created
 
-		cudaDeviceSynchronize();
-		cudaHostUnregister(ram_address);
+		if (sync) {
+
+			cudaStreamSynchronize(streams[0]);
+			cudaHostUnregister(ram_address);
+		}
+	}
+	else {
+
+		/**
+		 * streams_cnt - 1 (non default) streams will copy the same quantity
+		 * the last (non default) stream will also copy the remaining quantity
+		**/
+
+		size_t offset = 0;
+		size_t qty_per_stream = size_to_copy / streams_cnt;
+		size_t remainder_qty = size_to_copy % streams_cnt;
+
+		for (int i = 0; i < streams_cnt - 1; i++) {
+
+			cudaMemcpyAsync(ram_address + offset, vram_address + offset, qty_per_stream * sizeof(uint64_t), cudaMemcpyDeviceToHost, streams[i]);
+			offset += qty_per_stream * sizeof(uint64_t);
+		}
+		cudaMemcpyAsync(ram_address + offset, vram_address + offset, (remainder_qty + qty_per_stream) * sizeof(uint64_t), cudaMemcpyDeviceToHost, streams[streams_cnt - 1]);
+
+		if (sync) {
+
+			for (int i = 0; i < streams_cnt; i++)
+				cudaStreamSynchronize(streams[i]);
+
+			cudaHostUnregister(ram_address);
+		}
 	}
 
 	return ram_address;
@@ -234,18 +292,41 @@ __host__ uint64_t * CUDA_internal_interface::VRAM_TO_RAM_ciphertext_copy(uint64_
 __host__ uint64_t * CUDA_internal_interface::VRAM_TO_VRAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool sync) { 
 	
 	uint64_t * vram_new_address;
-	cudaMalloc(&vram_new_address, size_to_copy);
+	cudaMalloc(&vram_new_address, size_to_copy * sizeof(uint64_t));
 
-	for (int i = 0; i < streams_cnt; i++)
-		cudaMemcpyAsync(vram_new_address, vram_address, size_to_copy, cudaMemcpyDeviceToDevice, streams[i]);
+	if (size_to_copy < streams_cnt) {
 
-	if (sync) 
-		cudaDeviceSynchronize();
+		cudaMemcpyAsync(vram_new_address, vram_address, size_to_copy * sizeof(uint64_t), cudaMemcpyDeviceToDevice, streams[0]); // NOT the default stream, but the first created
+
+		if (sync)
+			cudaStreamSynchronize(streams[0]);
+	}
+	else {
+
+		/**
+		 * streams_cnt - 1 (non default) streams will copy the same quantity
+		 * the last (non default) stream will also copy the remaining quantity
+		**/
+
+		size_t offset = 0;
+		size_t qty_per_stream = size_to_copy / streams_cnt;
+		size_t remainder_qty = size_to_copy % streams_cnt;
+
+		for (int i = 0; i < streams_cnt - 1; i++) {
+
+			cudaMemcpyAsync(vram_new_address + offset, vram_address + offset, qty_per_stream * sizeof(uint64_t), cudaMemcpyDeviceToDevice, streams[i]);
+			offset += qty_per_stream * sizeof(uint64_t);
+		}
+		cudaMemcpyAsync(vram_new_address + offset, vram_address + offset, (remainder_qty + qty_per_stream) * sizeof(uint64_t), cudaMemcpyDeviceToDevice, streams[streams_cnt - 1]);
+
+		if (sync)
+			for (int i = 0; i < streams_cnt; i++)
+				cudaStreamSynchronize(streams[i]);
+	}
 
 	return vram_new_address;
 }
 
-// TODO
 __host__ void CUDA_internal_interface::VRAM_VRAM_chiphertext_multiply(uint64_t deflen_to_uint64, uint64_t result_deflen_cnt, uint64_t fst_deflen_cnt, uint64_t snd_deflen_cnt,
 	uint64_t * result, const uint64_t * fst, const uint64_t * snd) {
 
@@ -277,7 +358,6 @@ __host__ void CUDA_internal_interface::VRAM_VRAM_chiphertext_multiply(uint64_t d
 	cudaFree(VRAM_snd);
 }
 
-// TODO
 __host__ int CUDA_internal_interface::VRAM_ciphertext_decrpytion(uint64_t deflen_to_uint64, uint64_t to_decrypt_deflen_cnt, const uint64_t * to_decrypt, const uint64_t * sk_mask) {
 
 	uint64_t * VRAM_to_decrypt;
