@@ -76,21 +76,21 @@ public:
 	/**
 	 * multiplies two ciphertext chunks, both residing in VRAM, and stores the result in VRAM
 	**/
-	static uint64_t * VRAM_VRAM_VRAM_chiphertext_multiply(uint64_t deflen_to_uint64, uint64_t result_deflen_cnt, uint64_t fst_deflen_cnt, uint64_t snd_deflen_cnt,
+	static uint64_t * VRAM_VRAM_VRAM_chiphertext_multiply(uint64_t deflen_to_uint64, uint64_t fst_deflen_cnt, uint64_t snd_deflen_cnt,
 															 const uint64_t * fst, const uint64_t * snd);
 
 	/**
 	 * multiplies two ciphertext chunks, one of them residing in RAM and the other in VRAM, and stores the result in VRAM
 	 * the ciphertext chunk which is not in VRAM is temporarily copied in VRAM, and after the result is obtained that copy is deleted
 	**/
-	static uint64_t * RAM_VRAM_VRAM_chiphertext_multiply(uint64_t deflen_to_uint64, uint64_t result_deflen_cnt, uint64_t fst_deflen_cnt, uint64_t snd_deflen_cnt,
+	static uint64_t * RAM_VRAM_VRAM_chiphertext_multiply(uint64_t deflen_to_uint64, uint64_t fst_deflen_cnt, uint64_t snd_deflen_cnt,
 															const uint64_t * fst, const uint64_t * snd);
 
 	/**
 	 * multiplies two ciphertext chunks, both residing in RAM, and stores the result in VRAM
 	 * both ciphertext chunk operands are copied in VRAM, and after the result is obtained the copies are deleted
 	**/
-	static uint64_t * RAM_RAM_VRAM_chiphertext_multiply(uint64_t deflen_to_uint64, uint64_t result_deflen_cnt, uint64_t fst_deflen_cnt, uint64_t snd_deflen_cnt,
+	static uint64_t * RAM_RAM_VRAM_chiphertext_multiply(uint64_t deflen_to_uint64, uint64_t fst_deflen_cnt, uint64_t snd_deflen_cnt,
 														const uint64_t * fst, const uint64_t * snd);
 
 	/****************** ADDITION ******************/
@@ -99,21 +99,21 @@ public:
 	 * adds two ciphertext chunks, both residing in VRAM, and stores the result in VRAM
 	**/
 	static uint64_t * VRAM_VRAM_VRAM_chiphertext_addition(uint64_t deflen_to_uint64, uint64_t fst_deflen_cnt, uint64_t snd_deflen_cnt,
-		const uint64_t * fst, const uint64_t * snd);
+															const uint64_t * fst, const uint64_t * snd);
 
 	/**
 	 * adds two ciphertext chunks, one of them residing in RAM and the other in VRAM, and stores the result in VRAM
 	 * unlike multiplication analogue case, no temporary copies are created
 	**/
 	static uint64_t * RAM_VRAM_VRAM_chiphertext_addition(uint64_t deflen_to_uint64, uint64_t fst_deflen_cnt, uint64_t snd_deflen_cnt,
-		const uint64_t * fst, const uint64_t * snd);
+															const uint64_t * fst, const uint64_t * snd);
 
 	/**
 	 * adds two ciphertext chunks, both residing in RAM, and stores the result in VRAM
 	 * unlike multiplication analogue case, no temporary copies are created
 	**/
 	static uint64_t * RAM_RAM_VRAM_chiphertext_addition(uint64_t deflen_to_uint64, uint64_t fst_deflen_cnt, uint64_t snd_deflen_cnt,
-		const uint64_t * fst, const uint64_t * snd);
+														const uint64_t * fst, const uint64_t * snd);
 
 	/****************** DECRYPTION ******************/
 
