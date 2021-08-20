@@ -54,7 +54,7 @@ namespace certFHE {
 		CCC() = delete;
 
 #if CERTFHE_USE_CUDA
-		CCC(Context * context, uint64_t * ctxt, uint64_t deflen_cnt, bool ctxt_on_gpu, bool allocate_on_gpu);
+		CCC(Context * context, uint64_t * ctxt, uint64_t deflen_cnt, bool ctxt_on_gpu);
 #else
 		CCC(Context * context, uint64_t * ctxt, uint64_t deflen_cnt);
 #endif

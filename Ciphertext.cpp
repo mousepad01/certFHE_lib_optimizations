@@ -841,7 +841,7 @@ namespace certFHE{
 		uint64_t * raw_ctxt = sk.encrypt_raw(plaintext);
 
 #if CERTFHE_USE_CUDA
-		this->node = new CCC(sk.getContext(), raw_ctxt, 1, false, false);
+		this->node = new CCC(sk.getContext(), raw_ctxt, 1, false);
 #else
 		this->node = new CCC(sk.getContext(), raw_ctxt, 1);
 #endif
@@ -853,7 +853,7 @@ namespace certFHE{
 
 		uint64_t * raw_ctxt = sk.encrypt_raw(plaintext);
 #if CERTFHE_USE_CUDA
-		this->node = new CCC(sk.getContext(), raw_ctxt, 1, false, false);
+		this->node = new CCC(sk.getContext(), raw_ctxt, 1, false);
 #else
 		this->node = new CCC(sk.getContext(), raw_ctxt, 1);
 #endif

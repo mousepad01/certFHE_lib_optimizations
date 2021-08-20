@@ -157,7 +157,7 @@ __host__ uint64_t * CUDA_interface::VRAM_VRAM_VRAM_chiphertext_addition(uint64_t
 																		const uint64_t * fst, const uint64_t * snd) {
 
 	uint64_t * add_result;
-	cudaMalloc(&add_result, fst_deflen_cnt + snd_deflen_cnt);
+	cudaMalloc(&add_result, (fst_deflen_cnt + snd_deflen_cnt) * deflen_to_uint64 * sizeof(uint64_t));
 
 	CUDA_internal_interface::VRAM_TO_VRAM_ciphertext_copy((uint64_t *)fst, fst_deflen_cnt * deflen_to_uint64, true, add_result);
 	CUDA_internal_interface::VRAM_TO_VRAM_ciphertext_copy((uint64_t *)snd, snd_deflen_cnt * deflen_to_uint64, true, add_result + fst_deflen_cnt * deflen_to_uint64);
@@ -169,7 +169,7 @@ __host__ uint64_t * CUDA_interface::RAM_VRAM_VRAM_chiphertext_addition(uint64_t 
 																		const uint64_t * fst, const uint64_t * snd) {
 
 	uint64_t * add_result;
-	cudaMalloc(&add_result, fst_deflen_cnt + snd_deflen_cnt);
+	cudaMalloc(&add_result, (fst_deflen_cnt + snd_deflen_cnt) * deflen_to_uint64 * sizeof(uint64_t));
 
 	CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy((uint64_t *)fst, fst_deflen_cnt * deflen_to_uint64, true, add_result);
 	CUDA_internal_interface::VRAM_TO_VRAM_ciphertext_copy((uint64_t *)snd, snd_deflen_cnt * deflen_to_uint64, true, add_result + fst_deflen_cnt * deflen_to_uint64);
@@ -181,7 +181,7 @@ __host__ uint64_t * CUDA_interface::RAM_RAM_VRAM_chiphertext_addition(uint64_t d
 																		const uint64_t * fst, const uint64_t * snd) {
 
 	uint64_t * add_result;
-	cudaMalloc(&add_result, fst_deflen_cnt + snd_deflen_cnt);
+	cudaMalloc(&add_result, (fst_deflen_cnt + snd_deflen_cnt) * deflen_to_uint64 * sizeof(uint64_t));
 
 	CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy((uint64_t *)fst, fst_deflen_cnt * deflen_to_uint64, true, add_result);
 	CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy((uint64_t *)snd, snd_deflen_cnt * deflen_to_uint64, true, add_result + fst_deflen_cnt * deflen_to_uint64);
@@ -416,7 +416,7 @@ __host__ uint64_t * CUDA_internal_interface::VRAM_VRAM_VRAM_chiphertext_multiply
 
 		size_t deflen_offset = 0;
 		size_t block_qty_per_stream = block_cnt / streams_cnt;
-		size_t remainder = block_cnt % streams_cnt;
+		//size_t remainder = block_cnt % streams_cnt;
 
 		for (int i = 0; i < streams_cnt - 1; i++) {
 
@@ -467,7 +467,7 @@ __host__ int CUDA_internal_interface::VRAM_ciphertext_decryption(uint64_t deflen
 
 		size_t deflen_offset = 0;
 		size_t block_qty_per_stream = block_cnt / streams_cnt;
-		size_t remainder = block_cnt % streams_cnt;
+		//size_t remainder = block_cnt % streams_cnt;
 
 		for (int i = 0; i < streams_cnt - 1; i++) {
 
