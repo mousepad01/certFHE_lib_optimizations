@@ -2257,9 +2257,9 @@ void gpu_test_add() {
 	certFHE::Ciphertext c0(p0, sk);
 	certFHE::Ciphertext c1(p1, sk);
 
-	certFHE::Ciphertext a = c1 + c0;
+	certFHE::Ciphertext a = c1 + c0 + c1;
 
-	std::cout << ((a.decrypt(sk).getValue() & 0x01) == 1) << " ";
+	std::cout << ((a.decrypt(sk).getValue() & 0x01) == 0);
 }
 
 int main(){

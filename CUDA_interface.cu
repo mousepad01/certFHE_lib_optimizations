@@ -259,8 +259,7 @@ __host__ uint64_t * CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy(uint64_
 	if(!vram_address)
 		cudaMalloc(&vram_address, size_to_copy * sizeof(uint64_t));
 
-	cudaError_t err = cudaHostRegister(ram_address, size_to_copy * sizeof(uint64_t), 0);
-	std::cout << cudaGetErrorString(err) << '\n';
+	cudaHostRegister(ram_address, size_to_copy * sizeof(uint64_t), 0);
 
 	if (true || size_to_copy < streams_cnt) {
 
@@ -354,7 +353,7 @@ __host__ uint64_t * CUDA_internal_interface::VRAM_TO_VRAM_ciphertext_copy(uint64
 	if(!vram_new_address)
 		cudaMalloc(&vram_new_address, size_to_copy * sizeof(uint64_t));
 
-	if (size_to_copy < streams_cnt) {
+	if (true || size_to_copy < streams_cnt) {
 	
 		cudaMemcpyAsync(vram_new_address, vram_address, size_to_copy * sizeof(uint64_t), cudaMemcpyDeviceToDevice, streams[streams_cnt]); // NOT the default stream, but the first created
 
