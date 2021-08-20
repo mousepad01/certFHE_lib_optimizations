@@ -116,7 +116,7 @@ public:
 
 	/****************** DECRYPTION ******************/
 
-	static int VRAM_ciphertext_decrpytion(uint64_t deflen_to_uint64, uint64_t to_decrypt_deflen_cnt, const uint64_t * to_decrypt, const uint64_t * sk_mask);
+	static int VRAM_ciphertext_decryption(uint64_t deflen_to_uint64, uint64_t to_decrypt_deflen_cnt, const uint64_t * to_decrypt, const uint64_t * sk_mask);
 
 	/****************** PERMUTATION ******************/
 	// TODO

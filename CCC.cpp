@@ -715,7 +715,6 @@ namespace certFHE {
 		return 0;
 	}
 
-	// TODO
 	uint64_t CCC::decrypt(const SecretKey & sk) {
 
 		if (OPValues::decryption_cache) {
@@ -734,18 +733,11 @@ namespace certFHE {
 		uint64_t * sk_mask = sk.getMaskKey();
 		uint64_t * ctxt = this->ctxt;
 
-		// TODO
-		/*if (deflen_cnt >= GPUValues::dec_gpu_threshold) {
+		if (this->on_GPU) {
 
-			dec = (uint64_t)CUDA_ciphertext_decrpytion(deflen_to_u64, deflen_cnt, ctxt, sk_mask);
-
-			if (OPValues::decryption_cache)
-				CNODE::decryption_cached_values[this] = (unsigned char)dec;
-
-			return dec;
-		}*/
-
-		if (deflen_cnt < MTValues::dec_m_threshold) {
+			dec = CUDA_interface::VRAM_ciphertext_decryption(deflen_to_u64, deflen_cnt, ctxt, sk_mask);
+		}
+		else if (deflen_cnt < MTValues::dec_m_threshold) {
 
 #ifdef __AVX2__
 
