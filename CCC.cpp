@@ -17,23 +17,33 @@ namespace certFHE {
 
 			this->deflen_count = deflen_cnt;
 
-			if (allocate_on_gpu && this->deflen_count + GPUValues::gpu_current_vram_deflen_usage < GPUValues::gpu_max_vram_deflen_usage)
+			if (allocate_on_gpu && this->deflen_count + GPUValues::gpu_current_vram_deflen_usage < GPUValues::gpu_max_vram_deflen_usage) {
 
 				this->ctxt = CUDA_interface::VRAM_TO_VRAM_ciphertext_copy(ctxt, deflen_cnt, false);
+				this->on_GPU = true;
+			}
+			else {
 
-			else
 				this->ctxt = CUDA_interface::VRAM_TO_RAM_ciphertext_copy(ctxt, deflen_cnt, false);
+				this->on_GPU = false;
+			}
+				
 		}
 		else {
 
 			this->deflen_count = deflen_cnt;
 
-			if (allocate_on_gpu && this->deflen_count + GPUValues::gpu_current_vram_deflen_usage < GPUValues::gpu_max_vram_deflen_usage)
+			if (allocate_on_gpu && this->deflen_count + GPUValues::gpu_current_vram_deflen_usage < GPUValues::gpu_max_vram_deflen_usage) {
 
 				this->ctxt = CUDA_interface::RAM_TO_VRAM_ciphertext_copy(ctxt, deflen_cnt, false);
-				
-			else
+				this->on_GPU = true;
+			}
+			else {
+
 				this->ctxt = ctxt;
+				this->on_GPU = false;
+			}
+				
 		}
 	}
 
@@ -44,12 +54,14 @@ namespace certFHE {
 			if (other.on_GPU && (other.deflen_count + GPUValues::gpu_current_vram_deflen_usage < GPUValues::gpu_max_vram_deflen_usage)) {
 
 				this->ctxt = CUDA_interface::VRAM_TO_VRAM_ciphertext_copy(other.ctxt, other.deflen_count, false);
+				this->on_GPU = true;
 			}
 			else if (other.on_GPU){
 
 				uint64_t u64_length = this->deflen_count * this->context->getDefaultN();
 
 				this->ctxt = CUDA_interface::VRAM_TO_RAM_ciphertext_copy(other.ctxt, u64_length, false);
+				this->on_GPU = false;
 			}
 			else {
 
@@ -61,16 +73,23 @@ namespace certFHE {
 						this->ctxt[i] = other.ctxt[i];
 				else
 					Helper::u64_multithread_cpy(other.ctxt, this->ctxt, u64_length);
+
+				this->on_GPU = false;
 			}
 		}
-		else
+		else {
+
 			this->ctxt = 0;
+			this->on_GPU = false;
+		}
+
 	}
 
 	CCC::CCC(const CCC && other) : CNODE(other) {
 
 		this->deflen_count = other.deflen_count;
 		this->ctxt = other.ctxt;
+		this->on_GPU = other.on_GPU;
 	}
 
 	CCC::~CCC() {
@@ -692,6 +711,8 @@ namespace certFHE {
 
 
 		}
+
+		return 0;
 	}
 
 	// TODO

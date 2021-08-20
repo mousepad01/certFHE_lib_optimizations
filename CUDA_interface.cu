@@ -44,7 +44,7 @@ class CUDA_internal_interface {
 	 * NOTE: this function does NOT check vram usage upper limit,
 	 * checks should be done by the caller
 	**/
-	static uint64_t * RAM_TO_VRAM_ciphertext_copy(uint64_t * ram_address, uint64_t size_to_copy, bool sync);
+	static uint64_t * RAM_TO_VRAM_ciphertext_copy(uint64_t * ram_address, uint64_t size_to_copy, bool sync, uint64_t * destination);
 
 	/**
 	 * allocate RAM and copy values to it from VRAM
@@ -54,7 +54,7 @@ class CUDA_internal_interface {
 	 * sync -> wait for the operations to be done before exit or not
 	 * if sync is TRUE, the HOST memory is left PINNED
 	**/
-	static uint64_t * VRAM_TO_RAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool sync);
+	static uint64_t * VRAM_TO_RAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool sync, uint64_t * destination);
 
 	/**
 	 * allocate VRAM and copy values to it from VRAM
@@ -66,7 +66,7 @@ class CUDA_internal_interface {
 	 * NOTE: this function does NOT check vram usage upper limit,
 	 * checks should be done by the caller
 	**/
-	static uint64_t * VRAM_TO_VRAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool sync);
+	static uint64_t * VRAM_TO_VRAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool sync, uint64_t * destination);
 
 	static uint64_t * VRAM_VRAM_VRAM_chiphertext_multiply(uint64_t deflen_to_uint64, uint64_t fst_deflen_cnt, uint64_t snd_deflen_cnt,
 															 const uint64_t * fst, const uint64_t * snd);
@@ -92,7 +92,7 @@ __host__ void CUDA_interface::init_CUDA_interface() {
 
 __host__ uint64_t * CUDA_interface::RAM_TO_VRAM_ciphertext_copy(uint64_t * ram_address, uint64_t size_to_copy, bool delete_original) { 
 
-	uint64_t * to_return = CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy(ram_address, size_to_copy, true);
+	uint64_t * to_return = CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy(ram_address, size_to_copy, true, 0);
 
 	if (delete_original)
 		delete[] ram_address;
@@ -102,7 +102,7 @@ __host__ uint64_t * CUDA_interface::RAM_TO_VRAM_ciphertext_copy(uint64_t * ram_a
 
 __host__ uint64_t * CUDA_interface::VRAM_TO_RAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool delete_original) {
 
-	uint64_t * to_return = CUDA_internal_interface::VRAM_TO_RAM_ciphertext_copy(vram_address, size_to_copy, true);
+	uint64_t * to_return = CUDA_internal_interface::VRAM_TO_RAM_ciphertext_copy(vram_address, size_to_copy, true, 0);
 
 	if (delete_original)
 		cudaFree(vram_address);
@@ -112,7 +112,7 @@ __host__ uint64_t * CUDA_interface::VRAM_TO_RAM_ciphertext_copy(uint64_t * vram_
 
 __host__ uint64_t * CUDA_interface::VRAM_TO_VRAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool delete_original) {
 
-	uint64_t * to_return = CUDA_internal_interface::VRAM_TO_VRAM_ciphertext_copy(vram_address, size_to_copy, true);
+	uint64_t * to_return = CUDA_internal_interface::VRAM_TO_VRAM_ciphertext_copy(vram_address, size_to_copy, true, 0);
 
 	if (delete_original)
 		cudaFree(vram_address);
@@ -131,7 +131,7 @@ __host__ uint64_t * CUDA_interface::VRAM_VRAM_VRAM_chiphertext_multiply(uint64_t
 __host__ uint64_t * CUDA_interface::RAM_VRAM_VRAM_chiphertext_multiply(uint64_t deflen_to_uint64,  uint64_t fst_deflen_cnt, uint64_t snd_deflen_cnt,
 																		const uint64_t * fst, const uint64_t * snd) {
 
-	uint64_t * vram_fst = CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy((uint64_t *)fst, fst_deflen_cnt * sizeof(uint64_t), true);
+	uint64_t * vram_fst = CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy((uint64_t *)fst, fst_deflen_cnt * sizeof(uint64_t), true, 0);
 	uint64_t * mul_result = CUDA_internal_interface::VRAM_VRAM_VRAM_chiphertext_multiply(deflen_to_uint64, fst_deflen_cnt, snd_deflen_cnt, vram_fst, snd);
 
 	cudaFree(vram_fst);
@@ -142,8 +142,8 @@ __host__ uint64_t * CUDA_interface::RAM_VRAM_VRAM_chiphertext_multiply(uint64_t 
 __host__ uint64_t * CUDA_interface::RAM_RAM_VRAM_chiphertext_multiply(uint64_t deflen_to_uint64, uint64_t fst_deflen_cnt, uint64_t snd_deflen_cnt,
 																		const uint64_t * fst, const uint64_t * snd) {
 
-	uint64_t * vram_fst = CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy((uint64_t *)fst, fst_deflen_cnt * sizeof(uint64_t), true);
-	uint64_t * vram_snd = CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy((uint64_t *)snd, snd_deflen_cnt * sizeof(uint64_t), true);
+	uint64_t * vram_fst = CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy((uint64_t *)fst, fst_deflen_cnt * sizeof(uint64_t), true, 0);
+	uint64_t * vram_snd = CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy((uint64_t *)snd, snd_deflen_cnt * sizeof(uint64_t), true, 0);
 
 	uint64_t * mul_result = CUDA_internal_interface::VRAM_VRAM_VRAM_chiphertext_multiply(deflen_to_uint64, fst_deflen_cnt, snd_deflen_cnt, vram_fst, snd);
 
@@ -159,8 +159,8 @@ __host__ uint64_t * CUDA_interface::VRAM_VRAM_VRAM_chiphertext_addition(uint64_t
 	uint64_t * add_result;
 	cudaMalloc(&add_result, fst_deflen_cnt + snd_deflen_cnt);
 
-	CUDA_internal_interface::VRAM_TO_VRAM_ciphertext_copy(add_result, fst_deflen_cnt, false);
-	CUDA_internal_interface::VRAM_TO_VRAM_ciphertext_copy(add_result + fst_deflen_cnt, snd_deflen_cnt, false);
+	CUDA_internal_interface::VRAM_TO_VRAM_ciphertext_copy((uint64_t *)fst, fst_deflen_cnt, false, add_result);
+	CUDA_internal_interface::VRAM_TO_VRAM_ciphertext_copy((uint64_t *)snd, snd_deflen_cnt, false, add_result + fst_deflen_cnt);
 
 	for (int i = 0; i < CUDA_internal_interface::streams_cnt; i++)
 		cudaStreamSynchronize(CUDA_internal_interface::streams[i]);
@@ -174,8 +174,8 @@ __host__ uint64_t * CUDA_interface::RAM_VRAM_VRAM_chiphertext_addition(uint64_t 
 	uint64_t * add_result;
 	cudaMalloc(&add_result, fst_deflen_cnt + snd_deflen_cnt);
 
-	CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy(add_result, fst_deflen_cnt, false);
-	CUDA_internal_interface::VRAM_TO_VRAM_ciphertext_copy(add_result + fst_deflen_cnt, snd_deflen_cnt, false);
+	CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy((uint64_t *)fst, fst_deflen_cnt, false, add_result);
+	CUDA_internal_interface::VRAM_TO_VRAM_ciphertext_copy((uint64_t *)snd, snd_deflen_cnt, false, add_result + fst_deflen_cnt);
 
 	for (int i = 0; i < CUDA_internal_interface::streams_cnt; i++)
 		cudaStreamSynchronize(CUDA_internal_interface::streams[i]);
@@ -189,8 +189,8 @@ __host__ uint64_t * CUDA_interface::RAM_RAM_VRAM_chiphertext_addition(uint64_t d
 	uint64_t * add_result;
 	cudaMalloc(&add_result, fst_deflen_cnt + snd_deflen_cnt);
 
-	CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy(add_result, fst_deflen_cnt, false);
-	CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy(add_result + fst_deflen_cnt, snd_deflen_cnt, false);
+	CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy((uint64_t *)fst, fst_deflen_cnt, false, add_result);
+	CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy((uint64_t *)snd, snd_deflen_cnt, false, add_result + fst_deflen_cnt);
 
 	for (int i = 0; i < CUDA_internal_interface::streams_cnt; i++)
 		cudaStreamSynchronize(CUDA_internal_interface::streams[i]);
@@ -263,10 +263,10 @@ __host__ void CUDA_internal_interface::init() {
 		cudaStreamCreate(streams + i);
 }
 
-__host__ uint64_t * CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy(uint64_t * ram_address, uint64_t size_to_copy, bool sync) {
+__host__ uint64_t * CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy(uint64_t * ram_address, uint64_t size_to_copy, bool sync, uint64_t * vram_address = 0) {
 
-	uint64_t * vram_address;
-	cudaMalloc(&vram_address, size_to_copy * sizeof(uint64_t));
+	if(!vram_address)
+		cudaMalloc(&vram_address, size_to_copy * sizeof(uint64_t));
 
 	cudaHostRegister(ram_address, size_to_copy * sizeof(uint64_t), 0);
 
@@ -310,9 +310,11 @@ __host__ uint64_t * CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy(uint64_
 	return vram_address;
 }
 
-__host__ uint64_t * CUDA_internal_interface::VRAM_TO_RAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool sync) { 
+__host__ uint64_t * CUDA_internal_interface::VRAM_TO_RAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool sync, uint64_t * ram_address = 0) {
 
-	uint64_t * ram_address = new uint64_t[size_to_copy];
+	if(!ram_address)
+		ram_address = new uint64_t[size_to_copy];
+
 	cudaHostRegister(ram_address, size_to_copy * sizeof(uint64_t), 0);
 
 	if (size_to_copy < streams_cnt) {
@@ -355,10 +357,10 @@ __host__ uint64_t * CUDA_internal_interface::VRAM_TO_RAM_ciphertext_copy(uint64_
 	return ram_address;
 }
 
-__host__ uint64_t * CUDA_internal_interface::VRAM_TO_VRAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool sync) { 
+__host__ uint64_t * CUDA_internal_interface::VRAM_TO_VRAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool sync, uint64_t * vram_new_address = 0) {
 	
-	uint64_t * vram_new_address;
-	cudaMalloc(&vram_new_address, size_to_copy * sizeof(uint64_t));
+	if(!vram_new_address)
+		cudaMalloc(&vram_new_address, size_to_copy * sizeof(uint64_t));
 
 	if (size_to_copy < streams_cnt) {
 	

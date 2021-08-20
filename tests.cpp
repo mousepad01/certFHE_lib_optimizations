@@ -2245,9 +2245,29 @@ void old_implementation_compare_statistics_tests() {
 	std::cout << "Second test done\n\n";
 }
 
+void gpu_test_add() {
+
+	certFHE::Library::initializeLibrary();
+	certFHE::Context context(1247, 16);
+	certFHE::SecretKey sk(context);
+
+	certFHE::Plaintext p0(0);
+	certFHE::Plaintext p1(1);
+
+	certFHE::Ciphertext c0(p0, sk);
+	certFHE::Ciphertext c1(p1, sk);
+
+	certFHE::Ciphertext a = c0 + c1;
+	c1 += c1;
+
+	std::cout << ((a.decrypt(sk).getValue() & 0x01) == 1) << " " << ((c1.decrypt(sk).getValue() & 0x01) == 0);
+}
+
 int main(){
 
 	//old_implementation_compare_statistics_tests();
+
+	gpu_test_add();
 
     return 0;
 }
