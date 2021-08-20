@@ -680,15 +680,11 @@ namespace certFHE {
 
 				uint64_t deflen_to_u64 = fst->context->getDefaultN();
 
-				uint64_t fst_u64_cnt = fst->deflen_count * deflen_to_u64;
-				uint64_t snd_u64_cnt = snd->deflen_count * deflen_to_u64;
-				uint64_t res_u64_cnt = fst_u64_cnt * snd_u64_cnt;
-
 				uint64_t * res = CUDA_interface::RAM_RAM_VRAM_chiphertext_multiply(deflen_to_u64, fst->deflen_count, snd->deflen_count, fst->ctxt, snd->ctxt);
 
 				GPUValues::gpu_current_vram_deflen_usage += fst->deflen_count * snd->deflen_count;
 
-				return new CCC(fst->context, res, res_u64_cnt / deflen_to_u64, true);
+				return new CCC(fst->context, res, fst->deflen_count * snd->deflen_count, true);
 			}
 
 		}
@@ -709,15 +705,11 @@ namespace certFHE {
 
 				uint64_t deflen_to_u64 = fst->context->getDefaultN();
 
-				uint64_t fst_u64_cnt = fst->deflen_count * deflen_to_u64;
-				uint64_t snd_u64_cnt = snd->deflen_count * deflen_to_u64;
-				uint64_t res_u64_cnt = fst_u64_cnt * snd_u64_cnt;
-
 				uint64_t * res = CUDA_interface::RAM_VRAM_VRAM_chiphertext_multiply(deflen_to_u64, fst->deflen_count, snd->deflen_count, fst->ctxt, snd->ctxt);
 
 				GPUValues::gpu_current_vram_deflen_usage += fst->deflen_count * snd->deflen_count;
 
-				return new CCC(fst->context, res, res_u64_cnt / deflen_to_u64, true);
+				return new CCC(fst->context, res, fst->deflen_count * snd->deflen_count, true);
 			}
 		}
 		else if (fst->on_GPU && snd->on_GPU) {
@@ -736,15 +728,11 @@ namespace certFHE {
 
 				uint64_t deflen_to_u64 = fst->context->getDefaultN();
 
-				uint64_t fst_u64_cnt = fst->deflen_count * deflen_to_u64;
-				uint64_t snd_u64_cnt = snd->deflen_count * deflen_to_u64;
-				uint64_t res_u64_cnt = fst_u64_cnt * snd_u64_cnt;
-
 				uint64_t * res = CUDA_interface::VRAM_VRAM_VRAM_chiphertext_multiply(deflen_to_u64, fst->deflen_count, snd->deflen_count, fst->ctxt, snd->ctxt);
 
 				GPUValues::gpu_current_vram_deflen_usage += fst->deflen_count * snd->deflen_count;
 
-				return new CCC(fst->context, res, res_u64_cnt / deflen_to_u64, true);
+				return new CCC(fst->context, res, fst->deflen_count * snd->deflen_count, true);
 			}
 		}
 

@@ -145,7 +145,7 @@ __host__ uint64_t * CUDA_interface::RAM_RAM_VRAM_chiphertext_multiply(uint64_t d
 	uint64_t * vram_fst = CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy((uint64_t *)fst, fst_deflen_cnt * deflen_to_uint64, true, 0);
 	uint64_t * vram_snd = CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy((uint64_t *)snd, snd_deflen_cnt * deflen_to_uint64, true, 0);
 
-	uint64_t * mul_result = CUDA_internal_interface::VRAM_VRAM_VRAM_chiphertext_multiply(deflen_to_uint64, fst_deflen_cnt, snd_deflen_cnt, vram_fst, snd);
+	uint64_t * mul_result = CUDA_internal_interface::VRAM_VRAM_VRAM_chiphertext_multiply(deflen_to_uint64, fst_deflen_cnt, snd_deflen_cnt, vram_fst, vram_snd);
 
 	cudaFree(vram_fst);
 	cudaFree(vram_snd);
@@ -347,7 +347,7 @@ __host__ uint64_t * CUDA_internal_interface::VRAM_TO_RAM_ciphertext_copy(uint64_
 
 	return ram_address;
 }
-//
+
 __host__ uint64_t * CUDA_internal_interface::VRAM_TO_VRAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool sync, uint64_t * vram_new_address = 0) {
 	
 	if(!vram_new_address)
