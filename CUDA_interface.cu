@@ -261,7 +261,7 @@ __host__ uint64_t * CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy(uint64_
 
 	cudaHostRegister(ram_address, size_to_copy * sizeof(uint64_t), 0);
 
-	if (true || size_to_copy < streams_cnt) {
+	if (size_to_copy < streams_cnt) {
 
 		cudaMemcpyAsync(vram_address, ram_address, size_to_copy * sizeof(uint64_t), cudaMemcpyHostToDevice, streams[streams_cnt]); // the "small copies" stream used
 
@@ -285,7 +285,7 @@ __host__ uint64_t * CUDA_internal_interface::RAM_TO_VRAM_ciphertext_copy(uint64_
 		for (int i = 0; i < streams_cnt - 1; i++) {
 
 			cudaMemcpyAsync(vram_address + offset, ram_address + offset, qty_per_stream * sizeof(uint64_t), cudaMemcpyHostToDevice, streams[i]);
-			offset += qty_per_stream * sizeof(uint64_t);
+			offset += qty_per_stream;
 		}
 		cudaMemcpyAsync(vram_address + offset, ram_address + offset, (remainder_qty + qty_per_stream) * sizeof(uint64_t), cudaMemcpyHostToDevice, streams[streams_cnt - 1]);
 
@@ -332,7 +332,7 @@ __host__ uint64_t * CUDA_internal_interface::VRAM_TO_RAM_ciphertext_copy(uint64_
 		for (int i = 0; i < streams_cnt - 1; i++) {
 
 			cudaMemcpyAsync(ram_address + offset, vram_address + offset, qty_per_stream * sizeof(uint64_t), cudaMemcpyDeviceToHost, streams[i]);
-			offset += qty_per_stream * sizeof(uint64_t);
+			offset += qty_per_stream;
 		}
 		cudaMemcpyAsync(ram_address + offset, vram_address + offset, (remainder_qty + qty_per_stream) * sizeof(uint64_t), cudaMemcpyDeviceToHost, streams[streams_cnt - 1]);
 
@@ -347,13 +347,13 @@ __host__ uint64_t * CUDA_internal_interface::VRAM_TO_RAM_ciphertext_copy(uint64_
 
 	return ram_address;
 }
-
+//
 __host__ uint64_t * CUDA_internal_interface::VRAM_TO_VRAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool sync, uint64_t * vram_new_address = 0) {
 	
 	if(!vram_new_address)
 		cudaMalloc(&vram_new_address, size_to_copy * sizeof(uint64_t));
 
-	if (true || size_to_copy < streams_cnt) {
+	if (size_to_copy < streams_cnt) {
 	
 		cudaMemcpyAsync(vram_new_address, vram_address, size_to_copy * sizeof(uint64_t), cudaMemcpyDeviceToDevice, streams[streams_cnt]); // NOT the default stream, but the first created
 
@@ -374,7 +374,7 @@ __host__ uint64_t * CUDA_internal_interface::VRAM_TO_VRAM_ciphertext_copy(uint64
 		for (int i = 0; i < streams_cnt - 1; i++) {
 
 			cudaMemcpyAsync(vram_new_address + offset, vram_address + offset, qty_per_stream * sizeof(uint64_t), cudaMemcpyDeviceToDevice, streams[i]);
-			offset += qty_per_stream * sizeof(uint64_t);
+			offset += qty_per_stream;
 		}
 		cudaMemcpyAsync(vram_new_address + offset, vram_address + offset, (remainder_qty + qty_per_stream) * sizeof(uint64_t), cudaMemcpyDeviceToDevice, streams[streams_cnt - 1]);
 
