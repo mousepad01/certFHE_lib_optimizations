@@ -5,7 +5,7 @@
  * Macro to enable(parametrized) CUDA for CCC operations and storage on VRAM
  * !!!!!!!!!! CURRENTLY SUPPORTS ONLY ONE DEVICE !!!!!!!!!!
 **/
-#define CERTFHE_USE_CUDA false
+#define CERTFHE_USE_CUDA true
 
 #if CERTFHE_USE_CUDA
 
@@ -19,7 +19,10 @@
 **/
 class CUDA_interface {
 
-	static const int MAX_BLOCK_PER_GRID_COUNT;
+	/**
+	 * Maximum number of threads per block 
+	 * ("block" and "thread" have the same meaning as in official CUDA documentation)
+	**/
 	static const int MAX_THREADS_PER_BLOCK;
 
 public:
@@ -62,7 +65,7 @@ public:
 	/**
 	 * Wrapper around cudaFree, that deallocates memory from VRAM
 	**/
-	static void VRAM_delete_ciphertext(uint64_t * vram_address);
+	static void VRAM_delete(uint64_t * vram_address);
 
 	/****************** MULTIPLICATION ******************/
 

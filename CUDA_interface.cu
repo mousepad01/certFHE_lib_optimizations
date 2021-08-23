@@ -7,7 +7,6 @@
 
 #include <iostream>
 
-const int CUDA_interface::MAX_BLOCK_PER_GRID_COUNT = 65535;
 const int CUDA_interface::MAX_THREADS_PER_BLOCK = 256;
 
 /****************** GPU KERNEL FUNCTIONS ******************/
@@ -88,7 +87,7 @@ __host__ uint64_t * CUDA_interface::VRAM_TO_VRAM_ciphertext_copy(uint64_t * vram
 	return vram_new_address;
 }
 
-__host__ void CUDA_interface::VRAM_delete_ciphertext(uint64_t * vram_address) { cudaFree(vram_address); }
+__host__ void CUDA_interface::VRAM_delete(uint64_t * vram_address) { cudaFree(vram_address); }
 
 __host__ uint64_t * CUDA_interface::VRAM_VRAM_VRAM_chiphertext_multiply(uint64_t deflen_to_uint64, uint64_t fst_deflen_cnt, uint64_t snd_deflen_cnt,
 																		 const uint64_t * fst, const uint64_t * snd) {
@@ -173,14 +172,10 @@ __host__ uint64_t * CUDA_interface::RAM_RAM_VRAM_chiphertext_addition(uint64_t d
 
 __host__ int CUDA_interface::VRAM_ciphertext_decryption(uint64_t deflen_to_uint64, uint64_t to_decrypt_deflen_cnt, const uint64_t * to_decrypt, const uint64_t * sk_mask) {
 
-	uint64_t * vram_sk_mask;
 	int * vram_decryption_result;
 
-	cudaMalloc(&vram_sk_mask, deflen_to_uint64 * sizeof(uint64_t));
 	cudaMalloc(&vram_decryption_result, sizeof(int));
-
 	cudaMemset(vram_decryption_result, 0, sizeof(int));
-	cudaMemcpy(vram_sk_mask, sk_mask, deflen_to_uint64 * sizeof(uint64_t), cudaMemcpyHostToDevice);
 
 	cudaDeviceSynchronize();
 
@@ -190,7 +185,7 @@ __host__ int CUDA_interface::VRAM_ciphertext_decryption(uint64_t deflen_to_uint6
 	if (to_decrypt_deflen_cnt % MAX_THREADS_PER_BLOCK)
 		block_cnt += 1;
 
-	ctxt_decrypt_kernel <<< block_cnt, threads_per_block >>> (deflen_to_uint64, to_decrypt_deflen_cnt, to_decrypt, vram_sk_mask, vram_decryption_result);
+	ctxt_decrypt_kernel <<< block_cnt, threads_per_block >>> (deflen_to_uint64, to_decrypt_deflen_cnt, to_decrypt, sk_mask, vram_decryption_result);
 	cudaDeviceSynchronize();
 
 	int decryption_result;
@@ -198,7 +193,6 @@ __host__ int CUDA_interface::VRAM_ciphertext_decryption(uint64_t deflen_to_uint6
 	cudaMemcpy(&decryption_result, vram_decryption_result, sizeof(int), cudaMemcpyDeviceToHost);
 	cudaDeviceSynchronize();
 
-	cudaFree(vram_sk_mask);
 	cudaFree(vram_decryption_result);
 
 	return decryption_result;

@@ -72,7 +72,7 @@ namespace certFHE {
 
 			if (this->on_GPU) {
 
-				CUDA_interface::VRAM_delete_ciphertext(this->ctxt);
+				CUDA_interface::VRAM_delete(this->ctxt);
 				GPUValues::gpu_current_vram_deflen_usage -= this->deflen_count;
 			}
 				
@@ -759,7 +759,7 @@ namespace certFHE {
 
 		if (this->on_GPU) {
 
-			dec = CUDA_interface::VRAM_ciphertext_decryption(deflen_to_u64, deflen_cnt, ctxt, sk_mask);
+			dec = CUDA_interface::VRAM_ciphertext_decryption(deflen_to_u64, deflen_cnt, ctxt, sk.getVramMaskKey());
 		}
 		else if (deflen_cnt < MTValues::dec_m_threshold) {
 
