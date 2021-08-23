@@ -12,11 +12,17 @@ namespace certFHE{
     **/
     class Permutation{
 
-        uint64_t * permutation;			// vector used to store permutation
-		PermInversion * inversions;		// permutation as inversions on a default len chunk -- for optimized permutation op --
+        uint64_t * permutation;				// vector used to store permutation
+		PermInversion * inversions;			// permutation as inversions on a default len chunk -- for optimized permutation op --
+
+#if CERTFHE_USE_CUDA
+
+		PermInversion * vram_inversions;	// inversions copy inside VRAM for faster permutation on GPU
+
+#endif
         
-		uint64_t length;				// size of permutation vector
-		uint64_t inversions_cnt;		// number of inversions
+		uint64_t length;					// size of permutation vector
+		uint64_t inversions_cnt;			// number of inversions
 
 		Permutation(const uint64_t * perm, const uint64_t len, uint64_t inv_cnt, const PermInversion * invs);
 

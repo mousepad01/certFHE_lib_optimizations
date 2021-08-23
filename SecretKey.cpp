@@ -70,7 +70,7 @@ namespace certFHE{
 		this->mask_length = default_len;
 
 #if CERTFHE_USE_CUDA
-		this->vram_s_mask = CUDA_interface::RAM_TO_VRAM_ciphertext_copy(this->s_mask, default_len, 0);
+		this->vram_s_mask = (uint64_t *)CUDA_interface::RAM_TO_VRAM_copy(this->s_mask, default_len * sizeof(uint64_t), 0);
 #endif
 
 	}
