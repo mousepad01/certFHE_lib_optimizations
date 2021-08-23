@@ -842,7 +842,7 @@ namespace certFHE {
 	 * (at least before executing the operation)
 	 * it will be stored on host RAM
 	**/
-	uint64_t GPUValues::gpu_max_vram_deflen_usage = 2 * 10000000;
+	uint64_t GPUValues::gpu_max_vram_deflen_usage = -1;
 
 #pragma endregion
 #endif

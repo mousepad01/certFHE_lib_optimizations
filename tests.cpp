@@ -1653,7 +1653,7 @@ void average_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 
 				timer.start();
 
-				certFHE::MTValues::m_threshold_autoselect(context);// , false);
+				//certFHE::MTValues::m_threshold_autoselect(context, false);
 
 				out << timer.stop() << " " << TIME_MEASURE_UNIT << "\n";
 				timer.reset();
@@ -2207,7 +2207,7 @@ void average_predefined_test(std::string path_sufix = "\\average_test\\debug_sta
 		std::fstream log(STATS_PATH + "averagetest_" + path_sufix + ".txt", std::ios::out);
 		std::fstream log_old(STATS_PATH + "averagetest_" + path_sufix + "_old.txt", std::ios::out);
 
-		average_test(100, 90, 0, 0, 1247, 16, 100, 10, 0, log, log_old, permutations, true);
+		average_test(100, 110, 0, 0, 1247, 16, 100, 10, 0, log, log_old, permutations, true);
 
 		log.close();
 		log_old.close();
@@ -2216,7 +2216,7 @@ void average_predefined_test(std::string path_sufix = "\\average_test\\debug_sta
 
 		std::fstream log(STATS_PATH + "averagetest_" + path_sufix + ".txt", std::ios::out);
 
-		average_test(10000, 90, 0, 0, 1247, 16, 100, 10, 0, log, std::cout, permutations, false);
+		average_test(100, 110, 0, 0, 1247, 16, 100, 10, 0, log, std::cout, permutations, false);
 
 		log.close();
 	}
@@ -2270,9 +2270,9 @@ void gpu_test_add() {
 
 int main(){
 
-	//old_implementation_compare_statistics_tests();
+	old_implementation_compare_statistics_tests();
 
-	gpu_test_add();
+	//gpu_test_add();
 
     return 0;
 }

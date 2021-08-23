@@ -5,7 +5,7 @@
  * Macro to enable(parametrized) CUDA for CCC operations and storage on VRAM
  * !!!!!!!!!! CURRENTLY SUPPORTS ONLY ONE DEVICE !!!!!!!!!!
 **/
-#define CERTFHE_USE_CUDA true
+#define CERTFHE_USE_CUDA false
 
 #if CERTFHE_USE_CUDA
 
@@ -18,6 +18,9 @@
  * inside the certFHE namespace 
 **/
 class CUDA_interface {
+
+	static const int MAX_BLOCK_PER_GRID_COUNT;
+	static const int MAX_THREADS_PER_BLOCK;
 
 public:
 
@@ -39,31 +42,22 @@ public:
 	 *																				X, Y, Z = RAM / VRAM
 	**/
 
-	/**
-	 * Function that initializez the CUDA internal interface
-	 * Should be called (currently and only) from Library class
-	**/
-	static void init_CUDA_interface();
-
 	/****************** COPYINGS AND DELETION ******************/
 
 	/**
 	 * allocate VRAM and copy values to it from RAM
-	 * calls the method with the same name from CUDA_internal_interface with sync always true
 	**/
-	static uint64_t * RAM_TO_VRAM_ciphertext_copy(uint64_t * ram_address, uint64_t size_to_copy, bool delete_original);
+	static uint64_t * RAM_TO_VRAM_ciphertext_copy(uint64_t * ram_address, uint64_t size_to_copy, uint64_t * vram_address = 0);
 
 	/**
 	 * allocate RAM and copy values to it from VRAM
-	 * calls the method with the same name from CUDA_internal_interface with sync always true
 	**/
-	static uint64_t * VRAM_TO_RAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool delete_original);
+	static uint64_t * VRAM_TO_RAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, uint64_t * ram_address = 0);
 
 	/**
 	 * allocate VRAM and copy values to it from VRAM
-	 * calls the method with the same name from CUDA_internal_interface with sync always true
 	**/
-	static uint64_t * VRAM_TO_VRAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, bool delete_original);
+	static uint64_t * VRAM_TO_VRAM_ciphertext_copy(uint64_t * vram_address, uint64_t size_to_copy, uint64_t * vram_new_address = 0);
 
 	/**
 	 * Wrapper around cudaFree, that deallocates memory from VRAM
