@@ -1653,7 +1653,7 @@ void average_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 
 				timer.start();
 
-				//certFHE::MTValues::m_threshold_autoselect(context, false);
+				certFHE::MTValues::m_threshold_autoselect(context, false);
 
 				out << timer.stop() << " " << TIME_MEASURE_UNIT << "\n";
 				timer.reset();
@@ -2231,7 +2231,7 @@ void old_implementation_compare_statistics_tests() {
 		<< "To plot them, call average_test_plot function from plotter.py (dectime parameter - whether you want to plot decryption times in the same graph or not)\n"
 		<< "NOTE: plotter.py needs to be in the same directory in which the result files are located\n\n";
 
-	average_predefined_test("noGPU_stats", false, false);
+	average_predefined_test("GPU_stats", false, false);
 
 	std::cout << "First test done\n\n";
 

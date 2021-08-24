@@ -638,7 +638,7 @@ namespace certFHE {
 				uint64_t * ram_snd_ctxt = (uint64_t *)CUDA_interface::VRAM_TO_RAM_copy(snd->ctxt, snd->deflen_count * deflen_to_u64 * sizeof(uint64_t), 0);
 
 				CCC ram_fst(fst->context, ram_fst_ctxt, fst->deflen_count, false);
-				CCC ram_snd(snd->context, ram_fst_ctxt, snd->deflen_count, false);
+				CCC ram_snd(snd->context, ram_snd_ctxt, snd->deflen_count, false);
 
 				return CCC::CPU_add(&ram_fst, &ram_snd);
 			}
@@ -712,7 +712,7 @@ namespace certFHE {
 				uint64_t * ram_snd_ctxt = (uint64_t *)CUDA_interface::VRAM_TO_RAM_copy(snd->ctxt, snd->deflen_count * deflen_to_u64 * sizeof(uint64_t), 0);
 
 				CCC ram_fst(fst->context, ram_fst_ctxt, fst->deflen_count, false);
-				CCC ram_snd(snd->context, ram_fst_ctxt, snd->deflen_count, false);
+				CCC ram_snd(snd->context, ram_snd_ctxt, snd->deflen_count, false);
 
 				return CCC::CPU_multiply(&ram_fst, &ram_snd);
 			}

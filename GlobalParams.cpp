@@ -892,7 +892,7 @@ namespace certFHE {
 	 * Minimum threshold for using GPU for processing and its video RAM for storage
 	 * measured in default length multiples
 	**/
-	uint64_t GPUValues::gpu_deflen_threshold = 512;
+	uint64_t GPUValues::gpu_deflen_threshold = 2;
 
 	/**
 	 * Current quantity of video RAM used for storing ciphertext chunks
@@ -908,7 +908,7 @@ namespace certFHE {
 	 * (at least before executing the operation)
 	 * it will be stored on host RAM
 	**/
-	uint64_t GPUValues::gpu_max_vram_deflen_usage = -1;
+	uint64_t GPUValues::gpu_max_vram_deflen_usage = 16;
 
 #pragma endregion
 #endif
