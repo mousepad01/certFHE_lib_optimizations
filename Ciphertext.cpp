@@ -25,15 +25,15 @@ namespace certFHE{
 
 	uint64_t Ciphertext::decrypt_raw(const SecretKey & sk) const {
 
-		if (CERTFHE_UNLIKELY(this->concurrency_guard == 0))
+		if (this->concurrency_guard == 0)
 			throw std::runtime_error("concurrency guard cannot be null");
 
 		std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
 
-		if (CERTFHE_UNLIKELY(this->node == 0))
+		if (this->node == 0)
 			throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
-		if (CERTFHE_UNLIKELY(*this->node->context != *sk.getContext()))
+		if (*this->node->context != *sk.getContext())
 			throw std::runtime_error("ciphertext and secret key do not have the same context");
 
 		uint64_t dec = this->node->decrypt(sk);
@@ -42,7 +42,7 @@ namespace certFHE{
 
 	Ciphertext Ciphertext::applyPermutation(const Permutation & permutation) {
 
-		if (CERTFHE_UNLIKELY(this->concurrency_guard == 0))
+		if (this->concurrency_guard == 0)
 			throw std::runtime_error("concurrency guard cannot be null");
 
 		// guard locked inside copy constructor
@@ -50,7 +50,7 @@ namespace certFHE{
 
 		std::scoped_lock <std::mutex> lock(permuted_ciphertext.concurrency_guard->get_root()->mtx);
 
-		if (CERTFHE_UNLIKELY(permuted_ciphertext.node == 0))
+		if (permuted_ciphertext.node == 0)
 			throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
 		CNODE * permuted = permuted_ciphertext.node->permute(permutation, true);
@@ -63,12 +63,12 @@ namespace certFHE{
 
 	void Ciphertext::applyPermutation_inplace(const Permutation & permutation) {
 
-		if (CERTFHE_UNLIKELY(this->concurrency_guard == 0))
+		if (this->concurrency_guard == 0)
 			throw std::runtime_error("concurrency guard cannot be null");
 
 		std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
 
-		if (CERTFHE_UNLIKELY(this->node == 0))
+		if (this->node == 0)
 			throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
 		CNODE * permuted = this->node->permute(permutation, false);
@@ -79,12 +79,12 @@ namespace certFHE{
 
 	Ciphertext Ciphertext::make_deep_copy() const {
 
-		if (CERTFHE_UNLIKELY(this->concurrency_guard == 0))
+		if (this->concurrency_guard == 0)
 			throw std::runtime_error("concurrency guard cannot be null");
 
 		std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
 
-		if (CERTFHE_UNLIKELY(this->node == 0))
+		if (this->node == 0)
 			throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
 		Ciphertext deepcopy;
@@ -97,10 +97,10 @@ namespace certFHE{
 
 	uint64_t Ciphertext::decrypt_raw(const SecretKey & sk) const {
 
-		if (CERTFHE_UNLIKELY(this->node == 0))
+		if (this->node == 0)
 			throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
-		if (CERTFHE_UNLIKELY(*this->node->context != *sk.getContext()))
+		if (*this->node->context != *sk.getContext())
 			throw std::runtime_error("ciphertext and secret key do not have the same context");
 
 		uint64_t dec = this->node->decrypt(sk);
@@ -109,7 +109,7 @@ namespace certFHE{
 
 	Ciphertext Ciphertext::applyPermutation(const Permutation & permutation) {
 
-		if (CERTFHE_UNLIKELY(this->node == 0))
+		if (this->node == 0)
 			throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
 		Ciphertext permuted_ciphertext(*this);
@@ -124,7 +124,7 @@ namespace certFHE{
 
 	void Ciphertext::applyPermutation_inplace(const Permutation & permutation) {
 
-		if (CERTFHE_UNLIKELY(this->node == 0))
+		if (this->node == 0)
 			throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
 		CNODE * permuted = this->node->permute(permutation, false);
@@ -135,7 +135,7 @@ namespace certFHE{
 
 	Ciphertext Ciphertext::make_deep_copy() const {
 
-		if (CERTFHE_UNLIKELY(this->node == 0))
+		if (this->node == 0)
 			throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
 		Ciphertext deepcopy;
@@ -222,7 +222,7 @@ namespace certFHE{
 
 	Ciphertext Ciphertext::operator + (const Ciphertext & c) const {
 
-		if (CERTFHE_UNLIKELY(c.concurrency_guard == 0 || this->concurrency_guard == 0))
+		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
 			throw std::runtime_error("concurrency guard cannot be null");
 
 		std::mutex & this_mtx = this->concurrency_guard->get_root()->mtx;
@@ -232,10 +232,10 @@ namespace certFHE{
 			
 			std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
 
-			if (CERTFHE_UNLIKELY(c.node == 0 || this->node == 0))
+			if (c.node == 0 || this->node == 0)
 				throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
-			if (CERTFHE_UNLIKELY(*this->node->context != *c.node->context))
+			if (*this->node->context != *c.node->context)
 				throw std::runtime_error("ciphertexts do not have the same context");
 
 			CNODE * addition_result;
@@ -277,10 +277,10 @@ namespace certFHE{
 			
 			std::scoped_lock <std::mutex> lock(this_mtx);
 
-			if (CERTFHE_UNLIKELY(c.node == 0 || this->node == 0))
+			if (c.node == 0 || this->node == 0)
 				throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
-			if (CERTFHE_UNLIKELY(*this->node->context != *c.node->context))
+			if (*this->node->context != *c.node->context)
 				throw std::runtime_error("ciphertexts do not have the same context");
 
 			CNODE * addition_result;
@@ -320,7 +320,7 @@ namespace certFHE{
 
 	Ciphertext Ciphertext::operator * (const Ciphertext & c) const {
 
-		if (CERTFHE_UNLIKELY(c.concurrency_guard == 0 || this->concurrency_guard == 0))
+		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
 			throw std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
 
 		std::mutex & this_mtx = this->concurrency_guard->get_root()->mtx;
@@ -330,10 +330,10 @@ namespace certFHE{
 
 			std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
 
-			if (CERTFHE_UNLIKELY(c.node == 0 || this->node == 0))
+			if (c.node == 0 || this->node == 0)
 				throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
-			if (CERTFHE_UNLIKELY(*this->node->context != *c.node->context))
+			if (*this->node->context != *c.node->context)
 				throw std::runtime_error("ciphertexts do not have the same context");
 
 			CNODE * mul_result;
@@ -366,11 +366,11 @@ namespace certFHE{
 
 			std::scoped_lock <std::mutex> lock(this_mtx);
 
-			if (CERTFHE_UNLIKELY(c.node == 0 || this->node == 0))
+			if (c.node == 0 || this->node == 0)
 				throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
-			if (CERTFHE_UNLIKELY(*this->node->context != *c.node->context))
-				throw std::runtime_error("ciphertexts do not have the same context");
+			if (*this->node->context != *c.node->context)
+			throw std::runtime_error("ciphertexts do not have the same context");
 
 			CNODE * mul_result;
 			Ciphertext mul_result_c;
@@ -403,7 +403,7 @@ namespace certFHE{
 
 	Ciphertext & Ciphertext::operator += (const Ciphertext & c) {
 
-		if (CERTFHE_UNLIKELY(c.concurrency_guard == 0 || this->concurrency_guard == 0))
+		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
 			throw std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
 
 		std::mutex & this_mtx = this->concurrency_guard->get_root()->mtx;
@@ -413,10 +413,10 @@ namespace certFHE{
 
 			std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
 
-			if (CERTFHE_UNLIKELY(c.node == 0 || this->node == 0))
+			if (c.node == 0 || this->node == 0)
 				throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
-			if (CERTFHE_UNLIKELY(*this->node->context != *c.node->context))
+			if (*this->node->context != *c.node->context)
 				throw std::runtime_error("ciphertexts do not have the same context");
 
 			CNODE * addition_result;
@@ -449,10 +449,10 @@ namespace certFHE{
 
 			std::scoped_lock <std::mutex> lock(this_mtx);
 
-			if (CERTFHE_UNLIKELY(c.node == 0 || this->node == 0))
+			if (c.node == 0 || this->node == 0)
 				throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
-			if (CERTFHE_UNLIKELY(*this->node->context != *c.node->context))
+			if (*this->node->context != *c.node->context)
 				throw std::runtime_error("ciphertexts do not have the same context");
 
 			CNODE * addition_result;
@@ -485,7 +485,7 @@ namespace certFHE{
 
 	Ciphertext & Ciphertext::operator *= (const Ciphertext & c) {
 
-		if (CERTFHE_UNLIKELY(c.concurrency_guard == 0 || this->concurrency_guard == 0))
+		if (c.concurrency_guard == 0 || this->concurrency_guard == 0)
 			throw std::invalid_argument("Cannot operate on ciphertext with no concurrency guard");
 
 		std::mutex & this_mtx = this->concurrency_guard->get_root()->mtx;
@@ -495,10 +495,10 @@ namespace certFHE{
 
 			std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
 
-			if (CERTFHE_UNLIKELY(c.node == 0 || this->node == 0))
+			if (c.node == 0 || this->node == 0)
 				throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
-			if (CERTFHE_UNLIKELY(*this->node->context != *c.node->context))
+			if (*this->node->context != *c.node->context)
 				throw std::runtime_error("ciphertexts do not have the same context");
 
 			CNODE * mul_result;
@@ -531,10 +531,10 @@ namespace certFHE{
 
 			std::scoped_lock <std::mutex> lock(this_mtx);
 
-			if (CERTFHE_UNLIKELY(c.node == 0 || this->node == 0))
+			if (c.node == 0 || this->node == 0)
 				throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
-			if (CERTFHE_UNLIKELY(*this->node->context != *c.node->context))
+			if (*this->node->context != *c.node->context)
 				throw std::runtime_error("ciphertexts do not have the same context");
 
 			CNODE * mul_result;
@@ -567,7 +567,7 @@ namespace certFHE{
 
 	std::ostream & operator << (std::ostream & out, const Ciphertext & c) {
 
-		if (CERTFHE_UNLIKELY(c.concurrency_guard == 0))
+		if (c.concurrency_guard == 0) 
 			throw std::runtime_error("concurrency guard cannot be null");
 
 		std::scoped_lock <std::mutex> lock(c.concurrency_guard->get_root()->mtx);
@@ -591,10 +591,10 @@ namespace certFHE{
 	
 	Ciphertext & Ciphertext::operator = (const Ciphertext & c) {
 
-		if (CERTFHE_UNLIKELY(this->node != 0 && c.node != 0 && *this->node->context != *c.node->context))
+		if (this->node != 0 && c.node != 0 && *this->node->context != *c.node->context)
 			throw std::runtime_error("ciphertexts do not have the same context");
 
-		if (CERTFHE_UNLIKELY(this->concurrency_guard == 0 || c.concurrency_guard == 0))
+		if (this->concurrency_guard == 0 || c.concurrency_guard == 0)
 			throw std::runtime_error("concurrency guard cannot be null");
 
 		std::mutex & this_mtx = this->concurrency_guard->get_root()->mtx;
@@ -631,10 +631,10 @@ namespace certFHE{
 	
 	Ciphertext & Ciphertext::operator = (Ciphertext && c) {
 
-		if (CERTFHE_UNLIKELY(this->node != 0 && c.node != 0 && *this->node->context != *c.node->context))
+		if (this->node != 0 && c.node != 0 && *this->node->context != *c.node->context)
 			throw std::runtime_error("ciphertexts do not have the same context");
 		
-		if (CERTFHE_UNLIKELY(this->concurrency_guard == 0 || c.concurrency_guard == 0))
+		if (this->concurrency_guard == 0 || c.concurrency_guard == 0)
 			throw std::runtime_error("concurrency guard cannot be null");
 
 		CNODE_disjoint_set * removed;
@@ -664,10 +664,10 @@ namespace certFHE{
 
 	Ciphertext Ciphertext::operator + (const Ciphertext & c) const {
 
-		if (CERTFHE_UNLIKELY(c.node == 0 || this->node == 0))
+		if (c.node == 0 || this->node == 0)
 			throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
-		if (CERTFHE_UNLIKELY(*this->node->context != *c.node->context))
+		if (*this->node->context != *c.node->context)
 			throw std::runtime_error("ciphertexts do not have the same context");
 
 		CNODE * addition_result;
@@ -692,10 +692,10 @@ namespace certFHE{
 
 	Ciphertext Ciphertext::operator * (const Ciphertext & c) const {
 
-		if (CERTFHE_UNLIKELY(c.node == 0 || this->node == 0))
+		if (c.node == 0 || this->node == 0)
 			throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
-		if (CERTFHE_UNLIKELY(*this->node->context != *c.node->context))
+		if (*this->node->context != *c.node->context)
 			throw std::runtime_error("ciphertexts do not have the same context");
 
 		CNODE * mul_result;
@@ -720,10 +720,10 @@ namespace certFHE{
 
 	Ciphertext & Ciphertext::operator += (const Ciphertext & c) {
 
-		if (CERTFHE_UNLIKELY(c.node == 0 || this->node == 0))
+		if (c.node == 0 || this->node == 0)
 			throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
-		if (CERTFHE_UNLIKELY(*this->node->context != *c.node->context))
+		if (*this->node->context != *c.node->context)
 			throw std::runtime_error("ciphertexts do not have the same context");
 
 		CNODE * addition_result;
@@ -748,10 +748,10 @@ namespace certFHE{
 
 	Ciphertext & Ciphertext::operator *= (const Ciphertext & c) {
 
-		if (CERTFHE_UNLIKELY(c.node == 0 || this->node == 0))
+		if (c.node == 0 || this->node == 0)
 			throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
-		if (CERTFHE_UNLIKELY(*this->node->context != *c.node->context))
+		if (*this->node->context != *c.node->context)
 			throw std::runtime_error("ciphertexts do not have the same context");
 
 		CNODE * mul_result;
@@ -795,7 +795,7 @@ namespace certFHE{
 
 	Ciphertext & Ciphertext::operator = (const Ciphertext & c) {
 
-		if (CERTFHE_UNLIKELY(this->node != 0 && c.node != 0 && *this->node->context != *c.node->context))
+		if (this->node != 0 && c.node != 0 && *this->node->context != *c.node->context)
 			throw std::runtime_error("ciphertexts do not have the same context");
 
 		if (&c == this)
@@ -814,7 +814,7 @@ namespace certFHE{
 
 	Ciphertext & Ciphertext::operator = (Ciphertext && c) {
 
-		if (CERTFHE_UNLIKELY(this->node != 0 && c.node != 0 && *this->node->context != *c.node->context))
+		if (this->node != 0 && c.node != 0 && *this->node->context != *c.node->context)
 			throw std::runtime_error("ciphertexts do not have the same context");
 
 		if (this->node != 0)
@@ -863,7 +863,7 @@ namespace certFHE{
 
 	Ciphertext::Ciphertext(const Ciphertext & ctxt) {
 
-		if (CERTFHE_UNLIKELY(ctxt.concurrency_guard == 0))
+		if (ctxt.concurrency_guard == 0)
 			throw std::runtime_error("concurrency guard cannot be null");
 
 		std::scoped_lock <std::mutex> lock(ctxt.concurrency_guard->get_root()->mtx);
@@ -913,7 +913,7 @@ namespace certFHE{
 			**/
 			delete removed;
 		}
-		else if (CERTFHE_UNLIKELY(this->node != 0))
+		else if (this->node != 0)
 			std::cout << "concurrency guard is null but node is not null (check the rest of the code)";
 	}
 
@@ -973,14 +973,14 @@ namespace certFHE{
 
 #if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
 
-		if (CERTFHE_UNLIKELY(this->concurrency_guard == 0))
+		if (this->concurrency_guard == 0)
 			throw std::runtime_error("concurrency guard cannot be null");
 
 		std::scoped_lock <std::mutex>(this->concurrency_guard->get_root()->mtx);
 
 #endif
 
-		if (CERTFHE_UNLIKELY(this->node == 0))
+		if (this->node == 0)
 			throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
 		return this->node->getDeflenCnt();
@@ -990,14 +990,14 @@ namespace certFHE{
 
 #if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
 
-		if (CERTFHE_UNLIKELY(this->concurrency_guard == 0))
+		if (this->concurrency_guard == 0)
 			throw std::runtime_error("concurrency guard cannot be null");
 
 		std::scoped_lock <std::mutex>(this->concurrency_guard->get_root()->mtx);
 
 #endif
 
-		if (CERTFHE_UNLIKELY(this->node == 0))
+		if (this->node == 0)
 			throw std::invalid_argument("Cannot operate on ciphertext with no value");
 
 		return this->node->getContext();

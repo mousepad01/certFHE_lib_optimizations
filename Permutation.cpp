@@ -84,7 +84,7 @@ namespace certFHE{
 
 	Permutation Permutation::operator + (const Permutation & other) const {
 
-		if (CERTFHE_UNLIKELY(length != other.getLength()))
+		if (length != other.getLength())
 			throw std::invalid_argument("cannot add permutations with different length");
 
 		uint64_t * p = new uint64_t[length];
@@ -115,7 +115,7 @@ namespace certFHE{
 
 	Permutation & Permutation::operator += (const Permutation & other) {
 
-		if (CERTFHE_UNLIKELY(length != other.getLength()))
+		if (length != other.getLength())
 			throw std::invalid_argument("cannot add permutations with different length");
 
 		uint64_t * p = new uint64_t[length];
