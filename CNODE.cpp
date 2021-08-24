@@ -23,7 +23,7 @@ namespace certFHE {
 		if (this->downstream_reference_count == 1)
 			delete this;
 
-		else if (this->downstream_reference_count < 1)
+		else if (CERTFHE_UNLIKELY(this->downstream_reference_count < 1))
 			std::cout << "ERROR in try_delete: reference count smaller than 1 (nothing got deleted)\n";
 
 		else

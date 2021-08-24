@@ -16,7 +16,19 @@
 
 #define CERTFHE_MSVC_COMPILER_MACRO (_MSC_VER && !__INTEL_COMPILER)
 
-#define CERTFHE_GPP_COMPILER_MACRO __GNUC__
+#define CERTFHE_GNU_COMPILER_MACRO __GNUC__
+
+#if CERTFHE_GNU_COMPILER_MACRO
+
+#define CERTFHE_LIKELY(x) (__builtin_expect(x, 1))
+#define CERTFHE_UNLIKELY(x) (__builtin_expect(x, 0))
+
+#else
+
+#define CERTFHE_LIKELY(x, b) (x)
+#define CERTFHE_UNLIKELY(x, b) (x)
+
+#endif
 
 /**
  * MACRO to ENABLE/DISABLE use of GPU found inside CUDA_interface.h

@@ -6,7 +6,7 @@ namespace certFHE {
 
 	CCC::CCC(Context * context, uint64_t * ctxt, uint64_t deflen_cnt, bool ctxt_on_gpu) : CNODE(context) {
 
-		if (deflen_cnt > OPValues::max_ccc_deflen_size) {
+		if (CERTFHE_UNLIKELY(deflen_cnt > OPValues::max_ccc_deflen_size)) {
 
 			std::cout << "ERROR creating CCC node: deflen " << deflen_cnt
 				<< " exceeds limit " << OPValues::max_ccc_deflen_size << "\n";
@@ -70,7 +70,7 @@ namespace certFHE {
 
 	CCC::~CCC() {
 
-		if (this->ctxt != 0) {
+		if (CERTFHE_LIKELY(this->ctxt != 0)) {
 
 			if (this->on_GPU) {
 
@@ -89,7 +89,7 @@ namespace certFHE {
 
 	CCC::CCC(Context * context, uint64_t * ctxt, uint64_t deflen_cnt) : CNODE(context) {
 
-		if (deflen_cnt > OPValues::max_ccc_deflen_size) {
+		if (CERTFHE_UNLIKELY(deflen_cnt > OPValues::max_ccc_deflen_size)) {
 
 			std::cout << "ERROR creating CCC node: deflen " << deflen_cnt
 				<< " exceeds limit " << OPValues::max_ccc_deflen_size << "\n";
@@ -129,7 +129,7 @@ namespace certFHE {
 
 	CCC::~CCC() {
 
-		if (this->ctxt != 0)
+		if (CERTFHE_LIKELY(this->ctxt != 0))
 			delete[] ctxt;
 		else
 			std::cout << "CCC ctxt pointer should never be null (check the rest of the code)";
@@ -904,20 +904,8 @@ namespace certFHE {
 						uint64_t fst_u64_r = invs[k].fst_u64_r;
 						uint64_t snd_u64_r = invs[k].snd_u64_r;
 
-#if CERTFHE_MSVC_COMPILER_MACRO
-
-						//unsigned char val_i = _bittest64((const __int64 *)current_chunk + fst_u64_ch, fst_u64_r);
-						//unsigned char val_j = _bittest64((const __int64 *)current_chunk + snd_u64_ch, snd_u64_r);
-
 						unsigned char val_i = (current_chunk[fst_u64_ch] >> fst_u64_r) & 0x01;
 						unsigned char val_j = (current_chunk[snd_u64_ch] >> snd_u64_r) & 0x01;
-
-#else
-
-						unsigned char val_i = (current_chunk[fst_u64_ch] >> fst_u64_r) & 0x01;
-						unsigned char val_j = (current_chunk[snd_u64_ch] >> snd_u64_r) & 0x01;
-
-#endif
 
 						if (val_i)
 							current_chunk[snd_u64_ch] |= (uint64_t)1 << snd_u64_r;
