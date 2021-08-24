@@ -54,6 +54,45 @@ namespace certFHE {
 		}
 	}
 
+	/**
+	 * Device function
+	 * Each thread operates on default length chunks
+	**/
+	__global__ static void ctxt_permute_kernel(uint64_t deflen_to_uint64, uint64_t to_permute_deflen_cnt, uint64_t * to_permute, const PermInversion * perm_inversions, uint64_t inv_cnt) {
+
+		int to_permute_deflen_offset = blockDim.x * blockIdx.x + threadIdx.x;
+		int to_permute_deflen_stride = blockDim.x * gridDim.x;
+
+		int local_decryption_result = 1;
+
+		for (int to_permute_deflen_i = to_permute_deflen_offset; to_permute_deflen_i < to_permute_deflen_cnt; to_permute_deflen_i += to_permute_deflen_stride) {
+
+			uint64_t * current_chunk = to_permute + to_permute_deflen_i * deflen_to_uint64;
+			uint64_t * current_chunk_res = to_permute + to_permute_deflen_i * deflen_to_uint64;
+
+			for (int i = 0; i < inv_cnt; i++) {
+
+				uint64_t fst_u64_ch = perm_inversions[i].fst_u64_ch;
+				uint64_t snd_u64_ch = perm_inversions[i].snd_u64_ch;
+				uint64_t fst_u64_r = perm_inversions[i].fst_u64_r;
+				uint64_t snd_u64_r = perm_inversions[i].snd_u64_r;
+
+				unsigned char val_i = (current_chunk[fst_u64_ch] >> fst_u64_r) & 0x01;
+				unsigned char val_j = (current_chunk[snd_u64_ch] >> snd_u64_r) & 0x01;
+
+				if (val_i)
+					current_chunk_res[snd_u64_ch] |= (uint64_t)1 << snd_u64_r;
+				else
+					current_chunk_res[snd_u64_ch] &= ~((uint64_t)1 << snd_u64_r);
+
+				if (val_j)
+					current_chunk_res[fst_u64_ch] |= (uint64_t)1 << fst_u64_r;
+				else
+					current_chunk_res[fst_u64_ch] &= ~((uint64_t)1 << fst_u64_r);
+			}
+		}
+	}
+
 	/****************** CUDA INTERFACE METHODS ******************/
 
 	__host__ void * CUDA_interface::RAM_TO_VRAM_copy(void * ram_address, uint64_t size_to_copy, void * vram_address) {
@@ -187,7 +226,7 @@ namespace certFHE {
 		if (to_decrypt_deflen_cnt % MAX_THREADS_PER_BLOCK)
 			block_cnt += 1;
 
-		ctxt_decrypt_kernel << < block_cnt, threads_per_block >> > (deflen_to_uint64, to_decrypt_deflen_cnt, to_decrypt, sk_mask, vram_decryption_result);
+		ctxt_decrypt_kernel <<< block_cnt, threads_per_block >>> (deflen_to_uint64, to_decrypt_deflen_cnt, to_decrypt, sk_mask, vram_decryption_result);
 		cudaDeviceSynchronize();
 
 		int decryption_result;
@@ -200,9 +239,17 @@ namespace certFHE {
 		return decryption_result;
 	}
 
-	__host__ void CUDA_interface::VRAM_ciphertext_permutation(uint64_t deflen_to_uint64, uint64_t to_permute_deflen_cnt, uint64_t * to_permute, const PermInversion * perm_inversions) {
+	__host__ void CUDA_interface::VRAM_ciphertext_permutation(uint64_t deflen_to_uint64, uint64_t to_permute_deflen_cnt, uint64_t * to_permute, 
+																const PermInversion * perm_inversions, uint64_t inv_cnt) {
+		std::cout << "here\n";
+		int threads_per_block = to_permute_deflen_cnt > MAX_THREADS_PER_BLOCK ? MAX_THREADS_PER_BLOCK : (int)to_permute_deflen_cnt;
 
-		// TODO
+		int block_cnt = (int)(to_permute_deflen_cnt / MAX_THREADS_PER_BLOCK);
+		if (to_permute_deflen_cnt % MAX_THREADS_PER_BLOCK)
+			block_cnt += 1;
+
+		ctxt_permute_kernel <<< block_cnt, threads_per_block >>> (deflen_to_uint64, to_permute_deflen_cnt, to_permute, perm_inversions, inv_cnt);
+		cudaDeviceSynchronize();
 	}
 }
 

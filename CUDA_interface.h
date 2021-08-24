@@ -127,7 +127,7 @@ namespace certFHE {
 		 * It permutes INPLACE
 		 * NOTE: to_permute and perm_inversions are expected to already reside in VRAM
 		**/
-		static void VRAM_ciphertext_permutation(uint64_t deflen_to_uint64, uint64_t to_permute_deflen_cnt, uint64_t * to_permute, const PermInversion * perm_inversions);
+		static void VRAM_ciphertext_permutation(uint64_t deflen_to_uint64, uint64_t to_permute_deflen_cnt, uint64_t * to_permute, const PermInversion * perm_inversions, uint64_t inv_cnt);
 	};
 }
 

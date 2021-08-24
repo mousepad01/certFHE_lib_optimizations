@@ -64,6 +64,15 @@ namespace certFHE{
 		**/
 		PermInversion * getInversions() const { return this->inversions; }
 
+#if CERTFHE_USE_CUDA
+
+		/**
+		 * DO NOT DELETE THE RETUNING POINTER
+		**/
+		PermInversion * getVramInversions() const { return this->vram_inversions; }
+
+#endif
+
         /**
          * Friend class for operator <<
         **/
