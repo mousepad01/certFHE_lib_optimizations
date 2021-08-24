@@ -1769,7 +1769,7 @@ void average_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 									certFHE::CNODE::clear_decryption_cache();
 
 									if (val[i] != pp) {
-
+										
 										out << "WRONG decryption on permuted ctxt; should be " << val[i] << ", decrypted " << pp << '\n';
 										out.flush();
 									}
@@ -1801,8 +1801,6 @@ void average_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 								t_acc_dec += t_dec;
 
 								if (p != val[pos]) {
-
-									std::cout << "WRONG decryption; should be " << val[pos] << ", decrypted " << p << '\n';
 
 									out << "WRONG decryption; should be " << val[pos] << ", decrypted " << p << '\n';
 									out.flush();
@@ -2209,7 +2207,7 @@ void average_predefined_test(std::string path_sufix = "\\average_test\\debug_sta
 		std::fstream log(STATS_PATH + "averagetest_" + path_sufix + ".txt", std::ios::out);
 		std::fstream log_old(STATS_PATH + "averagetest_" + path_sufix + "_old.txt", std::ios::out);
 
-		average_test(100, 90, 0, 0, 1247, 16, 100, 10, 0, log, log_old, permutations, true);
+		average_test(100, 110, 0, 0, 1247, 16, 100, 10, 0, log, log_old, permutations, true);
 
 		log.close();
 		log_old.close();
@@ -2218,7 +2216,7 @@ void average_predefined_test(std::string path_sufix = "\\average_test\\debug_sta
 
 		std::fstream log(STATS_PATH + "averagetest_" + path_sufix + ".txt", std::ios::out);
 
-		average_test(100, 90, 0, 0, 1247, 16, 100, 10, 0, log, std::cout, permutations, false);
+		average_test(100, 110, 0, 0, 1247, 16, 100, 10, 0, log, std::cout, permutations, false);
 
 		log.close();
 	}
@@ -2233,7 +2231,7 @@ void old_implementation_compare_statistics_tests() {
 		<< "To plot them, call average_test_plot function from plotter.py (dectime parameter - whether you want to plot decryption times in the same graph or not)\n"
 		<< "NOTE: plotter.py needs to be in the same directory in which the result files are located\n\n";
 
-	average_predefined_test("stats", true, false);
+	average_predefined_test("GPU_stats", false, false);
 
 	std::cout << "First test done\n\n";
 
@@ -2242,14 +2240,39 @@ void old_implementation_compare_statistics_tests() {
 		<< "To plot them, call array_ctxt_tests_plot from plotter.py (op parameter - Addition or Multiplication)\n"
 		<< "NOTE: plotter.py needs to be in the same directory in which the result files are located\n\n";
 
-	array_ctxt_predefined_test("stats", true);
+	//array_ctxt_predefined_test("statsGPU", true);
 
 	std::cout << "Second test done\n\n";
 }
 
+void gpu_test_add() {
+
+	certFHE::Library::initializeLibrary();
+	certFHE::Context context(1247, 16);
+	certFHE::SecretKey sk(context);
+
+	certFHE::Plaintext p0(0);
+	certFHE::Plaintext p1(1);
+
+	certFHE::Ciphertext c0(p0, sk);
+	certFHE::Ciphertext c1(p1, sk);
+
+	certFHE::Ciphertext a = c1 + c0 + c1 + c0 + c1 + c1 + c0;
+	certFHE::Ciphertext b = c0 + c0 + c1 + c0;
+	certFHE::Ciphertext c = a + b;
+
+	certFHE::Ciphertext d = c0 * c1;
+
+	std::cout << ((a.decrypt(sk).getValue() & 0x01) == 0) << " " << ((b.decrypt(sk).getValue() & 0x01) == 1) << " " << ((c.decrypt(sk).getValue() & 0x01) == 1) << " ";
+
+	std::cout << ((d.decrypt(sk).getValue() & 0x01) == 0) << " ";
+}
+
 int main(){
 
-	//old_implementation_compare_statistics_tests();
+	old_implementation_compare_statistics_tests();
+
+	//gpu_test_add();
 
     return 0;
 }
