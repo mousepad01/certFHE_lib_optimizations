@@ -609,11 +609,11 @@ namespace certFHE {
 
 			if (fst->deflen_count + snd->deflen_count + GPUValues::gpu_current_vram_deflen_usage >= GPUValues::gpu_max_vram_deflen_usage) {
 
-				uint64_t * ram_fst_ctxt = (uint64_t *)CUDA_interface::VRAM_TO_RAM_copy(fst->ctxt, fst->deflen_count * deflen_to_u64 * sizeof(uint64_t), 0);
+				uint64_t * ram_snd_ctxt = (uint64_t *)CUDA_interface::VRAM_TO_RAM_copy(snd->ctxt, snd->deflen_count * deflen_to_u64 * sizeof(uint64_t), 0);
 
-				CCC ram_fst(fst->context, ram_fst_ctxt, fst->deflen_count, false);
+				CCC ram_snd(snd->context, ram_snd_ctxt, snd->deflen_count, false);
 
-				return CCC::CPU_add(&ram_fst, snd);
+				return CCC::CPU_add(fst, &ram_snd);
 			}
 			else {
 
@@ -687,11 +687,11 @@ namespace certFHE {
 
 			if (fst->deflen_count * snd->deflen_count + GPUValues::gpu_current_vram_deflen_usage >= GPUValues::gpu_max_vram_deflen_usage) {
 
-				uint64_t * ram_fst_ctxt = (uint64_t *)CUDA_interface::VRAM_TO_RAM_copy(fst->ctxt, fst->deflen_count * deflen_to_u64 * sizeof(uint64_t), 0);
+				uint64_t * ram_snd_ctxt = (uint64_t *)CUDA_interface::VRAM_TO_RAM_copy(snd->ctxt, snd->deflen_count * deflen_to_u64 * sizeof(uint64_t), 0);
 
-				CCC ram_fst(fst->context, ram_fst_ctxt, fst->deflen_count, false);
+				CCC ram_snd(snd->context, ram_snd_ctxt, snd->deflen_count, false);
 
-				return CCC::CPU_multiply(&ram_fst, snd);
+				return CCC::CPU_multiply(fst, &ram_snd);
 			}
 			else {
 

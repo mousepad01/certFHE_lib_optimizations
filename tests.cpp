@@ -2231,7 +2231,7 @@ void old_implementation_compare_statistics_tests() {
 		<< "To plot them, call average_test_plot function from plotter.py (dectime parameter - whether you want to plot decryption times in the same graph or not)\n"
 		<< "NOTE: plotter.py needs to be in the same directory in which the result files are located\n\n";
 
-	average_predefined_test("GPU_withperm_stats", false, true);
+	average_predefined_test("noGPU_stats", false, false);
 
 	std::cout << "First test done\n\n";
 

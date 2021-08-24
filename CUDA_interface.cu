@@ -241,7 +241,7 @@ namespace certFHE {
 
 	__host__ void CUDA_interface::VRAM_ciphertext_permutation(uint64_t deflen_to_uint64, uint64_t to_permute_deflen_cnt, uint64_t * to_permute, 
 																const PermInversion * perm_inversions, uint64_t inv_cnt) {
-		std::cout << "here\n";
+	
 		int threads_per_block = to_permute_deflen_cnt > MAX_THREADS_PER_BLOCK ? MAX_THREADS_PER_BLOCK : (int)to_permute_deflen_cnt;
 
 		int block_cnt = (int)(to_permute_deflen_cnt / MAX_THREADS_PER_BLOCK);
