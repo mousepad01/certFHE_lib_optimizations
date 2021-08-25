@@ -148,6 +148,26 @@ namespace certFHE {
 		return deepcopy;
 	}
 
+	void CMUL::serialize_recon(std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) {
+
+		static uint32_t temp_CMUL_id = 2; // 0b00...000 10
+
+		uint64_t upstream_ref_cnt = 0; // number of nodes in CNODE_list WITHOUT dummy (first) element
+
+		CNODE_list * thisnodes = this->nodes->next;
+		while (thisnodes != 0 && thisnodes->current != 0) {
+
+			if (addr_to_id.find(thisnodes->current) == addr_to_id.end())
+				thisnodes->current->serialize_recon(addr_to_id);
+
+			upstream_ref_cnt += 1;
+			thisnodes = thisnodes->next;
+		}
+
+		addr_to_id[this] = { temp_CMUL_id, sizeof(uint32_t) + 2 * sizeof(uint64_t) + upstream_ref_cnt * sizeof(uint32_t) };
+		temp_CMUL_id += 4;
+	}
+
 	std::ostream & operator << (std::ostream & out, const CMUL & cmul) {
 
 		out << "CADD\n" << static_cast <const COP &> (cmul) << '\n';
@@ -249,10 +269,8 @@ namespace certFHE {
 
 		return 0;
 	}
-	//
+	
 	CNODE * CMUL::__upstream_merging(CADD * fst, CADD * snd) { 
-
-		//return 0;
 
 		/**
 		 * Check maximum operation size for when to try to merge or not
@@ -356,10 +374,8 @@ namespace certFHE {
 
 		return distributed_mul;
 	}
-	//
+	
 	CNODE * CMUL::__upstream_merging(CADD * fst, CMUL * snd) { 
-
-		//return 0;
 		
 		/**
 		 * Check maximum operation size for when to try to merge or not
@@ -580,10 +596,8 @@ namespace certFHE {
 
 		return merged;
 	}
-	//
+	
 	CNODE * CMUL::__upstream_merging(CADD * fst, CCC * snd) { 
-
-		//return 0;
 		
 		/**
 		 * Check maximum operation size for when to try to merge or not

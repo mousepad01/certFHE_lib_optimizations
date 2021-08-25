@@ -19,6 +19,11 @@
 #define CERTFHE_GNU_COMPILER_MACRO __GNUC__
 
 /**
+ * Pointer to array of bytes that represents one or more Ciphertext, SecretKey or Permutation serializations
+**/
+typedef unsigned char * certfhe_ser_ptr_t;
+
+/**
  * MACRO to ENABLE/DISABLE use of GPU found inside CUDA_interface.h
 **/
 #include "CUDA_interface.h"
@@ -26,6 +31,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
+#include <cstdarg>
 
 #include <immintrin.h>
 

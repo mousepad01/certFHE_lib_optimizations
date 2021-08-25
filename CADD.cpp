@@ -172,6 +172,26 @@ namespace certFHE {
 		return deepcopy;
 	}
 
+	void CADD::serialize_recon(std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) {
+
+		static uint32_t temp_CADD_id = 1; // 0b00...000 01
+
+		uint64_t upstream_ref_cnt = 0; // number of nodes in CNODE_list WITHOUT dummy (first) element
+
+		CNODE_list * thisnodes = this->nodes->next;
+		while (thisnodes != 0 && thisnodes->current != 0) {
+
+			if (addr_to_id.find(thisnodes->current) == addr_to_id.end()) 
+				thisnodes->current->serialize_recon(addr_to_id);
+
+			upstream_ref_cnt += 1;
+			thisnodes = thisnodes->next;
+		}
+
+		addr_to_id[this] = { temp_CADD_id, sizeof(uint32_t) + 2 * sizeof(uint64_t) + upstream_ref_cnt * sizeof(uint32_t) };
+		temp_CADD_id += 4;
+	}
+
 	CNODE * CADD::permute(const Permutation & perm, bool force_deep_copy) {
 
 		CADD * to_permute;
@@ -422,30 +442,11 @@ namespace certFHE {
 			return fst;
 		}
 
-		CADD * merged;
+		CADD * merged = new CADD(*fst);
 
-		/**
-		 * Check to see whether the first node is referenced multiple times or not
-		 * if not, the changes will be done inplace to save time
-		**/
-		if (fst->downstream_reference_count == 1) {
-
-			fst->downstream_reference_count += 1;
-
-			snd->downstream_reference_count += 1;
-			fst->nodes->insert_next_element(snd); // insertion on second position, order does not matter (as long as dummy element remains on first position)
-			fst->deflen_count += snd->deflen_count;
-
-			merged = fst;
-		}
-		else {
-
-			merged = new CADD(*fst);
-
-			snd->downstream_reference_count += 1;
-			merged->nodes->insert_next_element(snd); 
-			merged->deflen_count += snd->deflen_count;
-		}
+		snd->downstream_reference_count += 1;
+		merged->nodes->insert_next_element(snd); 
+		merged->deflen_count += snd->deflen_count;
 
 		merged->upstream_merging();
 
@@ -460,7 +461,6 @@ namespace certFHE {
 		}
 
 		return merged;
-
 	}
 	
 	CNODE * CADD::__upstream_merging(CMUL * fst, CMUL * snd) { 
@@ -484,6 +484,10 @@ namespace certFHE {
 
 		CADD * merged;
 
+		/**
+		 * Check to see whether the first node is referenced multiple times or not
+		 * if not, the changes will be done inplace to save time
+		**/
 		if (fst->downstream_reference_count == 1) {
 
 			fst->downstream_reference_count += 1;

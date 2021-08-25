@@ -94,6 +94,8 @@ namespace certFHE {
 		**/
 		CNODE * make_deep_copy() override { return new CCC(*this); }
 
+		void serialize_recon(std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) override;
+
 		/**
 			* Add two chunks of ciphertxts --- for multithreading only ---
 			* @param[in] args: input sent as a pointer to an AddArgs object

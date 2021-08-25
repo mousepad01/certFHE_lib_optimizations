@@ -21,8 +21,6 @@ namespace certFHE{
      * Class used for storing a ciphertext
     **/
 	class Ciphertext{
-
-	public:
     
 		/**
 		 * CNODE associated with the ciphertext
@@ -57,6 +55,8 @@ namespace certFHE{
 		static CNODE * multiply(CNODE * fst, CNODE * snd);
 
 	public:
+
+		static certfhe_ser_ptr_t serialize(const int ctxt_count, Ciphertext ** to_serialize_arr);
 
 		Ciphertext();
 

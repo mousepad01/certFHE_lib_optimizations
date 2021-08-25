@@ -2,6 +2,8 @@
 
 namespace certFHE {
 
+	// TODO ADD CUDA SERIALIZATION SUPPORT
+
 #if CERTFHE_USE_CUDA
 
 	CCC::CCC(Context * context, uint64_t * ctxt, uint64_t deflen_cnt, bool ctxt_on_gpu) : CNODE(context) {
@@ -1469,6 +1471,14 @@ namespace certFHE {
 		}
 
 		return to_permute;
+	}
+
+	void CCC::serialize_recon(std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) {
+
+		static uint32_t temp_CCC_id = 0; // 0b00...000 00
+
+		addr_to_id[this] = { temp_CCC_id, sizeof(uint32_t) + sizeof(uint64_t) + this->deflen_count * this->context->getDefaultN() * sizeof(uint64_t) };
+		temp_CCC_id += 4;
 	}
 
 #endif

@@ -21,6 +21,69 @@ namespace certFHE{
 		return Plaintext(this->decrypt_raw(sk));
 	}
 
+	certfhe_ser_ptr_t Ciphertext::serialize(const int ctxt_count, Ciphertext ** to_serialize_arr) {
+
+		/**
+		 * Serialization for:
+		 *		Ciphertext: id 4 bytes, node id 4 bytes
+		 *		CCC: id 4 bytes, deflen cnt 8 bytes, ctxt (deflen cnt * deflen to u64 * sizeof(u64)) bytes
+		 *		CADD, CMUL: id 4 bytes, deflen cnt 8 bytes, upstream ref cnt 8 bytes, upstream ref IDs (sizeof(u32) * upstream ref cnt) bytes
+		**/
+
+		/**
+		 * It contains the (temporary) IDs
+		 * Associated with every object to serialize (Ciphertxt / CNODE)
+		 * ID restrictions:
+		 *		CCC: first 2 bits 00
+		 *		CADD: first 2 bits 01
+		 *		CMUL: first 2 bits 10
+		 *		Ciphertext: first 2 bits 11
+		**/
+		static uint32_t temp_ctxt_id = 3; // 0b00....000 11
+
+		/**
+		 * Associates an (id, byte length) for every Ciphertext / CNODE (address)
+		 * The associated id is local to the current serialization
+		 * And the byte length is the size that node will occupy in the serialization
+		 * It also helps to eliminate duplicates in the current serialization
+		**/
+		std::unordered_map <void *, std::pair <uint32_t, int>> addr_to_id;
+
+		for (int i = 0; i < ctxt_count; i++) {
+
+			if (addr_to_id.find(to_serialize_arr[i]) != addr_to_id.end()) 
+				continue;
+
+			addr_to_id[to_serialize_arr[i]] = {temp_ctxt_id, 2 * sizeof(uint32_t)}; // ID of the current Ciphertext, ID of its associated CNODE
+			temp_ctxt_id += 4;
+
+			to_serialize_arr[i]->node->serialize_recon(addr_to_id);
+		}
+
+		/**
+		 * Serialization byte array total length
+		 * It is incremented with the help of the "serialization recon" recursive calls
+		**/
+		int ser_byte_length = 0;
+
+		for (auto entry : addr_to_id) 
+			ser_byte_length += entry.second.second;
+
+		certfhe_ser_ptr_t serialization = new unsigned char[ser_byte_length];
+
+		for (auto entry : addr_to_id) {
+
+			CNODE * node = (CNODE *)entry.first;
+
+			uint32_t node_id = entry.second.first;
+			int node_ser_byte_len = entry.second.second;
+
+			
+		}
+
+
+	}
+
 #if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
 
 	uint64_t Ciphertext::decrypt_raw(const SecretKey & sk) const {

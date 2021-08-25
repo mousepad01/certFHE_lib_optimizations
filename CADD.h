@@ -50,6 +50,8 @@ namespace certFHE {
 
 		CNODE * make_deep_copy() override;
 
+		void serialize_recon(std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) override;
+
 		// Methods that merge two nodes
 		// Only called internally by other methods of this class
 

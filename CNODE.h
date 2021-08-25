@@ -100,6 +100,15 @@ namespace certFHE {
 		virtual CNODE * permute(const Permutation & perm, bool force_deep_copy) = 0;
 
 		/**
+		 * The "serialization recon" recursive function has two roles:
+		 *		-> Identifying and inserting in the map received as the argument 
+		 *		   all the upstream referenced nodes that need to be serialized
+		 *		   that were previously not found
+		 *		-> Calculating the space required for the current node's serialization (in bytes)
+		**/
+		virtual void serialize_recon(std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) = 0;
+
+		/**
 		 * Method used instead of directly deleting the current node
 		 * Decides whether to decrease reference count or actually delete the node
 		**/
