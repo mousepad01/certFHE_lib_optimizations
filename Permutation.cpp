@@ -12,6 +12,7 @@ namespace certFHE{
 		for (uint64_t i = 0; i < length; i++) {
 			for (uint64_t j = 0; j < length; j++) {
 				
+
 				if (permutation[j] == i) {
 
 					p[i] = j; 
@@ -29,6 +30,29 @@ namespace certFHE{
 		Permutation invP(p, length, this_invcnt, inverseInvs);
 		delete[] p;
 		return invP;
+	}
+
+	unsigned char * Permutation::serialization() const {
+
+		int ser_byte_length = 2 + this->length + 4 * this->inversions_cnt;
+
+		uint64_t * serialization = new uint64_t[ser_byte_length];
+
+		serialization[0] = this->length;
+		serialization[1] = this->inversions_cnt;
+
+		for (int i = 0; i < serialization[0]; i++)
+			serialization[2 + i] = this->permutation[i];
+		
+		for (int i = 0; i < serialization[1]; i++) {
+
+			serialization[2 + this->length + 4 * i] = this->inversions[i].fst_u64_ch;
+			serialization[2 + this->length + 4 * i + 1] = this->inversions[i].fst_u64_r;
+			serialization[2 + this->length + 4 * i + 2] = this->inversions[i].snd_u64_ch;
+			serialization[2 + this->length + 4 * i + 3] = this->inversions[i].snd_u64_r;
+		}
+
+		return (unsigned char *)serialization;
 	}
 
 #pragma endregion

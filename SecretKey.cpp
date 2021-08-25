@@ -272,6 +272,31 @@ namespace certFHE{
 		return secKey;
 	}
 
+	unsigned char * SecretKey::serialization() const {
+
+		int ser_byte_length = 4 + 2 + this->length + this->mask_length;
+
+		uint64_t * serialization = new uint64_t[ser_byte_length];
+
+		Context * context = this->certFHEContext;
+
+		serialization[0] = context->getN();
+		serialization[1] = context->getD();
+		serialization[2] = context->getS();
+		serialization[3] = context->getDefaultN();
+
+		serialization[4] = this->length;
+		serialization[5] = this->mask_length;
+
+		for (int i = 0; i < serialization[0]; i++)
+			serialization[6 + i] = this->s[i];
+
+		for (int i = 0; i < serialization[1]; i++)
+			serialization[6 + this->length + i] = this->s_mask[i];
+
+		return (unsigned char *)serialization;
+	}
+
 #pragma endregion
 
 #pragma region Constructors and destructor

@@ -1490,10 +1490,10 @@ namespace certFHE {
 
 	void CCC::serialize_recon(std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) {
 
-		static uint32_t temp_CCC_id = 0; // 0b00...000 000
+		static uint32_t temp_CCC_id = 0; // 0b00...000 00
 
 		addr_to_id[this] = { temp_CCC_id, sizeof(uint32_t) + sizeof(uint64_t) + this->deflen_count * this->context->getDefaultN() * sizeof(uint64_t) };
-		temp_CCC_id += 0b1000;
+		temp_CCC_id += 0b100;
 	}
 
 	std::ostream & operator << (std::ostream & out, const CCC & ccc) {

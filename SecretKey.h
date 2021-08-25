@@ -139,6 +139,8 @@ namespace certFHE {
 
 #endif
 
+		unsigned char * serialization() const;
+
     };
 
 }

@@ -34,16 +34,14 @@ namespace certFHE{
 		 * It contains the (temporary) IDs for a Ciphertext object
 		 *
 		 * ID restrictions:
-		 *		CCC: first 3 bits 000
-		 *		CADD: first 3 bits 001
-		 *		CMUL: first 3 bits 010
-		 *		Ciphertext: first 3 bits 011
-		 *		SecretKey: first 3 bits 100
-		 *		Permutation: first 3 bits 101
+		 *		CCC: first 2 bits 00
+		 *		CADD: first 2 bits 01
+		 *		CMUL: first 2 bits 10
+		 *		Ciphertext: first 2 bits 11
 		 * 
-		 * NOTE: to conserve this restriction, the IDs will be incremented by 0b1000
+		 * NOTE: to conserve this restriction, the IDs will be incremented by 0b100
 		**/
-		static uint32_t temp_ctxt_id = 3; // 0b00....000 011
+		static uint32_t temp_ctxt_id = 3; // 0b00....000 11
 
 		/**
 		 * Associates an (id, byte length) for every Ciphertext / CNODE (address)
@@ -59,7 +57,7 @@ namespace certFHE{
 				continue;
 
 			addr_to_id[to_serialize_arr[i]] = {temp_ctxt_id, 2 * sizeof(uint32_t)}; // ID of the current Ciphertext, ID of its associated CNODE
-			temp_ctxt_id += 0b1000;
+			temp_ctxt_id += 0b100;
 
 			to_serialize_arr[i]->node->serialize_recon(addr_to_id);
 		}
@@ -71,7 +69,7 @@ namespace certFHE{
 		int ser_byte_length = 0;
 
 		/**
-		 * First element in a serialization array are ALWAYS its attributes
+		 * First element in a serialization array are ALWAYS its context attributes
 		**/
 		ser_byte_length += 4 * sizeof(uint64_t);
 
@@ -85,8 +83,8 @@ namespace certFHE{
 		uint64_t * ser_int64 = (uint64_t *)serialization;
 
 		ser_int64[0] = context->getN();
-		ser_int64[1] = context->getS();
-		ser_int64[2] = context->getD();
+		ser_int64[1] = context->getD();
+		ser_int64[2] = context->getS();
 		ser_int64[3] = context->getDefaultN();
 
 		int ser_offset = 4 * sizeof(uint64_t);

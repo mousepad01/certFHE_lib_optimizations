@@ -89,7 +89,6 @@ namespace certFHE{
         **/
         Permutation getInverse();
 
-
         /**
          * Combine two permutations
          * @param[in] permB: the second permutation to combine
@@ -97,6 +96,8 @@ namespace certFHE{
         **/
        Permutation operator + (const Permutation & other) const;
        Permutation & operator += (const Permutation & other);
+
+	   unsigned char * serialization() const;
     };
 
 

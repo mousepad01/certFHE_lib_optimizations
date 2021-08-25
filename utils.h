@@ -4,19 +4,15 @@
 /**
  * Macros used for (de)serialization identification
  * ID restrictions:
- *		CCC: first 3 bits 000
- *		CADD: first 3 bits 001
- *		CMUL: first 3 bits 010
- *		Ciphertext: first 3 bits 011
- *		SecretKey: first 3 bits 100
- *		Permutation: first 3 bits 101
+ *		CCC: first 2 bits 00
+ *		CADD: first 2 bits 01
+ *		CMUL: first 2 bits 10
+ *		Ciphertext: first 2 bits 11
 **/
-#define CERTFHE_CCC_ID(X) ((X) & 0b000)
-#define CERTFHE_CADD_ID(X) ((X) & 0b001)
-#define CERTFHE_CMUL_ID(X) ((X) & 0b010)
-#define CERTFHE_CTXT_ID(X) ((X) & 0b011)
-#define CERTFHE_SK_ID(X) ((X) & 0b100)
-#define CERTFHE_PERM_ID(X) ((X) & 0b101)
+#define CERTFHE_CCC_ID(X) ((X) & 0b00)
+#define CERTFHE_CADD_ID(X) ((X) & 0b01)
+#define CERTFHE_CMUL_ID(X) ((X) & 0b10)
+#define CERTFHE_CTXT_ID(X) ((X) & 0b11)
 
 /**
  * Regarding Ciphertext class, current implementation is threadsafe (without manual synchronization)
