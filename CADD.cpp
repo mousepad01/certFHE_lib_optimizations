@@ -174,7 +174,7 @@ namespace certFHE {
 
 	void CADD::serialize_recon(std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) {
 
-		static uint32_t temp_CADD_id = 1; // 0b00...000 01
+		static uint32_t temp_CADD_id = 1; // 0b00...000 001
 
 		uint64_t upstream_ref_cnt = 0; // number of nodes in CNODE_list WITHOUT dummy (first) element
 
@@ -189,7 +189,7 @@ namespace certFHE {
 		}
 
 		addr_to_id[this] = { temp_CADD_id, sizeof(uint32_t) + 2 * sizeof(uint64_t) + upstream_ref_cnt * sizeof(uint32_t) };
-		temp_CADD_id += 4;
+		temp_CADD_id += 0b1000;
 	}
 
 	CNODE * CADD::permute(const Permutation & perm, bool force_deep_copy) {

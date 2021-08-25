@@ -1,7 +1,22 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#define BIT(X) X & 0x01
+/**
+ * Macros used for (de)serialization identification
+ * ID restrictions:
+ *		CCC: first 3 bits 000
+ *		CADD: first 3 bits 001
+ *		CMUL: first 3 bits 010
+ *		Ciphertext: first 3 bits 011
+ *		SecretKey: first 3 bits 100
+ *		Permutation: first 3 bits 101
+**/
+#define CERTFHE_CCC_ID(X) ((X) & 0b000)
+#define CERTFHE_CADD_ID(X) ((X) & 0b001)
+#define CERTFHE_CMUL_ID(X) ((X) & 0b010)
+#define CERTFHE_CTXT_ID(X) ((X) & 0b011)
+#define CERTFHE_SK_ID(X) ((X) & 0b100)
+#define CERTFHE_PERM_ID(X) ((X) & 0b101)
 
 /**
  * Regarding Ciphertext class, current implementation is threadsafe (without manual synchronization)
@@ -17,11 +32,6 @@
 #define CERTFHE_MSVC_COMPILER_MACRO (_MSC_VER && !__INTEL_COMPILER)
 
 #define CERTFHE_GNU_COMPILER_MACRO __GNUC__
-
-/**
- * Pointer to array of bytes that represents one or more Ciphertext, SecretKey or Permutation serializations
-**/
-typedef unsigned char * certfhe_ser_ptr_t;
 
 /**
  * MACRO to ENABLE/DISABLE use of GPU found inside CUDA_interface.h

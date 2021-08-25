@@ -96,6 +96,8 @@ namespace certFHE {
 
 		void serialize_recon(std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) override;
 
+		void serialize(unsigned char * serialization_buffer, std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) override;
+
 		/**
 			* Add two chunks of ciphertxts --- for multithreading only ---
 			* @param[in] args: input sent as a pointer to an AddArgs object

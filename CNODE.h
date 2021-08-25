@@ -109,6 +109,11 @@ namespace certFHE {
 		virtual void serialize_recon(std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) = 0;
 
 		/**
+		 * Serialization function 
+		**/
+		virtual void serialize(unsigned char * serialization_buffer, std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) = 0;
+
+		/**
 		 * Method used instead of directly deleting the current node
 		 * Decides whether to decrease reference count or actually delete the node
 		**/

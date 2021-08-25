@@ -2270,7 +2270,7 @@ void gpu_test_add() {
 
 int main(){
 
-	old_implementation_compare_statistics_tests();
+	//old_implementation_compare_statistics_tests();
 
 	//gpu_test_add();
 

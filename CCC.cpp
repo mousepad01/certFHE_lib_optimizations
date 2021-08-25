@@ -1473,15 +1473,28 @@ namespace certFHE {
 		return to_permute;
 	}
 
-	void CCC::serialize_recon(std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) {
+	void CCC::serialize(unsigned char * serialization_buffer, std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) {
 
-		static uint32_t temp_CCC_id = 0; // 0b00...000 00
+		uint32_t * ser_int32 = (uint32_t *)serialization_buffer;
+		ser_int32[0] = addr_to_id[this].first;
 
-		addr_to_id[this] = { temp_CCC_id, sizeof(uint32_t) + sizeof(uint64_t) + this->deflen_count * this->context->getDefaultN() * sizeof(uint64_t) };
-		temp_CCC_id += 4;
+		uint64_t * ser_int64 = (uint64_t *)(serialization_buffer + sizeof(uint32_t));
+
+		ser_int64[0] = this->deflen_count;
+
+		for (int i = 0; i < ser_int64[0]; i++) 
+			ser_int64[i + 1] = this->ctxt[i];
 	}
 
 #endif
+
+	void CCC::serialize_recon(std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) {
+
+		static uint32_t temp_CCC_id = 0; // 0b00...000 000
+
+		addr_to_id[this] = { temp_CCC_id, sizeof(uint32_t) + sizeof(uint64_t) + this->deflen_count * this->context->getDefaultN() * sizeof(uint64_t) };
+		temp_CCC_id += 0b1000;
+	}
 
 	std::ostream & operator << (std::ostream & out, const CCC & ccc) {
 

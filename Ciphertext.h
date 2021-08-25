@@ -56,7 +56,11 @@ namespace certFHE{
 
 	public:
 
-		static certfhe_ser_ptr_t serialize(const int ctxt_count, Ciphertext ** to_serialize_arr);
+		/**
+		 * Serialization (into bytes) function
+		 * This function ASSUMES all the ciphertexts were encrypted under the same context (or at least an equal one)
+		**/
+		static unsigned char * serialize(const int ctxt_count, Ciphertext ** to_serialize_arr);
 
 		Ciphertext();
 
@@ -140,6 +144,10 @@ namespace certFHE{
 			* @return value: decrypted value as a plaintext object
 		**/
 		Plaintext decrypt(const SecretKey & sk) const; 
+
+		// Other
+
+		friend class CNODE_disjoint_set;
 
 	};
 }

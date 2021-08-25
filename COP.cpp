@@ -95,6 +95,29 @@ namespace certFHE {
 		else
 			return 0;
 	}
+
+	void COP::serialize(unsigned char * serialization_buffer, std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) {
+
+		uint32_t * ser_int32 = (uint32_t *)serialization_buffer;
+		ser_int32[0] = addr_to_id[this].first;
+
+		uint64_t * ser_int64 = (uint64_t *)(serialization_buffer + sizeof(uint32_t));
+
+		ser_int64[0] = this->deflen_count;
+
+		uint64_t upstream_ref_cnt = 0; 
+
+		CNODE_list * thisnodes = this->nodes->next;
+		while (thisnodes != 0 && thisnodes->current != 0) {
+
+			ser_int32[5 + upstream_ref_cnt] = addr_to_id[thisnodes->current].first;
+
+			upstream_ref_cnt += 1;
+			thisnodes = thisnodes->next;
+		}
+
+		ser_int64[1] = upstream_ref_cnt;
+	}
 }
 
 

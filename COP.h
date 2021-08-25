@@ -56,6 +56,10 @@ namespace certFHE {
 
 		CNODE * permute(const Permutation & perm, bool force_deep_copy) override = 0;
 
+		void serialize_recon(std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) override = 0;
+
+		void serialize(unsigned char * serialization_buffer, std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) override;
+
 		// Other
 
 		friend class CMUL;

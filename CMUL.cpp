@@ -150,7 +150,7 @@ namespace certFHE {
 
 	void CMUL::serialize_recon(std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) {
 
-		static uint32_t temp_CMUL_id = 2; // 0b00...000 10
+		static uint32_t temp_CMUL_id = 2; // 0b00...000 010
 
 		uint64_t upstream_ref_cnt = 0; // number of nodes in CNODE_list WITHOUT dummy (first) element
 
@@ -165,7 +165,7 @@ namespace certFHE {
 		}
 
 		addr_to_id[this] = { temp_CMUL_id, sizeof(uint32_t) + 2 * sizeof(uint64_t) + upstream_ref_cnt * sizeof(uint32_t) };
-		temp_CMUL_id += 4;
+		temp_CMUL_id += 0b1000;
 	}
 
 	std::ostream & operator << (std::ostream & out, const CMUL & cmul) {
