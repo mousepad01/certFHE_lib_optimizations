@@ -24,7 +24,7 @@ namespace certFHE{
 		uint64_t length;					// size of permutation vector
 		uint64_t inversions_cnt;			// number of inversions
 
-		Permutation(const uint64_t * perm, const uint64_t len, uint64_t inv_cnt, const PermInversion * invs);
+		Permutation(const uint64_t * perm, const uint64_t len, const PermInversion * invs, const uint64_t inv_cnt);
 
     public:
 
@@ -97,12 +97,11 @@ namespace certFHE{
        Permutation operator + (const Permutation & other) const;
        Permutation & operator += (const Permutation & other);
 
-	   unsigned char * serialization() const;
+	   unsigned char * serialize() const;
+
+	   static Permutation deserialize(unsigned char * serialization);
     };
 
-
-
 }
-
 
 #endif

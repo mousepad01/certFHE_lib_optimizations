@@ -272,9 +272,9 @@ namespace certFHE{
 		return secKey;
 	}
 
-	unsigned char * SecretKey::serialization() const {
+	unsigned char * SecretKey::serialize() const {
 
-		int ser_byte_length = 4 + 2 + this->length + this->mask_length;
+		int ser_byte_length = 4 + 2 + (int)this->length + (int)this->mask_length;
 
 		uint64_t * serialization = new uint64_t[ser_byte_length];
 
@@ -297,9 +297,56 @@ namespace certFHE{
 		return (unsigned char *)serialization;
 	}
 
+	std::pair <SecretKey, Context> SecretKey::deserialize(unsigned char * serialization) {
+
+		uint64_t * ser_int64 = (uint64_t *)serialization;
+
+		Context context(ser_int64[0], ser_int64[1]);
+
+		uint64_t length = ser_int64[4];
+		uint64_t mask_length = ser_int64[5];
+
+		uint64_t * s = new uint64_t[length];
+		uint64_t * s_mask = new uint64_t[mask_length];
+
+		for (int i = 0; i < length; i++)
+			s[i] = ser_int64[6 + i];
+
+		for (int i = 0; i < mask_length; i++)
+			s_mask[i] = ser_int64[6 + length + i];
+
+		SecretKey to_return(s, length, s_mask, mask_length);
+
+		delete[] s;
+		delete[] s_mask;
+
+		for (int i = 0; i < length; i++)
+			s[i] = 0;
+
+		for (int i = 0; i < mask_length; i++)
+			s_mask[i] = 0;
+
+		return { to_return, context };
+	}
+
 #pragma endregion
 
 #pragma region Constructors and destructor
+
+	SecretKey::SecretKey(const uint64_t * s, const uint64_t length, const uint64_t * s_mask, const uint64_t mask_length) {
+
+		this->s = new uint64_t[length];
+		this->length = length;
+
+		this->s_mask = new uint64_t[mask_length];
+		this->mask_length = mask_length;
+
+		for (int i = 0; i < length; i++)
+			this->s[i] = s[i];
+
+		for (int i = 0; i < mask_length; i++)
+			this->s_mask[i] = s_mask[i];
+	}
 
 	SecretKey::SecretKey(const Context & context) {	
 
