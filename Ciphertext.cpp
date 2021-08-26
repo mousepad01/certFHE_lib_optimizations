@@ -56,7 +56,7 @@ namespace certFHE{
 			if (addr_to_id.find(to_serialize_arr[i]) != addr_to_id.end()) 
 				continue;
 
-			addr_to_id[to_serialize_arr[i]] = {temp_ctxt_id, 2 * sizeof(uint32_t)}; // ID of the current Ciphertext, ID of its associated CNODE
+			addr_to_id[to_serialize_arr[i]] = { temp_ctxt_id, (int)(2 * sizeof(uint32_t)) }; // ID of the current Ciphertext, ID of its associated CNODE
 			temp_ctxt_id += 0b100;
 
 			to_serialize_arr[i]->node->serialize_recon(addr_to_id);
@@ -83,28 +83,30 @@ namespace certFHE{
 
 		Context * context = to_serialize_arr[0]->node->context;
 
-		uint64_t * ser_int64 = (uint64_t *)(serialization + 4);
+		uint64_t * ser_int64 = (uint64_t *)(serialization + sizeof(uint32_t));
 
 		ser_int64[0] = context->getN();
 		ser_int64[1] = context->getD();
 		ser_int64[2] = context->getS();
 		ser_int64[3] = context->getDefaultN();
 
-		int ser_offset = 4 * sizeof(uint64_t) + 4;
-
+		int ser_offset = sizeof(uint32_t) + 4 * sizeof(uint64_t);
+		int cntc = 0;
 		for (auto entry : addr_to_id) {
-
+			
 			if (CERTFHE_CTXT_ID(entry.second.first)) {
 
 				Ciphertext * ciphertext = (Ciphertext *)entry.first;
-
+				cntc += 1;
 				ser_int32 = (uint32_t *)(serialization + ser_offset);
-
-				ser_int32[0] = addr_to_id[ciphertext].first;
+				
+				ser_int32[0] = entry.second.first;
 				ser_int32[1] = addr_to_id[ciphertext->node].first;
+
+				ser_offset += 2 * sizeof(uint32_t);
 			}
 			else {
-
+				
 				CNODE * node = (CNODE *)entry.first;
 
 				node->serialize(serialization + ser_offset, addr_to_id);

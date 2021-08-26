@@ -9,10 +9,10 @@
  *		CMUL: first 2 bits 10
  *		Ciphertext: first 2 bits 11
 **/
-#define CERTFHE_CCC_ID(X) ((X) & 0b00)
-#define CERTFHE_CADD_ID(X) ((X) & 0b01)
-#define CERTFHE_CMUL_ID(X) ((X) & 0b10)
-#define CERTFHE_CTXT_ID(X) ((X) & 0b11)
+#define CERTFHE_CCC_ID(X) (((X) & 0b11) == 0b00)
+#define CERTFHE_CADD_ID(X) (((X) & 0b11) == 0b01)
+#define CERTFHE_CMUL_ID(X) (((X) & 0b11) == 0b10)
+#define CERTFHE_CTXT_ID(X) (((X) & 0b11) == 0b11)
 
 /**
  * Regarding Ciphertext class, current implementation is threadsafe (without manual synchronization)

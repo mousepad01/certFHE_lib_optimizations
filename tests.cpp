@@ -2231,7 +2231,7 @@ void old_implementation_compare_statistics_tests() {
 		<< "To plot them, call average_test_plot function from plotter.py (dectime parameter - whether you want to plot decryption times in the same graph or not)\n"
 		<< "NOTE: plotter.py needs to be in the same directory in which the result files are located\n\n";
 
-	average_predefined_test("GPU_stats", false, false);
+	average_predefined_test("debug_stats", false, false);
 
 	std::cout << "First test done\n\n";
 
@@ -2245,34 +2245,250 @@ void old_implementation_compare_statistics_tests() {
 	std::cout << "Second test done\n\n";
 }
 
-void gpu_test_add() {
+void serialization_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000, const int CS_CNT = 20,
+	const int CONTEXT_N = 1247, const int CONTEXT_D = 16, std::ostream & out = std::cout) {
 
-	certFHE::Library::initializeLibrary();
-	certFHE::Context context(1247, 16);
-	certFHE::SecretKey sk(context);
+	//try {
 
-	certFHE::Plaintext p0(0);
-	certFHE::Plaintext p1(1);
+		certFHE::Timer timer;
 
-	certFHE::Ciphertext c0(p0, sk);
-	certFHE::Ciphertext c1(p1, sk);
+		const char * TIME_MEASURE_UNIT = "miliseconds";
 
-	certFHE::Ciphertext a = c1 + c0 + c1 + c0 + c1 + c1 + c0;
-	certFHE::Ciphertext b = c0 + c0 + c1 + c0;
-	certFHE::Ciphertext c = a + b;
+		out << ROUNDS_PER_TEST << " rounds per test, "
+			<< CS_CNT << " ciphertexts\n\n";
 
-	certFHE::Ciphertext d = c0 * c1;
+		out << "Starting...";
+		out.flush();
 
-	std::cout << ((a.decrypt(sk).getValue() & 0x01) == 0) << " " << ((b.decrypt(sk).getValue() & 0x01) == 1) << " " << ((c.decrypt(sk).getValue() & 0x01) == 1) << " ";
+		timer.start();
 
-	std::cout << ((d.decrypt(sk).getValue() & 0x01) == 0) << " ";
+		certFHE::Library::initializeLibrary();
+		certFHE::Context context(CONTEXT_N, CONTEXT_D);
+		certFHE::SecretKey sk(context);
+
+		out << timer.stop() << " " << TIME_MEASURE_UNIT << "\n";
+		timer.reset();
+
+		out << "Multithreading thresholds autoselection...";
+		out.flush();
+
+		timer.start();
+
+		certFHE::MTValues::m_threshold_autoselect(context, false);
+
+		out << timer.stop() << " " << TIME_MEASURE_UNIT << "\n";
+		timer.reset();
+
+		int * val = new int[CS_CNT];
+		certFHE::Ciphertext ** cs;
+		cs = new certFHE::Ciphertext *[CS_CNT];
+
+		uint64_t pp;
+
+		int OP_MODULUS = 2;
+
+		out << "Starting tests:\n\n";
+
+		out.flush();
+
+		for (int ts = 0; ts < TEST_COUNT; ts++) {
+
+			//try {
+
+				out << "TEST " << ts << ":\n";
+				out.flush();
+
+				out << "Initializing starting values...";
+				out.flush();
+
+				timer.start();
+
+				for (int i = 0; i < CS_CNT; i++) {
+
+					val[i] = rand() % 2;
+
+					cs[i] = new certFHE::Ciphertext();
+
+					certFHE::Plaintext p(val[i]);
+					*cs[i] = sk.encrypt(p);
+				}
+
+				out << timer.stop() << " " << TIME_MEASURE_UNIT << "\n";
+				timer.reset();
+
+				double t_acc = 0;
+				double t;
+
+				int i, j, k;
+
+				for (int rnd = 0; rnd < ROUNDS_PER_TEST; rnd++) {
+
+					int opc = rand() % OP_MODULUS;
+
+					switch (opc) {
+
+					case(0): // * between two random ctxt, += in the third
+
+						i = rand() % CS_CNT;
+						j = rand() % CS_CNT;
+						k = rand() % CS_CNT;
+
+						timer.start();
+
+						*cs[k] += *cs[i] * *cs[j];
+
+						t = timer.stop();
+						timer.reset();
+
+						t_acc += t;
+
+						val[k] ^= (val[i] & val[j]);
+
+						break;
+
+					case(1): // + between two random ctxt, *= in the third
+
+						i = rand() % CS_CNT;
+						j = rand() % CS_CNT;
+						k = rand() % CS_CNT;
+
+						timer.start();
+
+						*cs[k] *= *cs[i] + *cs[j];
+
+						t = timer.stop();
+						timer.reset();
+
+						t_acc += t;
+
+						val[k] &= (val[i] ^ val[j]);
+
+						break;
+
+					default:
+						break;
+					}
+				}
+
+				out << "Decrypting...\n";
+				out.flush();
+
+				double t_acc_dec = 0;
+				double t_dec;
+
+				certFHE::CNODE::clear_decryption_cache();
+
+				for (int pos = 0; pos < CS_CNT; pos++) {
+
+					timer.start();
+
+					uint64_t p = sk.decrypt(*cs[pos]).getValue() & 0x01;
+
+					t_dec = timer.stop();
+					timer.reset();
+
+					t_acc_dec += t_dec;
+
+					if (p != val[pos]) {
+
+						out << "WRONG initial decryption; should be " << val[pos] << ", decrypted " << p << '\n';
+						out.flush();
+					}
+				}
+
+				certFHE::CNODE::clear_decryption_cache();
+
+				out << "Operations done: " << t_acc << " " << TIME_MEASURE_UNIT
+					<< ", decryption " << t_acc_dec << " " << TIME_MEASURE_UNIT << "\n";
+				out.flush();
+				
+				out << "Serializing...\n";
+				out.flush();
+
+				double t_ser;
+				double t_ser_acc = 0;
+
+				timer.start();
+
+				unsigned char * serialized = certFHE::Ciphertext::serialize(CS_CNT, cs);
+
+				t_ser = timer.stop();
+				timer.reset();
+
+				t_ser_acc += t_ser;
+
+				out << "Serialization done: " << t_ser_acc << " " << TIME_MEASURE_UNIT << "\n";
+				out << "Deserializing...\n";
+				out.flush();
+
+				t_ser_acc = 0;
+
+				timer.start();
+
+				auto deserialized_res = certFHE::Ciphertext::deserialize(serialized);
+				certFHE::Ciphertext ** deserialized = deserialized_res.first;
+
+				t_ser = timer.stop();
+				timer.reset();
+
+				t_ser_acc += t_ser;
+
+				out << "Deserialization done: " << t_ser_acc << " " << TIME_MEASURE_UNIT << "\n";
+				out << "Decrypting deserialized ciphertexts...\n";
+				out.flush();
+
+				for (int i = 0; i < CS_CNT; i++) {
+
+					uint64_t p = sk.decrypt(*deserialized[i]).getValue() & 0x01;
+
+					if (p != val[i]) {
+
+						out << "WRONG initial decryption; should be " << val[i] << ", decrypted " << p << '\n';
+						out.flush();
+					}
+				}
+				out << "Deserialized ciphertext decryption done\n";
+				out.flush();
+
+				for (int ct = 0; ct < CS_CNT; ct++)
+					delete deserialized[ct];
+
+				for (int ct = 0; ct < CS_CNT; ct++)
+					delete cs[ct];
+
+				out << "TEST " << ts << " DONE\n\n";
+				out.flush();
+
+			/*}
+			catch (std::exception e) {
+
+				out << "ERROR: " << e.what() << '\n';
+				out.flush();
+			}*/
+		}
+
+		delete val;
+	/*}
+	catch (std::exception & err) {
+
+		out << "ERROR running (de)serialization tests: " << err.what() << '\n';
+	}*/
+}
+
+void serialization_predefined_test(std::string path_sufix = "\\serialization_test\\debug_stats") {
+
+	std::fstream log(STATS_PATH + "sertest_" + path_sufix + ".txt", std::ios::out);
+
+	serialization_test(10, 110, 100, 1247, 16, log);
+
+	log.close();
 }
 
 int main(){
 
 	//old_implementation_compare_statistics_tests();
 
-	//gpu_test_add();
+	serialization_predefined_test("debug_stats");
 
     return 0;
 }
