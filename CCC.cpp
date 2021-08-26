@@ -1476,7 +1476,7 @@ namespace certFHE {
 	void CCC::serialize(unsigned char * serialization_buffer, std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) {
 
 		uint32_t * ser_int32 = (uint32_t *)serialization_buffer;
-		ser_int32[0] = addr_to_id[this].first;
+		ser_int32[0] = addr_to_id.at(this).first;
 
 		uint64_t * ser_int64 = (uint64_t *)(serialization_buffer + sizeof(uint32_t));
 		ser_int64[0] = this->deflen_count;
@@ -1517,7 +1517,7 @@ namespace certFHE {
 
 	void CCC::serialize_recon(std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) {
 
-		static uint32_t temp_CCC_id = 0b00;
+		static uint32_t temp_CCC_id = 0b100; // starting from the second possible id, to avoid having an id equal to 0
 
 		addr_to_id[this] = { temp_CCC_id, (int)(sizeof(uint32_t) + sizeof(uint64_t) + this->deflen_count * this->context->getDefaultN() * sizeof(uint64_t)) };
 		temp_CCC_id += 0b100;

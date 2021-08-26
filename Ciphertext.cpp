@@ -69,9 +69,9 @@ namespace certFHE{
 		int ser_byte_length = 0;
 
 		/**
-		 * First elements in a serialization array are ALWAYS its Ciphertext object count and context attributes
+		 * First elements in a serialization array are ALWAYS its Ciphertext object count, total CNODE + Ciphertxt count, and context attributes
 		**/
-		ser_byte_length += sizeof(uint32_t) + 4 * sizeof(uint64_t);
+		ser_byte_length += 2 * sizeof(uint32_t) + 4 * sizeof(uint64_t);
 
 		for (auto entry : addr_to_id) 
 			ser_byte_length += entry.second.second;
@@ -80,24 +80,25 @@ namespace certFHE{
 
 		uint32_t * ser_int32 = (uint32_t *)serialization;
 		ser_int32[0] = (uint32_t)ctxt_count;
+		// ser_int32[1] completed later in the execution (after the next for loop)
 
 		Context * context = to_serialize_arr[0]->node->context;
 
-		uint64_t * ser_int64 = (uint64_t *)(serialization + sizeof(uint32_t));
+		uint64_t * ser_int64 = (uint64_t *)(serialization + 2 * sizeof(uint32_t));
 
 		ser_int64[0] = context->getN();
 		ser_int64[1] = context->getD();
 		ser_int64[2] = context->getS();
 		ser_int64[3] = context->getDefaultN();
 
-		int ser_offset = sizeof(uint32_t) + 4 * sizeof(uint64_t);
-		int cntc = 0;
+		int ser_offset = 2 * sizeof(uint32_t) + 4 * sizeof(uint64_t);
+		
 		for (auto entry : addr_to_id) {
 			
 			if (CERTFHE_CTXT_ID(entry.second.first)) {
 
 				Ciphertext * ciphertext = (Ciphertext *)entry.first;
-				cntc += 1;
+				
 				ser_int32 = (uint32_t *)(serialization + ser_offset);
 				
 				ser_int32[0] = entry.second.first;
@@ -114,6 +115,26 @@ namespace certFHE{
 			}
 		}
 
+		ser_int32 = (uint32_t *)serialization; 
+		ser_int32[1] = addr_to_id.size;
+
+		// DEBUG-----------------------------
+		for (auto entry : addr_to_id) {
+
+			if (CERTFHE_CTXT_ID(entry.second.first)) 
+				std::cout << "Ciphertext " << entry.second.first << " assoc " << addr_to_id[((Ciphertext *)entry.first)->node].first << "\n";
+
+			if (CERTFHE_CCC_ID(entry.second.first))
+				std::cout << "CCC " << entry.second.first << '\n';
+
+			if (CERTFHE_CADD_ID(entry.second.first))
+				std::cout << "CADD " << entry.second.first << '\n';
+
+			if (CERTFHE_CMUL_ID(entry.second.first))
+				std::cout << "CMUL " << entry.second.first << '\n';
+		}
+		std::cout << "\n";
+
 		return serialization;
 	}
 
@@ -122,9 +143,11 @@ namespace certFHE{
 		std::unordered_map <uint32_t, void *> id_to_addr;
 
 		uint32_t * ser_int32 = (uint32_t *)serialization;
-		int ctxt_cnt = (int)ser_int32[0];
 
-		uint64_t * ser_int64 = (uint64_t *)(serialization + sizeof(uint32_t));
+		uint32_t ctxt_cnt = ser_int32[0];
+		uint32_t total_ser_cnt = ser_int32[1];
+
+		uint64_t * ser_int64 = (uint64_t *)(serialization + 2 * sizeof(uint32_t));
 		Context context(ser_int64[0], ser_int64[1]);
 
 		Ciphertext ** deserialized = new Ciphertext *[ctxt_cnt];
@@ -139,13 +162,13 @@ namespace certFHE{
 		 * and also links Ciphertext objects with their nodes
 		**/
 
-		ser_int32 = (uint32_t *)(serialization + 9 * sizeof(uint32_t));
+		ser_int32 = (uint32_t *)(serialization + 10 * sizeof(uint32_t));
 		int ser32_offset = 0;
 
 		uint32_t current_id = ser_int32[0];
 		int ctxt_i = 0;
 
-		while (current_id != 0) {
+		for(uint32_t ser_cnt = 0; ser_cnt < total_ser_cnt; ser_cnt++) {
 
 			if (CERTFHE_CTXT_ID(current_id)) {
 
@@ -174,19 +197,19 @@ namespace certFHE{
 			}
 		}
 
-		ser_int32 = (uint32_t *)(serialization + 9 * sizeof(uint32_t));
+		ser_int32 = (uint32_t *)(serialization + 10 * sizeof(uint32_t));
 		ser32_offset = 0;
 
 		current_id = ser_int32[0];
 		ctxt_i = 0;
 
-		while (current_id != 0) {
+		for (uint32_t ser_cnt = 0; ser_cnt < total_ser_cnt; ser_cnt++) {
 
 			if (CERTFHE_CTXT_ID(current_id)) {
 
 				uint32_t node_id = ser_int32[ser32_offset + 1];
 
-				deserialized[ctxt_i]->node = (CNODE *)id_to_addr[node_id];
+				deserialized[ctxt_i]->node = (CNODE *)id_to_addr.at(node_id);
 				deserialized[ctxt_i]->node->downstream_reference_count += 1;
 
 				ser32_offset += 2;

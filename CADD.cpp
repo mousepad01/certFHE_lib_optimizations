@@ -197,7 +197,7 @@ namespace certFHE {
 		uint32_t * ser_int32 = (uint32_t *)serialized;
 		uint32_t id = ser_int32[0];
 
-		uint64_t * ser_int64 = (uint64_t *)(serialized + 4);
+		uint64_t * ser_int64 = (uint64_t *)(serialized + sizeof(uint32_t));
 
 		uint64_t deflen_cnt = ser_int64[0];
 		uint64_t deflen_to_u64 = context.getDefaultN();
@@ -213,12 +213,12 @@ namespace certFHE {
 		}
 		else {
 
-			CADD * deserialized = (CADD *)id_to_addr[id];
+			CADD * deserialized = (CADD *)id_to_addr.at(id);
 
 			for (int i = 0; i < upstream_ref_cnt; i++) {
 
 				uint32_t upstream_ref_id = ser_int32[5 + i];
-				CNODE * upstream_ref = (CNODE *)id_to_addr[upstream_ref_id];
+				CNODE * upstream_ref = (CNODE *)id_to_addr.at(upstream_ref_id);
 
 				upstream_ref->downstream_reference_count += 1;
 

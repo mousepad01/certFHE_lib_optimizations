@@ -2479,7 +2479,7 @@ void serialization_predefined_test(std::string path_sufix = "\\serialization_tes
 
 	std::fstream log(STATS_PATH + "sertest_" + path_sufix + ".txt", std::ios::out);
 
-	serialization_test(10, 110, 100, 1247, 16, log);
+	serialization_test(10, 11, 10, 1247, 16, log);
 
 	log.close();
 }
