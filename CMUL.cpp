@@ -189,12 +189,12 @@ namespace certFHE {
 		}
 		else {
 
-			CMUL * deserialized = (CMUL *)id_to_addr.at(id);
+			CMUL * deserialized = (CMUL *)id_to_addr[id];
 
 			for (int i = 0; i < upstream_ref_cnt; i++) {
 
 				uint32_t upstream_ref_id = ser_int32[5 + i];
-				CNODE * upstream_ref = (CNODE *)id_to_addr.at(upstream_ref_id);
+				CNODE * upstream_ref = (CNODE *)id_to_addr[upstream_ref_id];
 
 				upstream_ref->downstream_reference_count += 1;
 

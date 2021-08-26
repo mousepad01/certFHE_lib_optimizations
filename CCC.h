@@ -100,9 +100,13 @@ namespace certFHE {
 
 		/**
 		 * Deserialization function
+		 *
+		 * already_created == false -> completely deserializez the corresponding bytes and creates a CCC object
+		 * already_created == true -> does nothing, method called with this value only for the return quantity
+		 *
 		 * Returns the next ID from the serialization array
 		**/
-		static uint32_t deserialize(unsigned char * serialized, std::unordered_map <uint32_t, void *> & id_to_addr, Context & context);
+		static uint32_t deserialize(unsigned char * serialized, std::unordered_map <uint32_t, void *> & id_to_addr, Context & context, bool already_created);
 
 		/**
 			* Add two chunks of ciphertxts --- for multithreading only ---

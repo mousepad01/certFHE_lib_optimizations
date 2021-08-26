@@ -1486,7 +1486,7 @@ namespace certFHE {
 			ser_int64[i + 1] = this->ctxt[i];
 	}
 
-	uint32_t CCC::deserialize(unsigned char * serialized, std::unordered_map <uint32_t, void *> & id_to_addr, Context & context) {
+	uint32_t CCC::deserialize(unsigned char * serialized, std::unordered_map <uint32_t, void *> & id_to_addr, Context & context, bool already_created) {
 
 		uint32_t * ser_int32 = (uint32_t *)serialized;
 		uint32_t id = ser_int32[0];
@@ -1496,15 +1496,18 @@ namespace certFHE {
 		uint64_t deflen_cnt = ser_int64[0];
 		uint64_t deflen_to_u64 = context.getDefaultN();
 
-		uint64_t * ctxt = new uint64_t[deflen_cnt * deflen_to_u64];
-		
-		for (int i = 0; i < deflen_cnt * deflen_to_u64; i++)
-			ctxt[i] = ser_int64[1 + i];
+		if (!already_created) {
 
-		CCC * deserialized = new CCC(&context, ctxt, deflen_cnt);
-		deserialized->downstream_reference_count = 0; // it will be fixed later
+			uint64_t * ctxt = new uint64_t[deflen_cnt * deflen_to_u64];
 
-		id_to_addr[id] = deserialized;
+			for (int i = 0; i < deflen_cnt * deflen_to_u64; i++)
+				ctxt[i] = ser_int64[1 + i];
+
+			CCC * deserialized = new CCC(&context, ctxt, deflen_cnt);
+			deserialized->downstream_reference_count = 0; // it will be fixed later
+
+			id_to_addr[id] = deserialized;
+		}
 
 		return ser_int32[deflen_cnt * deflen_to_u64 * 2 + 3];
 	}
