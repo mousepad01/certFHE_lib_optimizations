@@ -1479,19 +1479,20 @@ namespace certFHE {
 		ser_int32[0] = addr_to_id[this].first;
 
 		uint64_t * ser_int64 = (uint64_t *)(serialization_buffer + sizeof(uint32_t));
-
 		ser_int64[0] = this->deflen_count;
 
-		for (int i = 0; i < ser_int64[0]; i++) 
+		uint64_t u64_len = this->deflen_count * this->context->getDefaultN();
+
+		for (int i = 0; i < u64_len; i++) 
 			ser_int64[i + 1] = this->ctxt[i];
 	}
 
-	uint32_t CCC::deserialize(unsigned char * serialized, std::unordered_map <uint32_t, void *> & id_to_addr, Context & context, bool already_created) {
+	int CCC::deserialize(unsigned char * serialized, std::unordered_map <uint32_t, void *> & id_to_addr, Context & context, bool already_created) {
 
 		uint32_t * ser_int32 = (uint32_t *)serialized;
 		uint32_t id = ser_int32[0];
 
-		uint64_t * ser_int64 = (uint64_t *)(serialized + 4);
+		uint64_t * ser_int64 = (uint64_t *)(serialized + sizeof(uint32_t));
 
 		uint64_t deflen_cnt = ser_int64[0];
 		uint64_t deflen_to_u64 = context.getDefaultN();
@@ -1509,7 +1510,7 @@ namespace certFHE {
 			id_to_addr[id] = deserialized;
 		}
 
-		return ser_int32[deflen_cnt * deflen_to_u64 * 2 + 3];
+		return (int)(deflen_cnt * deflen_to_u64 * 2 + 3);
 	}
 
 #endif

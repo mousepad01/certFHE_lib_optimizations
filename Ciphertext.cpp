@@ -69,9 +69,9 @@ namespace certFHE{
 		int ser_byte_length = 0;
 
 		/**
-		 * First element in a serialization array are ALWAYS its context attributes
+		 * First elements in a serialization array are ALWAYS its Ciphertext object count and context attributes
 		**/
-		ser_byte_length += 4 * sizeof(uint64_t);
+		ser_byte_length += sizeof(uint32_t) + 4 * sizeof(uint64_t);
 
 		for (auto entry : addr_to_id) 
 			ser_byte_length += entry.second.second;
@@ -159,15 +159,18 @@ namespace certFHE{
 			}
 			else if (CERTFHE_CCC_ID(current_id)) {
 
-				current_id = CCC::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context, false);
+				ser32_offset += CCC::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context, false);
+				current_id = ser_int32[ser32_offset];
 			}
 			else if (CERTFHE_CADD_ID(current_id)) {
 
-				current_id = CADD::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context, false);
+				ser32_offset += CADD::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context, false);
+				current_id = ser_int32[ser32_offset];
 			}
 			else if (CERTFHE_CMUL_ID(current_id)) {
 
-				current_id = CMUL::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context, false);
+				ser32_offset += CMUL::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context, false);
+				current_id = ser_int32[ser32_offset];
 			}
 		}
 
@@ -193,15 +196,18 @@ namespace certFHE{
 			}
 			else if (CERTFHE_CCC_ID(current_id)) {
 
-				current_id = CCC::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context, true);
+				ser32_offset += CCC::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context, true);
+				current_id = ser_int32[ser32_offset];
 			}
 			else if (CERTFHE_CADD_ID(current_id)) {
 
-				current_id = CADD::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context, true);
+				ser32_offset += CADD::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context, true);
+				current_id = ser_int32[ser32_offset];
 			}
 			else if (CERTFHE_CMUL_ID(current_id)) {
 
-				current_id = CMUL::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context, true);
+				ser32_offset += CMUL::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context, true);
+				current_id = ser_int32[ser32_offset];
 			}
 		}
 

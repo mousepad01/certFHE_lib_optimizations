@@ -192,7 +192,7 @@ namespace certFHE {
 		temp_CADD_id += 0b100;
 	}
 
-	uint32_t CADD::deserialize(unsigned char * serialized, std::unordered_map <uint32_t, void *> & id_to_addr, Context & context, bool already_created) {
+	int CADD::deserialize(unsigned char * serialized, std::unordered_map <uint32_t, void *> & id_to_addr, Context & context, bool already_created) {
 
 		uint32_t * ser_int32 = (uint32_t *)serialized;
 		uint32_t id = ser_int32[0];
@@ -226,7 +226,7 @@ namespace certFHE {
 			}
 		}
 
-		return ser_int32[upstream_ref_cnt + 5];
+		return (int)(upstream_ref_cnt + 5);
 	}
 
 	CNODE * CADD::permute(const Permutation & perm, bool force_deep_copy) {
