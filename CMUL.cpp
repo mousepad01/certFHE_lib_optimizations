@@ -168,6 +168,41 @@ namespace certFHE {
 		temp_CMUL_id += 0b100;
 	}
 
+	uint32_t CMUL::deserialize(unsigned char * serialized, std::unordered_map <uint32_t, void *> & id_to_addr, Context & context, bool already_created) {
+
+		uint32_t * ser_int32 = (uint32_t *)serialized;
+		uint32_t id = ser_int32[0];
+
+		uint64_t * ser_int64 = (uint64_t *)(serialized + 4);
+
+		uint64_t deflen_cnt = ser_int64[0];
+		uint64_t deflen_to_u64 = context.getDefaultN();
+
+		uint64_t upstream_ref_cnt = ser_int64[1];
+
+		if (!already_created) {
+
+			CMUL * deserialized = new CMUL(&context);
+			id_to_addr[id] = deserialized;
+		}
+		else {
+
+			CMUL * deserialized = (CMUL *)id_to_addr[id];
+
+			for (int i = 0; i < upstream_ref_cnt; i++) {
+
+				uint32_t upstream_ref_id = ser_int32[5 + i];
+				CNODE * upstream_ref = (CNODE *)id_to_addr[upstream_ref_id];
+
+				upstream_ref->downstream_reference_count += 1;
+
+				deserialized->nodes->next->insert_next_element(upstream_ref);
+			}
+		}
+
+		return ser_int32[upstream_ref_cnt + 5];
+	}
+
 	std::ostream & operator << (std::ostream & out, const CMUL & cmul) {
 
 		out << "CADD\n" << static_cast <const COP &> (cmul) << '\n';

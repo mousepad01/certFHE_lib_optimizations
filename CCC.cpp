@@ -1486,6 +1486,27 @@ namespace certFHE {
 			ser_int64[i + 1] = this->ctxt[i];
 	}
 
+	uint32_t CCC::deserialize(unsigned char * serialized, std::unordered_map <uint32_t, void *> & id_to_addr, Context & context) {
+
+		uint32_t * ser_int32 = (uint32_t *)serialized;
+		uint32_t id = ser_int32[0];
+
+		uint64_t * ser_int64 = (uint64_t *)(serialized + 4);
+
+		uint64_t deflen_cnt = ser_int64[0];
+		uint64_t deflen_to_u64 = context.getDefaultN();
+
+		uint64_t * ctxt = new uint64_t[deflen_cnt * deflen_to_u64];
+		
+		for (int i = 0; i < deflen_cnt * deflen_to_u64; i++)
+			ctxt[i] = ser_int64[1 + i];
+
+		CCC * deserialized = new CCC(&context, ctxt, deflen_cnt);
+		id_to_addr[id] = deserialized;
+
+		return ser_int32[deflen_cnt * deflen_to_u64 * 2 + 3];
+	}
+
 #endif
 
 	void CCC::serialize_recon(std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) {

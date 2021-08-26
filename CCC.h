@@ -99,6 +99,12 @@ namespace certFHE {
 		void serialize(unsigned char * serialization_buffer, std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) override;
 
 		/**
+		 * Deserialization function
+		 * Returns the next ID from the serialization array
+		**/
+		static uint32_t deserialize(unsigned char * serialized, std::unordered_map <uint32_t, void *> & id_to_addr, Context & context);
+
+		/**
 			* Add two chunks of ciphertxts --- for multithreading only ---
 			* @param[in] args: input sent as a pointer to an AddArgs object
 			* @return value : nothing

@@ -78,16 +78,19 @@ namespace certFHE{
 
 		unsigned char * serialization = new unsigned char[ser_byte_length];
 
+		uint32_t * ser_int32 = (uint32_t *)serialization;
+		ser_int32[0] = (uint32_t)ctxt_count;
+
 		Context * context = to_serialize_arr[0]->node->context;
 
-		uint64_t * ser_int64 = (uint64_t *)serialization;
+		uint64_t * ser_int64 = (uint64_t *)(serialization + 4);
 
 		ser_int64[0] = context->getN();
 		ser_int64[1] = context->getD();
 		ser_int64[2] = context->getS();
 		ser_int64[3] = context->getDefaultN();
 
-		int ser_offset = 4 * sizeof(uint64_t);
+		int ser_offset = 4 * sizeof(uint64_t) + 4;
 
 		for (auto entry : addr_to_id) {
 
@@ -95,7 +98,7 @@ namespace certFHE{
 
 				Ciphertext * ciphertext = (Ciphertext *)entry.first;
 
-				uint32_t * ser_int32 = (uint32_t *)(serialization + ser_offset);
+				ser_int32 = (uint32_t *)(serialization + ser_offset);
 
 				ser_int32[0] = addr_to_id[ciphertext].first;
 				ser_int32[1] = addr_to_id[ciphertext->node].first;
@@ -110,6 +113,93 @@ namespace certFHE{
 		}
 
 		return serialization;
+	}
+
+	std::pair <Ciphertext **, Context> Ciphertext::deserialize(unsigned char * serialization) {
+
+		std::unordered_map <uint32_t, void *> id_to_addr;
+
+		uint64_t * ser_int64 = (uint64_t *)serialization;
+		Context context(ser_int64[0], ser_int64[1]);
+
+		uint32_t * ser_int32 = (uint32_t *)(serialization + 4 * sizeof(uint64_t));
+		int ctxt_cnt = (int)ser_int32[0];
+
+		Ciphertext ** deserialized = new Ciphertext *[ctxt_cnt];
+
+		/**
+		 * Iterating two times through the serialization array
+		 *
+		 * The first time, it creates the corresponding Ciphertext / CNODE objects in memory,
+		 * but does NOT link them
+		 *
+		 * The second time, it links the CNODE objects between them
+		 * and also links Ciphertext objects with their nodes
+		**/
+
+		ser_int32 = (uint32_t *)(serialization + 9 * sizeof(uint32_t));
+		int ser32_offset = 0;
+
+		uint32_t current_id = ser_int32[0];
+		int ctxt_i = 0;
+
+		while (current_id != 0) {
+
+			if (CERTFHE_CTXT_ID(current_id)) {
+
+				deserialized[ctxt_i] = new Ciphertext();
+				id_to_addr[current_id] = deserialized[ctxt_i];
+
+				ser32_offset += 2; // skipping associated node's id for the moment
+				current_id = ser_int32[ser32_offset];
+
+				ctxt_i += 1;			
+			}
+			else if (CERTFHE_CCC_ID(current_id)) {
+
+				current_id = CCC::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context);
+			}
+			else if (CERTFHE_CADD_ID(current_id)) {
+
+				current_id = CADD::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context, false);
+			}
+			else if (CERTFHE_CMUL_ID(current_id)) {
+
+				current_id = CMUL::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context, false);
+			}
+		}
+
+		ser_int32 = (uint32_t *)(serialization + 9 * sizeof(uint32_t));
+		ser32_offset = 0;
+
+		current_id = ser_int32[0];
+		ctxt_i = 0;
+
+		while (current_id != 0) {
+
+			if (CERTFHE_CTXT_ID(current_id)) {
+
+				uint32_t node_id = ser_int32[ser32_offset + 1];
+
+				deserialized[ctxt_i]->node = (CNODE *)id_to_addr[node_id];
+				deserialized[ctxt_i]->node->downstream_reference_count += 1;
+
+				ser32_offset += 2;
+				current_id = ser_int32[ser32_offset];
+
+				ctxt_i += 1;
+			}
+			else if (CERTFHE_CADD_ID(current_id)) {
+
+				current_id = CADD::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context, true);
+			}
+			else if (CERTFHE_CMUL_ID(current_id)) {
+
+				current_id = CMUL::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context, true);
+			}
+		}
+
+		return { deserialized, context };
 	}
 
 #if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT

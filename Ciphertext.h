@@ -62,6 +62,13 @@ namespace certFHE{
 		**/
 		static unsigned char * serialize(const int ctxt_count, Ciphertext ** to_serialize_arr);
 
+		/**
+		 * This method takes a full serialization array (containing one or more serialized ciphertexts)
+		 * And returns an array of pointers to heap-allocated deserialized ciphertexts
+		 * It ASSUMES all the serialized Ciphertexts / CNODEs do not have duplicates inside the same serialization
+		**/
+		static std::pair <Ciphertext **, Context> deserialize(unsigned char * serialization);
+
 		Ciphertext();
 
 		/**

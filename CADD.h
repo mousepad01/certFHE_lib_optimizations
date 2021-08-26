@@ -52,6 +52,16 @@ namespace certFHE {
 
 		void serialize_recon(std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) override;
 
+		/**
+		 * Deserialization function
+		 *
+		 * already_created == false -> It ONLY creates the CADD object, but DOES NOT populate the CNODE_list
+		 * already_created == true -> It searches in the unordered map the already created CADD object and populates its CNODE_list
+		 *
+		 * Returns the next ID from the serialization array
+		**/
+		static uint32_t deserialize(unsigned char * deserialization_buffer, std::unordered_map <uint32_t, void *> & id_to_addr, Context & context, bool already_created);
+
 		// Methods that merge two nodes
 		// Only called internally by other methods of this class
 
