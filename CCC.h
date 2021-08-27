@@ -98,6 +98,11 @@ namespace certFHE {
 
 		void serialize(unsigned char * serialization_buffer, std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) override;
 
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
+
+		void concurrency_guard_structure_rebuild(std::unordered_map <CNODE *, Ciphertext *> & node_to_ctxt, Ciphertext * associated_ctxt) override;
+#endif
+
 		/**
 		 * Deserialization function
 		 *

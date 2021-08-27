@@ -113,6 +113,20 @@ namespace certFHE {
 		**/
 		virtual void serialize(unsigned char * serialization_buffer, std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) = 0;
 
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
+
+		/**
+		 * Method that helps to manually rebuild the CNODE_disjoint_set structure
+		 * When deserializing a serialization created inside an implementation without extended multithreading support
+		 *
+		 * The argument map will temporarily directly associate every CNODE with a Ciphertext "root"
+		 * When a CNODE is recursively found to have already been associated with a Ciphertext,
+		 * The merge operation is called on the guards of those two Ciphertexts
+		**/
+		virtual void concurrency_guard_structure_rebuild(std::unordered_map <CNODE *, Ciphertext *> & node_to_ctxt, Ciphertext * associated_ctxt) = 0;
+
+#endif
+
 		/**
 		 * Method used instead of directly deleting the current node
 		 * Decides whether to decrease reference count or actually delete the node

@@ -63,7 +63,7 @@ namespace certFHE{
 		 * 
 		 * NOTE: it has the potential of significantly slowing down the deserialization 
 		**/
-		static void concurrency_guard_structure_rebuild(Ciphertext ** deserialized);
+		static void concurrency_guard_structure_rebuild(const int ctxt_count, Ciphertext ** deserialized);
 
 #endif
 
@@ -167,6 +167,8 @@ namespace certFHE{
 
 		// Other
 
+		friend class CCC;
+		friend class COP;
 		friend class CNODE_disjoint_set;
 
 	};

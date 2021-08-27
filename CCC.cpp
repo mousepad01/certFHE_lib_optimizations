@@ -1,5 +1,12 @@
 #include "CCC.h"
 
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
+
+#include "Ciphertext.h"
+#include "CNODE_disjoint_set.h"
+
+#endif
+
 namespace certFHE {
 
 	// TODO ADD CUDA SERIALIZATION SUPPORT
@@ -1519,6 +1526,19 @@ namespace certFHE {
 		}
 
 		return (int)(deflen_cnt * deflen_to_u64 * 2 + 3);
+	}
+
+#endif
+
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
+
+	void CCC::concurrency_guard_structure_rebuild(std::unordered_map <CNODE *, Ciphertext *> & node_to_ctxt, Ciphertext * associated_ctxt) {
+
+		if (node_to_ctxt.find(this) == node_to_ctxt.end()) 
+			node_to_ctxt[this] = associated_ctxt;
+
+		else 
+			associated_ctxt->concurrency_guard->set_union(node_to_ctxt[this]->concurrency_guard);
 	}
 
 #endif

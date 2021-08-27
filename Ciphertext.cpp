@@ -21,105 +21,6 @@ namespace certFHE{
 		return Plaintext(this->decrypt_raw(sk));
 	}
 
-	std::pair <Ciphertext **, Context> Ciphertext::deserialize(unsigned char * serialization) {
-
-		std::unordered_map <uint32_t, void *> id_to_addr;
-
-		uint32_t * ser_int32 = (uint32_t *)serialization;
-
-		uint32_t ctxt_cnt = ser_int32[0];
-		uint32_t total_ser_cnt = ser_int32[1];
-
-		uint64_t * ser_int64 = (uint64_t *)(serialization + 2 * sizeof(uint32_t));
-		Context  * context = new Context(ser_int64[0], ser_int64[1]);
-
-		Ciphertext ** deserialized = new Ciphertext *[ctxt_cnt];
-
-		/**
-		 * Iterating two times through the serialization array
-		 *
-		 * The first time, it creates the corresponding Ciphertext / CNODE objects in memory,
-		 * but does NOT link them
-		 *
-		 * The second time, it links the CNODE objects between them
-		 * and also links Ciphertext objects with their nodes
-		**/
-
-		ser_int32 = (uint32_t *)(serialization + 10 * sizeof(uint32_t));
-		int ser32_offset = 0;
-
-		uint32_t current_id = ser_int32[0];
-		int ctxt_i = 0;
-
-		for(uint32_t ser_cnt = 0; ser_cnt < total_ser_cnt; ser_cnt++) {
-
-			if (CERTFHE_CTXT_ID(current_id)) {
-
-				deserialized[ctxt_i] = new Ciphertext();
-				id_to_addr[current_id] = deserialized[ctxt_i];
-
-				ser32_offset += 2; 
-				current_id = ser_int32[ser32_offset];
-
-				ctxt_i += 1;			
-			}
-			else if (CERTFHE_CCC_ID(current_id)) {
-
-				ser32_offset += CCC::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, false);
-				current_id = ser_int32[ser32_offset];
-			}
-			else if (CERTFHE_CADD_ID(current_id)) {
-
-				ser32_offset += CADD::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, false);
-				current_id = ser_int32[ser32_offset];
-			}
-			else if (CERTFHE_CMUL_ID(current_id)) {
-
-				ser32_offset += CMUL::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, false);
-				current_id = ser_int32[ser32_offset];
-			}
-		}
-
-		ser_int32 = (uint32_t *)(serialization + 10 * sizeof(uint32_t));
-		ser32_offset = 0;
-
-		current_id = ser_int32[0];
-		ctxt_i = 0;
-
-		for (uint32_t ser_cnt = 0; ser_cnt < total_ser_cnt; ser_cnt++) {
-
-			if (CERTFHE_CTXT_ID(current_id)) {
-
-				uint32_t node_id = ser_int32[ser32_offset + 1];
-
-				deserialized[ctxt_i]->node = (CNODE *)id_to_addr.at(node_id);
-				deserialized[ctxt_i]->node->downstream_reference_count += 1;
-
-				ser32_offset += 2;
-				current_id = ser_int32[ser32_offset];
-
-				ctxt_i += 1;
-			}
-			else if (CERTFHE_CCC_ID(current_id)) {
-
-				ser32_offset += CCC::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, true);
-				current_id = ser_int32[ser32_offset];
-			}
-			else if (CERTFHE_CADD_ID(current_id)) {
-
-				ser32_offset += CADD::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, true);
-				current_id = ser_int32[ser32_offset];
-			}
-			else if (CERTFHE_CMUL_ID(current_id)) {
-
-				ser32_offset += CMUL::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, true);
-				current_id = ser_int32[ser32_offset];
-			}
-		}
-
-		return { deserialized, *context };
-	}
-
 #if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
 
 	unsigned char * Ciphertext::serialize(const int ctxt_count, Ciphertext ** to_serialize_arr) {
@@ -428,14 +329,22 @@ namespace certFHE{
 		}
 
 		if (serialized_no_extended_multithreading_support)
-			concurrency_guard_structure_rebuild(deserialized);
+			concurrency_guard_structure_rebuild(ctxt_cnt, deserialized);
 
 		return { deserialized, *context };
 	}
 
-	void concurrency_guard_structure_rebuild(Ciphertext ** deserialized) {
+	void Ciphertext::concurrency_guard_structure_rebuild(const int ctxt_count, Ciphertext ** deserialized) {
 
-		// TODO
+		/**
+		 * Map that will temporarily directly associate every CNODE with a Ciphertext "root"
+		 * When a CNODE is recursively found to have already been associated with a Ciphertext,
+		 * The merge operation is called on the guards of those two Ciphertexts
+		**/
+		std::unordered_map <CNODE *, Ciphertext *> node_to_ctxt;
+
+		for (int i = 0; i < ctxt_count; i++)
+			deserialized[i]->node->concurrency_guard_structure_rebuild(node_to_ctxt, deserialized[i]);
 	}
 
 	uint64_t Ciphertext::decrypt_raw(const SecretKey & sk) const {

@@ -19,8 +19,9 @@
  * only when manipulating ciphertexts with no common internal node
  * (they were obtained from totally different ciphertexts, and no operation was performed between them)
  * Setting this macro to true enables support for these cases, 
- * although this might slow down (by a significant amount) all operations on all ciphertexts
- * NOTE: deepcopies are not considered related (they can be safely used in a multithreading context in any case)
+ * although this might slow down (by a significant amount) all operations on all ciphertexts, including (de)serialization
+ *
+ * NOTE: deepcopies are not considered related (they can be safely used in a multithreading context even without this macro set to true)
  * NOTE: when operating on ciphertext with only CCC as nodes, implementation IS THREADSAFE
 **/
 #define CERTFHE_MULTITHREADING_EXTENDED_SUPPORT true

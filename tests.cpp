@@ -2494,7 +2494,7 @@ int main(){
 
 	//old_implementation_compare_statistics_tests();
 
-	serialization_predefined_test("release_stats");
+	//serialization_predefined_test("release_stats");
 
     return 0;
 }

@@ -1,5 +1,12 @@
 #include "COP.h"
 
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
+
+#include "Ciphertext.h"
+#include "CNODE_disjoint_set.h"
+
+#endif
+
 namespace certFHE {
 
 	COP::COP(Context * context): CNODE(context) {
@@ -119,6 +126,28 @@ namespace certFHE {
 
 		ser_int64[1] = upstream_ref_cnt;
 	}
+
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
+
+	void COP::concurrency_guard_structure_rebuild(std::unordered_map <CNODE *, Ciphertext *> & node_to_ctxt, Ciphertext * associated_ctxt) {
+
+		if (node_to_ctxt.find(this) == node_to_ctxt.end()) {
+
+			node_to_ctxt[this] = associated_ctxt;
+
+			CNODE_list * thisnodes = this->nodes->next;
+			while (thisnodes != 0 && thisnodes->current != 0) {
+
+				thisnodes->current->concurrency_guard_structure_rebuild(node_to_ctxt, associated_ctxt);
+				thisnodes = thisnodes->next;
+			}
+		}
+		else
+			associated_ctxt->concurrency_guard->set_union(node_to_ctxt[this]->concurrency_guard);
+	}
+
+#endif
+
 }
 
 
