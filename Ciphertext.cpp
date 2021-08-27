@@ -122,7 +122,7 @@ namespace certFHE{
 		ser_int32[1] = (uint32_t)addr_to_id.size();
 
 		// DEBUG-----------------------------
-		for (auto entry : addr_to_id) {
+		/*for (auto entry : addr_to_id) {
 
 			if (CERTFHE_CTXT_ID(entry.second.first)) 
 				std::cout << "Ciphertext " << entry.second.first << " assoc " << addr_to_id[((Ciphertext *)entry.first)->node].first << "\n";
@@ -136,7 +136,7 @@ namespace certFHE{
 			if (CERTFHE_CMUL_ID(entry.second.first))
 				std::cout << "CMUL " << entry.second.first << '\n';
 		}
-		std::cout << "\n";
+		std::cout << "\n";*/
 
 		return serialization;
 	}

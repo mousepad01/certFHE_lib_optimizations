@@ -183,7 +183,7 @@ namespace certFHE {
 		if (!already_created) {
 
 			CMUL * deserialized = new CMUL(&context);
-			deserialized->downstream_reference_count = 0; // it will be fixed later
+			deserialized->downstream_reference_count = 0; // it will be set later
 
 			id_to_addr[id] = deserialized;
 		}
@@ -198,7 +198,7 @@ namespace certFHE {
 
 				upstream_ref->downstream_reference_count += 1;
 
-				deserialized->nodes->next->insert_next_element(upstream_ref);
+				deserialized->nodes->insert_next_element(upstream_ref);
 			}
 		}
 

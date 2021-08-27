@@ -222,7 +222,7 @@ namespace certFHE {
 
 				upstream_ref->downstream_reference_count += 1;
 
-				deserialized->nodes->next->insert_next_element(upstream_ref);
+				deserialized->nodes->insert_next_element(upstream_ref);
 			}
 		}
 

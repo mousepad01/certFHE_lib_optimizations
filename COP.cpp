@@ -104,6 +104,7 @@ namespace certFHE {
 		uint64_t * ser_int64 = (uint64_t *)(serialization_buffer + sizeof(uint32_t));
 
 		ser_int64[0] = this->deflen_count;
+		// ser_int64[1] completed after the next while loop
 
 		uint64_t upstream_ref_cnt = 0; 
 
