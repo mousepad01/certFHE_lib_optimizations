@@ -1496,7 +1496,7 @@ namespace certFHE {
 
 		uint64_t deflen_cnt = ser_int64[0];
 		uint64_t deflen_to_u64 = context.getDefaultN();
-
+		
 		if (!already_created) {
 
 			uint64_t * ctxt = new uint64_t[deflen_cnt * deflen_to_u64];

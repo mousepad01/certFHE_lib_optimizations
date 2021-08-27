@@ -82,9 +82,9 @@ namespace certFHE{
 		ser_int32[0] = (uint32_t)ctxt_count;
 		// ser_int32[1] completed later in the execution (after the next for loop)
 
-		Context * context = to_serialize_arr[0]->node->context;
-
 		uint64_t * ser_int64 = (uint64_t *)(serialization + 2 * sizeof(uint32_t));
+
+		Context * context = to_serialize_arr[0]->node->context;
 
 		ser_int64[0] = context->getN();
 		ser_int64[1] = context->getD();
@@ -92,22 +92,25 @@ namespace certFHE{
 		ser_int64[3] = context->getDefaultN();
 
 		int ser_offset = 2 * sizeof(uint32_t) + 4 * sizeof(uint64_t);
+
+		/**
+		 * The ciphertexts are serialized in the same order as in to_serialize_arr
+		**/
+
+		for (int i = 0; i < ctxt_count; i++) {
+
+			ser_int32 = (uint32_t *)(serialization + ser_offset);
+
+			ser_int32[0] = addr_to_id[to_serialize_arr[i]].first;
+			ser_int32[1] = addr_to_id[to_serialize_arr[i]->node].first;
+
+			ser_offset += 2 * sizeof(uint32_t);
+		}
 		
 		for (auto entry : addr_to_id) {
 			
-			if (CERTFHE_CTXT_ID(entry.second.first)) {
+			if (!CERTFHE_CTXT_ID(entry.second.first)) {
 
-				Ciphertext * ciphertext = (Ciphertext *)entry.first;
-				
-				ser_int32 = (uint32_t *)(serialization + ser_offset);
-				
-				ser_int32[0] = entry.second.first;
-				ser_int32[1] = addr_to_id[ciphertext->node].first;
-
-				ser_offset += 2 * sizeof(uint32_t);
-			}
-			else {
-				
 				CNODE * node = (CNODE *)entry.first;
 
 				node->serialize(serialization + ser_offset, addr_to_id);
@@ -116,7 +119,7 @@ namespace certFHE{
 		}
 
 		ser_int32 = (uint32_t *)serialization; 
-		ser_int32[1] = addr_to_id.size;
+		ser_int32[1] = (uint32_t)addr_to_id.size();
 
 		// DEBUG-----------------------------
 		for (auto entry : addr_to_id) {
@@ -148,7 +151,7 @@ namespace certFHE{
 		uint32_t total_ser_cnt = ser_int32[1];
 
 		uint64_t * ser_int64 = (uint64_t *)(serialization + 2 * sizeof(uint32_t));
-		Context context(ser_int64[0], ser_int64[1]);
+		Context  * context = new Context(ser_int64[0], ser_int64[1]);
 
 		Ciphertext ** deserialized = new Ciphertext *[ctxt_cnt];
 
@@ -182,17 +185,17 @@ namespace certFHE{
 			}
 			else if (CERTFHE_CCC_ID(current_id)) {
 
-				ser32_offset += CCC::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context, false);
+				ser32_offset += CCC::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, false);
 				current_id = ser_int32[ser32_offset];
 			}
 			else if (CERTFHE_CADD_ID(current_id)) {
 
-				ser32_offset += CADD::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context, false);
+				ser32_offset += CADD::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, false);
 				current_id = ser_int32[ser32_offset];
 			}
 			else if (CERTFHE_CMUL_ID(current_id)) {
 
-				ser32_offset += CMUL::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context, false);
+				ser32_offset += CMUL::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, false);
 				current_id = ser_int32[ser32_offset];
 			}
 		}
@@ -219,22 +222,22 @@ namespace certFHE{
 			}
 			else if (CERTFHE_CCC_ID(current_id)) {
 
-				ser32_offset += CCC::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context, true);
+				ser32_offset += CCC::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, true);
 				current_id = ser_int32[ser32_offset];
 			}
 			else if (CERTFHE_CADD_ID(current_id)) {
 
-				ser32_offset += CADD::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context, true);
+				ser32_offset += CADD::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, true);
 				current_id = ser_int32[ser32_offset];
 			}
 			else if (CERTFHE_CMUL_ID(current_id)) {
 
-				ser32_offset += CMUL::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, context, true);
+				ser32_offset += CMUL::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, true);
 				current_id = ser_int32[ser32_offset];
 			}
 		}
 
-		return { deserialized, context };
+		return { deserialized, *context };
 	}
 
 #if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT

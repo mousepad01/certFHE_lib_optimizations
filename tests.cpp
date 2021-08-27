@@ -2283,8 +2283,6 @@ void serialization_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1
 		certFHE::Ciphertext ** cs;
 		cs = new certFHE::Ciphertext *[CS_CNT];
 
-		uint64_t pp;
-
 		int OP_MODULUS = 2;
 
 		out << "Starting tests:\n\n";
@@ -2433,6 +2431,8 @@ void serialization_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1
 
 				t_ser_acc += t_ser;
 
+				certFHE::CNODE::clear_decryption_cache();
+
 				out << "Deserialization done: " << t_ser_acc << " " << TIME_MEASURE_UNIT << "\n";
 				out << "Decrypting deserialized ciphertexts...\n";
 				out.flush();
@@ -2443,12 +2443,16 @@ void serialization_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1
 
 					if (p != val[i]) {
 
-						out << "WRONG initial decryption; should be " << val[i] << ", decrypted " << p << '\n';
+						out << "WRONG deserialized decryption; should be " << val[i] << ", decrypted " << p << '\n';
 						out.flush();
 					}
 				}
 				out << "Deserialized ciphertext decryption done\n";
 				out.flush();
+
+				certFHE::CNODE::clear_decryption_cache();
+
+				delete[] serialized;
 
 				for (int ct = 0; ct < CS_CNT; ct++)
 					delete deserialized[ct];
