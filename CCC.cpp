@@ -9,8 +9,6 @@
 
 namespace certFHE {
 
-	// TODO ADD CUDA SERIALIZATION SUPPORT
-
 #if CERTFHE_USE_CUDA
 
 	CCC::CCC(Context * context, uint64_t * ctxt, uint64_t deflen_cnt, bool ctxt_on_gpu) : CNODE(context) {
@@ -1027,7 +1025,7 @@ namespace certFHE {
 
 		return to_permute;
 	}
-	//TODO
+
 	void CCC::serialize(unsigned char * serialization_buffer, std::unordered_map <void *, std::pair<uint32_t, int>> & addr_to_id) {
 
 		uint32_t * ser_int32 = (uint32_t *)serialization_buffer;
@@ -1038,13 +1036,18 @@ namespace certFHE {
 
 		uint64_t u64_len = this->deflen_count * this->context->getDefaultN();
 
-		if (u64_len < MTValues::cpy_m_threshold)
+		if (this->on_GPU)
+			(void)CUDA_interface::VRAM_TO_RAM_copy(this->ctxt, u64_len * sizeof(uint64_t), ser_int64 + 1);
+		
+		else if (u64_len < MTValues::cpy_m_threshold) {
+
 			for (uint64_t i = 0; i < u64_len; i++)
 				ser_int64[i + 1] = this->ctxt[i];
+		}
 		else
 			Helper::u64_multithread_cpy(this->ctxt, ser_int64 + 1, u64_len);
 	}
-	//TODO
+	
 	int CCC::deserialize(unsigned char * serialized, std::unordered_map <uint32_t, void *> & id_to_addr, Context & context, bool already_created) {
 
 		uint32_t * ser_int32 = (uint32_t *)serialized;
@@ -1059,15 +1062,27 @@ namespace certFHE {
 
 		if (!already_created) {
 
-			uint64_t * ctxt = new uint64_t[u64_len];
+			CCC * deserialized;
 
-			if (u64_len < MTValues::cpy_m_threshold)
-				for (uint64_t i = 0; i < u64_len; i++)
-					ctxt[i] = ser_int64[1 + i];
-			else
-				Helper::u64_multithread_cpy(ser_int64 + 1, ctxt, u64_len);
+			if ((deflen_cnt > GPUValues::gpu_deflen_threshold) && (deflen_cnt + GPUValues::gpu_current_vram_deflen_usage < GPUValues::gpu_max_vram_deflen_usage)) {
 
-			CCC * deserialized = new CCC(&context, ctxt, deflen_cnt);
+				uint64_t * ctxt = (uint64_t *)CUDA_interface::RAM_TO_VRAM_copy(ser_int64 + 1, u64_len * sizeof(uint64_t), 0);
+
+				deserialized = new CCC(&context, ctxt, deflen_cnt, true);
+			}
+			else {
+
+				uint64_t * ctxt = new uint64_t[u64_len];
+
+				if (u64_len < MTValues::cpy_m_threshold)
+					for (uint64_t i = 0; i < u64_len; i++)
+						ctxt[i] = ser_int64[1 + i];
+				else
+					Helper::u64_multithread_cpy(ser_int64 + 1, ctxt, u64_len);
+
+				deserialized = new CCC(&context, ctxt, deflen_cnt, false);
+			}
+
 			deserialized->downstream_reference_count = 0; // it will be fixed later
 
 			id_to_addr[id] = deserialized;
