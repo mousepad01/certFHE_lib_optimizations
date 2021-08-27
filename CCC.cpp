@@ -1483,8 +1483,11 @@ namespace certFHE {
 
 		uint64_t u64_len = this->deflen_count * this->context->getDefaultN();
 
-		for (int i = 0; i < u64_len; i++) 
-			ser_int64[i + 1] = this->ctxt[i];
+		if (u64_len < MTValues::cpy_m_threshold)
+			for (uint64_t i = 0; i < u64_len; i++)
+				ser_int64[i + 1] = this->ctxt[i];
+		else
+			Helper::u64_multithread_cpy(this->ctxt, ser_int64 + 1, u64_len);
 	}
 
 	int CCC::deserialize(unsigned char * serialized, std::unordered_map <uint32_t, void *> & id_to_addr, Context & context, bool already_created) {
@@ -1496,13 +1499,18 @@ namespace certFHE {
 
 		uint64_t deflen_cnt = ser_int64[0];
 		uint64_t deflen_to_u64 = context.getDefaultN();
+
+		uint64_t u64_len = deflen_cnt * deflen_to_u64;
 		
 		if (!already_created) {
 
-			uint64_t * ctxt = new uint64_t[deflen_cnt * deflen_to_u64];
+			uint64_t * ctxt = new uint64_t[u64_len];
 
-			for (int i = 0; i < deflen_cnt * deflen_to_u64; i++)
-				ctxt[i] = ser_int64[1 + i];
+			if (u64_len < MTValues::cpy_m_threshold)
+				for (uint64_t i = 0; i < u64_len; i++)
+					ctxt[i] = ser_int64[1 + i];
+			else
+				Helper::u64_multithread_cpy(ser_int64 + 1, ctxt, u64_len);
 
 			CCC * deserialized = new CCC(&context, ctxt, deflen_cnt);
 			deserialized->downstream_reference_count = 0; // it will be fixed later
