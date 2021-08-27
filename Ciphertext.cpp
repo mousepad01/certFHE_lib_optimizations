@@ -27,24 +27,30 @@ namespace certFHE{
 
 		/**
 		 * For multithreading extended support, before anything else all mutexes are locked
-		 * Corresponding mutexes are found, sorted (by memory address) and then locked inside multiple std::unique_lock objects
+		 * Corresponding mutexes are found and sorted (by memory address) and then locked inside multiple std::unique_lock objects
 		**/
 
-		std::mutex ** mtxs = new std::mutex *[ctxt_count];
+		std::set <std::mutex *> mtxs;
 		for (int i = 0; i < ctxt_count; i++) {
 
 			if(to_serialize_arr[i]->concurrency_guard == 0)
 				throw std::runtime_error("concurrency guard cannot be null");
 
-			mtxs[i] = &(to_serialize_arr[i]->concurrency_guard->get_root()->mtx);
+			std::mutex * mtx = &(to_serialize_arr[i]->concurrency_guard->get_root()->mtx);
+
+			if(mtxs.find(mtx) == mtxs.end())
+				mtxs.insert(mtx);
 		}	
 
-		std::sort <std::mutex **>(mtxs, mtxs + ctxt_count, [](std::mutex * fst, std::mutex * snd) { return fst < snd; });
+		std::unique_lock <std::mutex> ** locks = new std::unique_lock <std::mutex> *[mtxs.size()];
 
-		std::unique_lock <std::mutex> ** locks = new std::unique_lock <std::mutex> *[ctxt_count];
-		for (int i = 0; i < ctxt_count; i++)
-			locks[i] = new std::unique_lock <std::mutex>(*mtxs[i]);
+		int aux_i = 0;
+		for (auto mtx_addr : mtxs) {
 
+			locks[aux_i] = new std::unique_lock <std::mutex>(*mtx_addr);
+			aux_i += 1;
+		}
+			
 		/**
 		 * Serialization for:
 		 *		Ciphertext: id 4 bytes, node id 4 bytes
@@ -200,10 +206,9 @@ namespace certFHE{
 		}
 		std::cout << "\n";*/
 
-		for (int i = 0; i < ctxt_count; i++) 
+		for (int i = 0; i < mtxs.size(); i++)
 			delete locks[i];
 			
-		delete[] mtxs;
 		delete[] locks;
 
 		return serialization;
@@ -295,6 +300,10 @@ namespace certFHE{
 
 				deserialized[ctxt_i]->node = (CNODE *)id_to_addr.at(node_id);
 				deserialized[ctxt_i]->node->downstream_reference_count += 1;
+
+				//DEBUG
+				if (guard_id && serialized_no_extended_multithreading_support)
+					throw std::runtime_error("Serialization corrupted");
 
 				if (guard_id) {
 

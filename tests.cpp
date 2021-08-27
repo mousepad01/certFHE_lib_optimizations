@@ -2248,7 +2248,7 @@ void old_implementation_compare_statistics_tests() {
 void serialization_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000, const int CS_CNT = 20,
 	const int CONTEXT_N = 1247, const int CONTEXT_D = 16, std::ostream & out = std::cout) {
 
-	try {
+	//try {
 
 		certFHE::Timer timer;
 
@@ -2291,7 +2291,7 @@ void serialization_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1
 
 		for (int ts = 0; ts < TEST_COUNT; ts++) {
 
-			try {
+			//try {
 
 				out << "TEST " << ts << ":\n";
 				out.flush();
@@ -2465,27 +2465,27 @@ void serialization_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1
 				out << "TEST " << ts << " DONE\n\n";
 				out.flush();
 
-			}
-			catch (std::exception e) {
+			//}
+			/*catch (std::exception e) {
 
 				out << "ERROR: " << e.what() << '\n';
 				out.flush();
-			}
+			}*/
 		}
 
 		delete val;
-	}
-	catch (std::exception & err) {
+	//}
+	/*catch (std::exception & err) {
 
 		out << "ERROR running (de)serialization tests: " << err.what() << '\n';
-	}
+	}*/
 }
 
 void serialization_predefined_test(std::string path_sufix = "\\serialization_test\\debug_stats") {
 
 	std::fstream log(STATS_PATH + "sertest_" + path_sufix + ".txt", std::ios::out);
 
-	serialization_test(100, 200, 100, 1247, 16, log);
+	serialization_test(10000, 30, 100, 1247, 16, log);
 
 	log.close();
 }
@@ -2494,7 +2494,7 @@ int main(){
 
 	//old_implementation_compare_statistics_tests();
 
-	//serialization_predefined_test("release_stats");
+	serialization_predefined_test("release_stats");
 
     return 0;
 }
