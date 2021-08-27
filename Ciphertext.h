@@ -54,6 +54,19 @@ namespace certFHE{
 		**/
 		static CNODE * multiply(CNODE * fst, CNODE * snd);
 
+
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
+
+		/**
+		 * Method to manually rebuild the CNODE_disjoint_set structure
+		 * When deserializing a serialization created inside an implementation without extended multithreading support
+		 * 
+		 * NOTE: it has the potential of significantly slowing down the deserialization 
+		**/
+		static void concurrency_guard_structure_rebuild(Ciphertext ** deserialized);
+
+#endif
+
 	public:
 
 		/**

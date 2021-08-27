@@ -21,126 +21,6 @@ namespace certFHE{
 		return Plaintext(this->decrypt_raw(sk));
 	}
 
-	unsigned char * Ciphertext::serialize(const int ctxt_count, Ciphertext ** to_serialize_arr) {
-
-		/**
-		 * Serialization for:
-		 *		Ciphertext: id 4 bytes, node id 4 bytes
-		 *		CCC: id 4 bytes, deflen cnt 8 bytes, ctxt (deflen cnt * deflen to u64 * sizeof(u64)) bytes
-		 *		CADD, CMUL: id 4 bytes, deflen cnt 8 bytes, upstream ref cnt 8 bytes, upstream ref IDs (sizeof(u32) * upstream ref cnt) bytes
-		**/
-
-		/**
-		 * It contains the (temporary) IDs for a Ciphertext object
-		 *
-		 * ID restrictions:
-		 *		CCC: first 2 bits 00
-		 *		CADD: first 2 bits 01
-		 *		CMUL: first 2 bits 10
-		 *		Ciphertext: first 2 bits 11
-		 * 
-		 * NOTE: to conserve this restriction, the IDs will be incremented by 0b100
-		**/
-		static uint32_t temp_ctxt_id = 3; // 0b00....000 11
-
-		/**
-		 * Associates an (id, byte length) for every Ciphertext / CNODE (address)
-		 * The associated id is local to the current serialization
-		 * And the byte length is the size that node will occupy in the serialization
-		 * It also helps to eliminate duplicates in the current serialization
-		**/
-		std::unordered_map <void *, std::pair <uint32_t, int>> addr_to_id;
-
-		for (int i = 0; i < ctxt_count; i++) {
-
-			if (addr_to_id.find(to_serialize_arr[i]) != addr_to_id.end()) 
-				continue;
-
-			addr_to_id[to_serialize_arr[i]] = { temp_ctxt_id, (int)(2 * sizeof(uint32_t)) }; // ID of the current Ciphertext, ID of its associated CNODE
-			temp_ctxt_id += 0b100;
-
-			to_serialize_arr[i]->node->serialize_recon(addr_to_id);
-		}
-
-		/**
-		 * Serialization byte array total length
-		 * It is incremented with the help of the "serialization recon" recursive calls
-		**/
-		int ser_byte_length = 0;
-
-		/**
-		 * First elements in a serialization array are ALWAYS its Ciphertext object count, total CNODE + Ciphertxt count, and context attributes
-		**/
-		ser_byte_length += 2 * sizeof(uint32_t) + 4 * sizeof(uint64_t);
-
-		for (auto entry : addr_to_id) 
-			ser_byte_length += entry.second.second;
-
-		unsigned char * serialization = new unsigned char[ser_byte_length];
-
-		uint32_t * ser_int32 = (uint32_t *)serialization;
-		ser_int32[0] = (uint32_t)ctxt_count;
-		// ser_int32[1] completed later in the execution (after the next for loop)
-
-		uint64_t * ser_int64 = (uint64_t *)(serialization + 2 * sizeof(uint32_t));
-
-		Context * context = to_serialize_arr[0]->node->context;
-
-		ser_int64[0] = context->getN();
-		ser_int64[1] = context->getD();
-		ser_int64[2] = context->getS();
-		ser_int64[3] = context->getDefaultN();
-
-		int ser_offset = 2 * sizeof(uint32_t) + 4 * sizeof(uint64_t);
-
-		/**
-		 * The ciphertexts are serialized in the same order as in to_serialize_arr
-		**/
-
-		for (int i = 0; i < ctxt_count; i++) {
-
-			ser_int32 = (uint32_t *)(serialization + ser_offset);
-
-			ser_int32[0] = addr_to_id[to_serialize_arr[i]].first;
-			ser_int32[1] = addr_to_id[to_serialize_arr[i]->node].first;
-
-			ser_offset += 2 * sizeof(uint32_t);
-		}
-		
-		for (auto entry : addr_to_id) {
-			
-			if (!CERTFHE_CTXT_ID(entry.second.first)) {
-
-				CNODE * node = (CNODE *)entry.first;
-
-				node->serialize(serialization + ser_offset, addr_to_id);
-				ser_offset += entry.second.second;
-			}
-		}
-
-		ser_int32 = (uint32_t *)serialization; 
-		ser_int32[1] = (uint32_t)addr_to_id.size();
-
-		// DEBUG-----------------------------
-		/*for (auto entry : addr_to_id) {
-
-			if (CERTFHE_CTXT_ID(entry.second.first)) 
-				std::cout << "Ciphertext " << entry.second.first << " assoc " << addr_to_id[((Ciphertext *)entry.first)->node].first << "\n";
-
-			if (CERTFHE_CCC_ID(entry.second.first))
-				std::cout << "CCC " << entry.second.first << '\n';
-
-			if (CERTFHE_CADD_ID(entry.second.first))
-				std::cout << "CADD " << entry.second.first << '\n';
-
-			if (CERTFHE_CMUL_ID(entry.second.first))
-				std::cout << "CMUL " << entry.second.first << '\n';
-		}
-		std::cout << "\n";*/
-
-		return serialization;
-	}
-
 	std::pair <Ciphertext **, Context> Ciphertext::deserialize(unsigned char * serialization) {
 
 		std::unordered_map <uint32_t, void *> id_to_addr;
@@ -242,12 +122,329 @@ namespace certFHE{
 
 #if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
 
+	unsigned char * Ciphertext::serialize(const int ctxt_count, Ciphertext ** to_serialize_arr) {
+
+		/**
+		 * For multithreading extended support, before anything else all mutexes are locked
+		 * Corresponding mutexes are found, sorted (by memory address) and then locked inside multiple std::unique_lock objects
+		**/
+
+		std::mutex ** mtxs = new std::mutex *[ctxt_count];
+		for (int i = 0; i < ctxt_count; i++) {
+
+			if(to_serialize_arr[i]->concurrency_guard == 0)
+				throw std::runtime_error("concurrency guard cannot be null");
+
+			mtxs[i] = &(to_serialize_arr[i]->concurrency_guard->get_root()->mtx);
+		}	
+
+		std::sort <std::mutex **>(mtxs, mtxs + ctxt_count, [](std::mutex * fst, std::mutex * snd) { return fst < snd; });
+
+		std::unique_lock <std::mutex> ** locks = new std::unique_lock <std::mutex> *[ctxt_count];
+		for (int i = 0; i < ctxt_count; i++)
+			locks[i] = new std::unique_lock <std::mutex>(*mtxs[i]);
+
+		/**
+		 * Serialization for:
+		 *		Ciphertext: id 4 bytes, node id 4 bytes
+		 *		CCC: id 4 bytes, deflen cnt 8 bytes, ctxt (deflen cnt * deflen to u64 * sizeof(u64)) bytes
+		 *		CADD, CMUL: id 4 bytes, deflen cnt 8 bytes, upstream ref cnt 8 bytes, upstream ref IDs (sizeof(u32) * upstream ref cnt) bytes
+		**/
+
+		/**
+		 * It contains the (temporary) IDs for a Ciphertext object
+		 *
+		 * ID restrictions:
+		 *		CCC: first 2 bits 00
+		 *		CADD: first 2 bits 01
+		 *		CMUL: first 2 bits 10
+		 *		Ciphertext: first 2 bits 11
+		 *
+		 * NOTE: to conserve this restriction, the IDs will be incremented by 0b100
+		**/
+
+		static uint32_t temp_ctxt_id = 3; // 0b00....000 11
+
+		/**
+		 * Guard ID to help rebuild the CNODE_disjoin_forest structure
+		 * If the implementation which deserializez the following serialization supports extended multithreading
+		 * 
+		 * NOTES: -> this field inside the serialization will be used 
+		 *           even if the current implementation DOES NOT support extended multithreading
+		 *			 this will be marked by having all guard IDs 0
+		 *	      -> the guard ID 0 is reserved for usage only in the situation described above
+		 *
+		 * This field alone helps implement the transition from 
+		 *		no extended multithreading -> no extended multithreading
+		 *		extended multithreading    -> extended multithreading
+		 *		extended multithreading    -> no extended multithreading
+		 * 
+		 * For the last case (no extended multithreading -> extended multithreading), an additional (way slower) function is required
+		 * to manually rebuild the disjoint set forest on the receiver (deserialization) implementation
+		**/
+		static uint32_t temp_guard_id = 1;
+
+		/**
+		 * Associates an (id, byte length) for every Ciphertext / CNODE (address)
+		 * The associated id is local to the current serialization
+		 * And the byte length is the size that node will occupy in the serialization
+		 * It also helps to eliminate duplicates in the current serialization
+		**/
+		std::unordered_map <void *, std::pair <uint32_t, int>> addr_to_id;
+
+		/**
+		 * Associates a guard ID with a Ciphertext's guard mutex address
+		**/
+		std::unordered_map <std::mutex *, uint32_t> addr_to_guard_id;
+
+		for (int i = 0; i < ctxt_count; i++) {
+
+			if (to_serialize_arr[i]->node == 0)
+				throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+			if (addr_to_id.find(to_serialize_arr[i]) != addr_to_id.end())
+				continue;
+
+			addr_to_id[to_serialize_arr[i]] = { temp_ctxt_id, (int)(3 * sizeof(uint32_t)) }; // ID of the current Ciphertext, ID of its associated CNODE, guard ID
+			temp_ctxt_id += 0b100;
+
+			std::mutex * mtx = &(to_serialize_arr[i]->concurrency_guard->get_root()->mtx);
+
+			if (addr_to_guard_id.find(mtx) == addr_to_guard_id.end()) {
+
+				addr_to_guard_id[mtx] = temp_guard_id;
+
+				temp_guard_id += 1;
+				if (temp_guard_id == 0)
+					temp_guard_id += 1;
+			}
+
+			to_serialize_arr[i]->node->serialize_recon(addr_to_id);
+		}
+
+		/**
+		 * Serialization byte array total length
+		 * It is incremented with the help of the "serialization recon" recursive calls
+		**/
+		int ser_byte_length = 0;
+
+		/**
+		 * First elements in a serialization array are ALWAYS its Ciphertext object count, total CNODE + Ciphertxt count, and context attributes
+		**/
+		ser_byte_length += 2 * sizeof(uint32_t) + 4 * sizeof(uint64_t);
+
+		for (auto entry : addr_to_id)
+			ser_byte_length += entry.second.second;
+
+		unsigned char * serialization = new unsigned char[ser_byte_length];
+
+		uint32_t * ser_int32 = (uint32_t *)serialization;
+		ser_int32[0] = (uint32_t)ctxt_count;
+		// ser_int32[1] completed later in the execution (after the next for loop)
+
+		uint64_t * ser_int64 = (uint64_t *)(serialization + 2 * sizeof(uint32_t));
+
+		Context * context = to_serialize_arr[0]->node->context;
+
+		ser_int64[0] = context->getN();
+		ser_int64[1] = context->getD();
+		ser_int64[2] = context->getS();
+		ser_int64[3] = context->getDefaultN();
+
+		int ser_offset = 2 * sizeof(uint32_t) + 4 * sizeof(uint64_t);
+
+		/**
+		 * The ciphertexts are serialized in the same order as in to_serialize_arr
+		**/
+
+		for (int i = 0; i < ctxt_count; i++) {
+
+			ser_int32 = (uint32_t *)(serialization + ser_offset);
+
+			ser_int32[0] = addr_to_id.at(to_serialize_arr[i]).first;
+			ser_int32[1] = addr_to_id.at(to_serialize_arr[i]->node).first;
+			ser_int32[2] = addr_to_guard_id.at(&(to_serialize_arr[i]->concurrency_guard->get_root()->mtx));
+
+			ser_offset += 3 * sizeof(uint32_t);
+		}
+
+		for (auto entry : addr_to_id) {
+
+			if (!CERTFHE_CTXT_ID(entry.second.first)) {
+
+				CNODE * node = (CNODE *)entry.first;
+
+				node->serialize(serialization + ser_offset, addr_to_id);
+				ser_offset += entry.second.second;
+			}
+		}
+
+		ser_int32 = (uint32_t *)serialization;
+		ser_int32[1] = (uint32_t)addr_to_id.size();
+
+		// DEBUG-----------------------------
+		/*for (auto entry : addr_to_id) {
+
+			if (CERTFHE_CTXT_ID(entry.second.first))
+				std::cout << "Ciphertext " << entry.second.first << " assoc " << addr_to_id[((Ciphertext *)entry.first)->node].first << "\n";
+
+			if (CERTFHE_CCC_ID(entry.second.first))
+				std::cout << "CCC " << entry.second.first << '\n';
+
+			if (CERTFHE_CADD_ID(entry.second.first))
+				std::cout << "CADD " << entry.second.first << '\n';
+
+			if (CERTFHE_CMUL_ID(entry.second.first))
+				std::cout << "CMUL " << entry.second.first << '\n';
+		}
+		std::cout << "\n";*/
+
+		for (int i = 0; i < ctxt_count; i++) 
+			delete locks[i];
+			
+		delete[] mtxs;
+		delete[] locks;
+
+		return serialization;
+	}
+
+	std::pair <Ciphertext **, Context> Ciphertext::deserialize(unsigned char * serialization) {
+
+		std::unordered_map <uint32_t, void *> id_to_addr;
+
+		uint32_t * ser_int32 = (uint32_t *)serialization;
+
+		uint32_t ctxt_cnt = ser_int32[0];
+		uint32_t total_ser_cnt = ser_int32[1];
+
+		uint64_t * ser_int64 = (uint64_t *)(serialization + 2 * sizeof(uint32_t));
+		Context  * context = new Context(ser_int64[0], ser_int64[1]);
+
+		Ciphertext ** deserialized = new Ciphertext *[ctxt_cnt];
+
+		/**
+		 * For multithreading extended support, 
+		 * A map that associates a guard ID from the serialization array a CNODE_disjoint_set object
+		**/
+		std::unordered_map <uint32_t, CNODE_disjoint_set *> guard_id_to_addr;
+
+		/**
+		 * Iterating two times through the serialization array
+		 *
+		 * The first time, it creates the corresponding Ciphertext / CNODE objects in memory,
+		 * but does NOT link them
+		 *
+		 * The second time, it links the CNODE objects between them
+		 * and also links Ciphertext objects with their nodes
+		**/
+
+		ser_int32 = (uint32_t *)(serialization + 10 * sizeof(uint32_t));
+		int ser32_offset = 0;
+
+		uint32_t current_id = ser_int32[0];
+		int ctxt_i = 0;
+
+		for (uint32_t ser_cnt = 0; ser_cnt < total_ser_cnt; ser_cnt++) {
+
+			if (CERTFHE_CTXT_ID(current_id)) {
+
+				deserialized[ctxt_i] = new Ciphertext();
+				id_to_addr[current_id] = deserialized[ctxt_i];
+
+				ser32_offset += 3;
+				current_id = ser_int32[ser32_offset];
+
+				ctxt_i += 1;
+			}
+			else if (CERTFHE_CCC_ID(current_id)) {
+
+				ser32_offset += CCC::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, false);
+				current_id = ser_int32[ser32_offset];
+			}
+			else if (CERTFHE_CADD_ID(current_id)) {
+
+				ser32_offset += CADD::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, false);
+				current_id = ser_int32[ser32_offset];
+			}
+			else if (CERTFHE_CMUL_ID(current_id)) {
+
+				ser32_offset += CMUL::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, false);
+				current_id = ser_int32[ser32_offset];
+			}
+		}
+
+		/**
+		 * If true, an additional function is called at the end, 
+		 * to manually reconstruct the disjoint set forest
+		**/
+		bool serialized_no_extended_multithreading_support = false;
+
+		ser_int32 = (uint32_t *)(serialization + 10 * sizeof(uint32_t));
+		ser32_offset = 0;
+
+		current_id = ser_int32[0];
+		ctxt_i = 0;
+
+		for (uint32_t ser_cnt = 0; ser_cnt < total_ser_cnt; ser_cnt++) {
+
+			if (CERTFHE_CTXT_ID(current_id)) {
+
+				uint32_t node_id = ser_int32[ser32_offset + 1];
+				uint32_t guard_id = ser_int32[ser32_offset + 2];
+
+				deserialized[ctxt_i]->node = (CNODE *)id_to_addr.at(node_id);
+				deserialized[ctxt_i]->node->downstream_reference_count += 1;
+
+				if (guard_id) {
+
+					if (guard_id_to_addr.find(guard_id) == guard_id_to_addr.end()) 
+						guard_id_to_addr[guard_id] = deserialized[ctxt_i]->concurrency_guard;
+					else 
+						deserialized[ctxt_i]->concurrency_guard->set_union(guard_id_to_addr.at(guard_id));
+				}
+				else
+					serialized_no_extended_multithreading_support = true;
+
+				ser32_offset += 3;
+				current_id = ser_int32[ser32_offset];
+
+				ctxt_i += 1;
+			}
+			else if (CERTFHE_CCC_ID(current_id)) {
+
+				ser32_offset += CCC::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, true);
+				current_id = ser_int32[ser32_offset];
+			}
+			else if (CERTFHE_CADD_ID(current_id)) {
+
+				ser32_offset += CADD::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, true);
+				current_id = ser_int32[ser32_offset];
+			}
+			else if (CERTFHE_CMUL_ID(current_id)) {
+
+				ser32_offset += CMUL::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, true);
+				current_id = ser_int32[ser32_offset];
+			}
+		}
+
+		if (serialized_no_extended_multithreading_support)
+			concurrency_guard_structure_rebuild(deserialized);
+
+		return { deserialized, *context };
+	}
+
+	void concurrency_guard_structure_rebuild(Ciphertext ** deserialized) {
+
+		// TODO
+	}
+
 	uint64_t Ciphertext::decrypt_raw(const SecretKey & sk) const {
 
 		if (this->concurrency_guard == 0)
 			throw std::runtime_error("concurrency guard cannot be null");
 
-		std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+		std::lock_guard <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+		//std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
 
 		if (this->node == 0)
 			throw std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -267,7 +464,8 @@ namespace certFHE{
 		// guard locked inside copy constructor
 		Ciphertext permuted_ciphertext(*this);
 
-		std::scoped_lock <std::mutex> lock(permuted_ciphertext.concurrency_guard->get_root()->mtx);
+		std::lock_guard <std::mutex> lock(permuted_ciphertext.concurrency_guard->get_root()->mtx);
+		//std::scoped_lock <std::mutex> lock(permuted_ciphertext.concurrency_guard->get_root()->mtx);
 
 		if (permuted_ciphertext.node == 0)
 			throw std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -285,7 +483,8 @@ namespace certFHE{
 		if (this->concurrency_guard == 0)
 			throw std::runtime_error("concurrency guard cannot be null");
 
-		std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+		std::lock_guard <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+		//std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
 
 		if (this->node == 0)
 			throw std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -301,7 +500,8 @@ namespace certFHE{
 		if (this->concurrency_guard == 0)
 			throw std::runtime_error("concurrency guard cannot be null");
 
-		std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+		std::lock_guard <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+		//std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
 
 		if (this->node == 0)
 			throw std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -313,6 +513,230 @@ namespace certFHE{
 	}
 
 #else
+
+	unsigned char * Ciphertext::serialize(const int ctxt_count, Ciphertext ** to_serialize_arr) {
+
+		/**
+		 * Serialization for:
+		 *		Ciphertext: id 4 bytes, node id 4 bytes
+		 *		CCC: id 4 bytes, deflen cnt 8 bytes, ctxt (deflen cnt * deflen to u64 * sizeof(u64)) bytes
+		 *		CADD, CMUL: id 4 bytes, deflen cnt 8 bytes, upstream ref cnt 8 bytes, upstream ref IDs (sizeof(u32) * upstream ref cnt) bytes
+		**/
+
+		/**
+		 * It contains the (temporary) IDs for a Ciphertext object
+		 *
+		 * ID restrictions:
+		 *		CCC: first 2 bits 00
+		 *		CADD: first 2 bits 01
+		 *		CMUL: first 2 bits 10
+		 *		Ciphertext: first 2 bits 11
+		 *
+		 * NOTE: to conserve this restriction, the IDs will be incremented by 0b100
+		**/
+
+		static uint32_t temp_ctxt_id = 3; // 0b00....000 11
+
+		/**
+		 * Associates an (id, byte length) for every Ciphertext / CNODE (address)
+		 * The associated id is local to the current serialization
+		 * And the byte length is the size that node will occupy in the serialization
+		 * It also helps to eliminate duplicates in the current serialization
+		**/
+		std::unordered_map <void *, std::pair <uint32_t, int>> addr_to_id;
+
+		for (int i = 0; i < ctxt_count; i++) {
+
+			if (to_serialize_arr[i]->node == 0)
+				throw std::invalid_argument("Cannot operate on ciphertext with no value");
+
+			if (addr_to_id.find(to_serialize_arr[i]) != addr_to_id.end())
+				continue;
+
+			addr_to_id[to_serialize_arr[i]] = { temp_ctxt_id, (int)(3 * sizeof(uint32_t)) }; // ID of the current Ciphertext, ID of its associated CNODE, guard ID (0) for extended multithreading compatibility
+			temp_ctxt_id += 0b100;
+
+			to_serialize_arr[i]->node->serialize_recon(addr_to_id);
+		}
+
+		/**
+		 * Serialization byte array total length
+		 * It is incremented with the help of the "serialization recon" recursive calls
+		**/
+		int ser_byte_length = 0;
+
+		/**
+		 * First elements in a serialization array are ALWAYS its Ciphertext object count, total CNODE + Ciphertxt count, and context attributes
+		**/
+		ser_byte_length += 2 * sizeof(uint32_t) + 4 * sizeof(uint64_t);
+
+		for (auto entry : addr_to_id)
+			ser_byte_length += entry.second.second;
+
+		unsigned char * serialization = new unsigned char[ser_byte_length];
+
+		uint32_t * ser_int32 = (uint32_t *)serialization;
+		ser_int32[0] = (uint32_t)ctxt_count;
+		// ser_int32[1] completed later in the execution (after the next for loop)
+
+		uint64_t * ser_int64 = (uint64_t *)(serialization + 2 * sizeof(uint32_t));
+
+		Context * context = to_serialize_arr[0]->node->context;
+
+		ser_int64[0] = context->getN();
+		ser_int64[1] = context->getD();
+		ser_int64[2] = context->getS();
+		ser_int64[3] = context->getDefaultN();
+
+		int ser_offset = 2 * sizeof(uint32_t) + 4 * sizeof(uint64_t);
+
+		/**
+		 * The ciphertexts are serialized in the same order as in to_serialize_arr
+		**/
+
+		for (int i = 0; i < ctxt_count; i++) {
+
+			ser_int32 = (uint32_t *)(serialization + ser_offset);
+
+			ser_int32[0] = addr_to_id.at(to_serialize_arr[i]).first;
+			ser_int32[1] = addr_to_id.at(to_serialize_arr[i]->node).first;
+			ser_int32[2] = 0; // for extended multithreading compatibility
+
+			ser_offset += 3 * sizeof(uint32_t);
+		}
+
+		for (auto entry : addr_to_id) {
+
+			if (!CERTFHE_CTXT_ID(entry.second.first)) {
+
+				CNODE * node = (CNODE *)entry.first;
+
+				node->serialize(serialization + ser_offset, addr_to_id);
+				ser_offset += entry.second.second;
+			}
+		}
+
+		ser_int32 = (uint32_t *)serialization;
+		ser_int32[1] = (uint32_t)addr_to_id.size();
+
+		// DEBUG-----------------------------
+		/*for (auto entry : addr_to_id) {
+
+			if (CERTFHE_CTXT_ID(entry.second.first))
+				std::cout << "Ciphertext " << entry.second.first << " assoc " << addr_to_id[((Ciphertext *)entry.first)->node].first << "\n";
+
+			if (CERTFHE_CCC_ID(entry.second.first))
+				std::cout << "CCC " << entry.second.first << '\n';
+
+			if (CERTFHE_CADD_ID(entry.second.first))
+				std::cout << "CADD " << entry.second.first << '\n';
+
+			if (CERTFHE_CMUL_ID(entry.second.first))
+				std::cout << "CMUL " << entry.second.first << '\n';
+		}
+		std::cout << "\n";*/
+
+		return serialization;
+	}
+
+	std::pair <Ciphertext **, Context> Ciphertext::deserialize(unsigned char * serialization) {
+
+		std::unordered_map <uint32_t, void *> id_to_addr;
+
+		uint32_t * ser_int32 = (uint32_t *)serialization;
+
+		uint32_t ctxt_cnt = ser_int32[0];
+		uint32_t total_ser_cnt = ser_int32[1];
+
+		uint64_t * ser_int64 = (uint64_t *)(serialization + 2 * sizeof(uint32_t));
+		Context  * context = new Context(ser_int64[0], ser_int64[1]);
+
+		Ciphertext ** deserialized = new Ciphertext *[ctxt_cnt];
+
+		/**
+		 * Iterating two times through the serialization array
+		 *
+		 * The first time, it creates the corresponding Ciphertext / CNODE objects in memory,
+		 * but does NOT link them
+		 *
+		 * The second time, it links the CNODE objects between them
+		 * and also links Ciphertext objects with their nodes
+		**/
+
+		ser_int32 = (uint32_t *)(serialization + 10 * sizeof(uint32_t));
+		int ser32_offset = 0;
+
+		uint32_t current_id = ser_int32[0];
+		int ctxt_i = 0;
+
+		for (uint32_t ser_cnt = 0; ser_cnt < total_ser_cnt; ser_cnt++) {
+
+			if (CERTFHE_CTXT_ID(current_id)) {
+
+				deserialized[ctxt_i] = new Ciphertext();
+				id_to_addr[current_id] = deserialized[ctxt_i];
+
+				ser32_offset += 3;
+				current_id = ser_int32[ser32_offset];
+
+				ctxt_i += 1;
+			}
+			else if (CERTFHE_CCC_ID(current_id)) {
+
+				ser32_offset += CCC::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, false);
+				current_id = ser_int32[ser32_offset];
+			}
+			else if (CERTFHE_CADD_ID(current_id)) {
+
+				ser32_offset += CADD::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, false);
+				current_id = ser_int32[ser32_offset];
+			}
+			else if (CERTFHE_CMUL_ID(current_id)) {
+
+				ser32_offset += CMUL::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, false);
+				current_id = ser_int32[ser32_offset];
+			}
+		}
+
+		ser_int32 = (uint32_t *)(serialization + 10 * sizeof(uint32_t));
+		ser32_offset = 0;
+
+		current_id = ser_int32[0];
+		ctxt_i = 0;
+
+		for (uint32_t ser_cnt = 0; ser_cnt < total_ser_cnt; ser_cnt++) {
+
+			if (CERTFHE_CTXT_ID(current_id)) {
+
+				uint32_t node_id = ser_int32[ser32_offset + 1];
+
+				deserialized[ctxt_i]->node = (CNODE *)id_to_addr.at(node_id);
+				deserialized[ctxt_i]->node->downstream_reference_count += 1;
+
+				ser32_offset += 3;
+				current_id = ser_int32[ser32_offset];
+
+				ctxt_i += 1;
+			}
+			else if (CERTFHE_CCC_ID(current_id)) {
+
+				ser32_offset += CCC::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, true);
+				current_id = ser_int32[ser32_offset];
+			}
+			else if (CERTFHE_CADD_ID(current_id)) {
+
+				ser32_offset += CADD::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, true);
+				current_id = ser_int32[ser32_offset];
+			}
+			else if (CERTFHE_CMUL_ID(current_id)) {
+
+				ser32_offset += CMUL::deserialize((unsigned char *)(ser_int32 + ser32_offset), id_to_addr, *context, true);
+				current_id = ser_int32[ser32_offset];
+			}
+		}
+
+		return { deserialized, *context };
+	}
 
 	uint64_t Ciphertext::decrypt_raw(const SecretKey & sk) const {
 
@@ -449,7 +873,21 @@ namespace certFHE{
 
 		if (&this_mtx != &c_mtx) {
 			
-			std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
+			std::unique_lock <std::mutex> this_lock(this_mtx, std::defer_lock);
+			std::unique_lock <std::mutex> c_lock(c_mtx, std::defer_lock);
+
+			if (&this_mtx < &c_mtx) {
+
+				this_lock.lock();
+				c_lock.lock();
+			}
+			else {
+
+				c_lock.lock();
+				this_lock.lock();
+			}
+
+			//std::scoped_lock lock(this_mtx, c_mtx);
 
 			if (c.node == 0 || this->node == 0)
 				throw std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -494,7 +932,8 @@ namespace certFHE{
 		}
 		else {
 			
-			std::scoped_lock <std::mutex> lock(this_mtx);
+			std::lock_guard <std::mutex> lock(this_mtx);
+			//std::scoped_lock <std::mutex> lock(this_mtx);
 
 			if (c.node == 0 || this->node == 0)
 				throw std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -547,7 +986,21 @@ namespace certFHE{
 
 		if (&this_mtx != &c_mtx) {
 
-			std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
+			std::unique_lock <std::mutex> this_lock(this_mtx, std::defer_lock);
+			std::unique_lock <std::mutex> c_lock(c_mtx, std::defer_lock);
+
+			if (&this_mtx < &c_mtx) {
+
+				this_lock.lock();
+				c_lock.lock();
+			}
+			else {
+
+				c_lock.lock();
+				this_lock.lock();
+			}
+
+			//std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
 
 			if (c.node == 0 || this->node == 0)
 				throw std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -583,7 +1036,8 @@ namespace certFHE{
 		}
 		else {
 
-			std::scoped_lock <std::mutex> lock(this_mtx);
+			std::lock_guard <std::mutex> lock(this_mtx);
+			//std::scoped_lock <std::mutex> lock(this_mtx);
 
 			if (c.node == 0 || this->node == 0)
 				throw std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -630,7 +1084,21 @@ namespace certFHE{
 
 		if (&this_mtx != &c_mtx) {
 
-			std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
+			std::unique_lock <std::mutex> this_lock(this_mtx, std::defer_lock);
+			std::unique_lock <std::mutex> c_lock(c_mtx, std::defer_lock);
+
+			if (&this_mtx < &c_mtx) {
+
+				this_lock.lock();
+				c_lock.lock();
+			}
+			else {
+
+				c_lock.lock();
+				this_lock.lock();
+			}
+
+			//std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
 
 			if (c.node == 0 || this->node == 0)
 				throw std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -666,7 +1134,8 @@ namespace certFHE{
 		}
 		else {
 
-			std::scoped_lock <std::mutex> lock(this_mtx);
+			std::lock_guard <std::mutex> lock(this_mtx);
+			//std::scoped_lock <std::mutex> lock(this_mtx);
 
 			if (c.node == 0 || this->node == 0)
 				throw std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -712,7 +1181,21 @@ namespace certFHE{
 
 		if (&this_mtx != &c_mtx) {
 
-			std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
+			std::unique_lock <std::mutex> this_lock(this_mtx, std::defer_lock);
+			std::unique_lock <std::mutex> c_lock(c_mtx, std::defer_lock);
+
+			if (&this_mtx < &c_mtx) {
+
+				this_lock.lock();
+				c_lock.lock();
+			}
+			else {
+
+				c_lock.lock();
+				this_lock.lock();
+			}
+
+			//std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
 
 			if (c.node == 0 || this->node == 0)
 				throw std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -748,7 +1231,8 @@ namespace certFHE{
 		}
 		else {
 
-			std::scoped_lock <std::mutex> lock(this_mtx);
+			std::lock_guard <std::mutex> lock(this_mtx);
+			//std::scoped_lock <std::mutex> lock(this_mtx);
 
 			if (c.node == 0 || this->node == 0)
 				throw std::invalid_argument("Cannot operate on ciphertext with no value");
@@ -789,7 +1273,8 @@ namespace certFHE{
 		if (c.concurrency_guard == 0) 
 			throw std::runtime_error("concurrency guard cannot be null");
 
-		std::scoped_lock <std::mutex> lock(c.concurrency_guard->get_root()->mtx);
+		std::lock_guard <std::mutex> lock(c.concurrency_guard->get_root()->mtx);
+		//std::scoped_lock <std::mutex> lock(c.concurrency_guard->get_root()->mtx);
 
 		if (c.node == 0)
 			out << "EMPTY CIPHERTEXT";
@@ -823,8 +1308,22 @@ namespace certFHE{
 
 			CNODE_disjoint_set * removed;
 
-			{
-				std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
+			{	
+				std::unique_lock <std::mutex> this_lock(this_mtx, std::defer_lock);
+				std::unique_lock <std::mutex> c_lock(c_mtx, std::defer_lock);
+
+				if (&this_mtx < &c_mtx) {
+
+					this_lock.lock();
+					c_lock.lock();
+				}
+				else {
+
+					c_lock.lock();
+					this_lock.lock();
+				}
+
+				//std::scoped_lock <std::mutex, std::mutex> lock(this_mtx, c_mtx);
 
 				if (this->node != 0)
 					this->node->try_delete();
@@ -859,7 +1358,8 @@ namespace certFHE{
 		CNODE_disjoint_set * removed;
 
 		{	
-			std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+			std::lock_guard <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+			//std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
 
 			if (this->node != 0)
 				this->node->try_delete();
@@ -1085,7 +1585,8 @@ namespace certFHE{
 		if (ctxt.concurrency_guard == 0)
 			throw std::runtime_error("concurrency guard cannot be null");
 
-		std::scoped_lock <std::mutex> lock(ctxt.concurrency_guard->get_root()->mtx);
+		std::lock_guard <std::mutex> lock(ctxt.concurrency_guard->get_root()->mtx);
+		//std::scoped_lock <std::mutex> lock(ctxt.concurrency_guard->get_root()->mtx);
 
 		if (ctxt.node != 0) {
 
@@ -1116,8 +1617,9 @@ namespace certFHE{
 			
 			CNODE_disjoint_set * removed;
 			
-			{
-				std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+			{	
+				std::lock_guard <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
+				//std::scoped_lock <std::mutex> lock(this->concurrency_guard->get_root()->mtx);
 
 				if (this->node != 0)
 					this->node->try_delete();
@@ -1195,7 +1697,8 @@ namespace certFHE{
 		if (this->concurrency_guard == 0)
 			throw std::runtime_error("concurrency guard cannot be null");
 
-		std::scoped_lock <std::mutex>(this->concurrency_guard->get_root()->mtx);
+		std::lock_guard <std::mutex>(this->concurrency_guard->get_root()->mtx);
+		//std::scoped_lock <std::mutex>(this->concurrency_guard->get_root()->mtx);
 
 #endif
 
@@ -1212,7 +1715,8 @@ namespace certFHE{
 		if (this->concurrency_guard == 0)
 			throw std::runtime_error("concurrency guard cannot be null");
 
-		std::scoped_lock <std::mutex>(this->concurrency_guard->get_root()->mtx);
+		std::lock_guard <std::mutex>(this->concurrency_guard->get_root()->mtx);
+		//std::scoped_lock <std::mutex>(this->concurrency_guard->get_root()->mtx);
 
 #endif
 
