@@ -2408,7 +2408,8 @@ void serialization_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1
 
 				timer.start();
 
-				unsigned char * serialized = certFHE::Ciphertext::serialize(CS_CNT, cs);
+				auto ser_res = certFHE::Ciphertext::serialize(CS_CNT, cs);
+				unsigned char * serialized = ser_res.first;
 
 				t_ser = timer.stop();
 				timer.reset();
@@ -2485,9 +2486,196 @@ void serialization_predefined_test(std::string path_sufix = "\\serialization_tes
 
 	std::fstream log(STATS_PATH + "sertest_" + path_sufix + ".txt", std::ios::out);
 
-	serialization_test(10000, 30, 100, 1247, 16, log);
+	serialization_test(1000, 100, 100, 1247, 16, log);
 
 	log.close();
+}
+
+void save_rnd_ser_test(const int ROUNDS = 100, const int CS_CNT = 20, const int CONTEXT_N = 1247, const int CONTEXT_D = 16, std::string out_name = "ser") {
+
+	out_name += ".bin";
+
+	certFHE::Library::initializeLibrary();
+	certFHE::Context context(CONTEXT_N, CONTEXT_D);
+	certFHE::SecretKey sk(context);
+
+	certFHE::MTValues::m_threshold_autoselect(context);
+
+	int * val = new int[CS_CNT];
+	certFHE::Ciphertext ** cs;
+	cs = new certFHE::Ciphertext *[CS_CNT];
+
+	int OP_MODULUS = 2;
+
+	for (int i = 0; i < CS_CNT; i++) {
+
+		val[i] = rand() % 2;
+
+		cs[i] = new certFHE::Ciphertext();
+
+		certFHE::Plaintext p(val[i]);
+		*cs[i] = sk.encrypt(p);
+	}
+
+	int i, j, k;
+
+	for (int rnd = 0; rnd < ROUNDS; rnd++) {
+
+		int opc = rand() % OP_MODULUS;
+
+		switch (opc) {
+
+		case(0): // * between two random ctxt, += in the third
+
+			i = rand() % CS_CNT;
+			j = rand() % CS_CNT;
+			k = rand() % CS_CNT;
+
+			*cs[k] += *cs[i] * *cs[j];
+
+			val[k] ^= (val[i] & val[j]);
+
+			break;
+
+		case(1): // + between two random ctxt, *= in the third
+
+			i = rand() % CS_CNT;
+			j = rand() % CS_CNT;
+			k = rand() % CS_CNT;
+
+			*cs[k] *= *cs[i] + *cs[j];
+
+			val[k] &= (val[i] ^ val[j]);
+
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	certFHE::CNODE::clear_decryption_cache();
+
+	for (int pos = 0; pos < CS_CNT; pos++) {
+
+		uint64_t p = sk.decrypt(*cs[pos]).getValue() & 0x01;
+
+		if (p != val[pos]) {
+
+			std::cout << "WRONG initial decryption; should be " << val[pos] << ", decrypted " << p << '\n';
+			std::cout.flush();
+		}
+	}
+
+	certFHE::CNODE::clear_decryption_cache();
+
+	auto ser_res = certFHE::Ciphertext::serialize(CS_CNT, cs);
+	unsigned char * serialized = ser_res.first;
+
+	auto deserialized_res = certFHE::Ciphertext::deserialize(serialized);
+	certFHE::Ciphertext ** deserialized = deserialized_res.first;
+
+	certFHE::CNODE::clear_decryption_cache();
+
+	for (int i = 0; i < CS_CNT; i++) {
+
+		uint64_t p = sk.decrypt(*deserialized[i]).getValue() & 0x01;
+
+		if (p != val[i]) {
+
+			std::cout << "WRONG deserialized decryption; should be " << val[i] << ", decrypted " << p << '\n';
+			std::cout.flush();
+		}
+	}
+
+	certFHE::CNODE::clear_decryption_cache();
+
+	for (int ct = 0; ct < CS_CNT; ct++)
+		delete deserialized[ct];
+
+	delete[] deserialized;
+
+	for (int ct = 0; ct < CS_CNT; ct++)
+		delete cs[ct];
+
+	// save in file
+	std::fstream out(out_name, std::ios::binary | std::ios::out);
+
+	std::pair <unsigned char *, int> sk_ser_res = sk.serialize();
+	
+	out.write((const char *)&(sk_ser_res.second), 4);
+	out.write((const char *)sk_ser_res.first, sk_ser_res.second);
+
+	out.write((const char *)&(ser_res.second), 4);
+	out.write((const char *)serialized, ser_res.second);
+	
+	out.write((const char *)&CS_CNT, 4);
+	out.write((const char *)val, 4 * CS_CNT);
+
+	out.flush();
+	out.close();
+
+	delete[] val;
+	delete[] serialized;
+}
+
+void load_rnd_ser_test(std::string in_name = "ser") {
+
+	in_name += ".bin";
+
+	std::fstream in(in_name, std::ios::binary | std::ios::in);
+
+	int sk_ser_length;
+	unsigned char * sk_ser;
+
+	int ser_length;
+	unsigned char * ser;
+
+	int CS_CNT;
+	int * val;
+
+	in.read((char *)&sk_ser_length, 4);
+
+	sk_ser = new unsigned char[sk_ser_length];
+	in.read((char *)sk_ser, sk_ser_length);
+	
+	in.read((char *)&ser_length, 4);
+	
+	ser = new unsigned char[ser_length];
+	in.read((char *)ser, ser_length);
+
+	in.read((char *)&CS_CNT, 4);
+
+	val = new int[CS_CNT];
+	in.read((char *)val, 4 * CS_CNT);
+
+	auto sk_deserialize_res = certFHE::SecretKey::deserialize(sk_ser);
+	certFHE::SecretKey sk = sk_deserialize_res.first;
+
+	auto deserialized_res = certFHE::Ciphertext::deserialize(ser);
+	certFHE::Ciphertext ** deserialized = deserialized_res.first;
+
+	certFHE::CNODE::clear_decryption_cache();
+
+	for (int i = 0; i < CS_CNT; i++) {
+
+		uint64_t p = sk.decrypt(*deserialized[i]).getValue() & 0x01;
+		
+		if (p != val[i]) {
+
+			std::cout << "WRONG deserialized decryption; should be " << val[i] << ", decrypted " << p << '\n';
+			std::cout.flush();
+		}
+	}
+
+	certFHE::CNODE::clear_decryption_cache();
+
+	for (int ct = 0; ct < CS_CNT; ct++)
+		delete deserialized[ct];
+
+	delete[] deserialized;
+	delete[] val;
+	delete[] ser;
 }
 
 int main(){
@@ -2495,6 +2683,9 @@ int main(){
 	//old_implementation_compare_statistics_tests();
 
 	//serialization_predefined_test("release_stats");
+
+	save_rnd_ser_test(100, 100, 1247, 16, "ser1");
+	load_rnd_ser_test("ser1");
 
     return 0;
 }

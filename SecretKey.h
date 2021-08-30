@@ -44,7 +44,7 @@ namespace certFHE {
 		**/
 		uint64_t * encrypt_raw_bit(unsigned char bit) const;
 
-		SecretKey(const uint64_t * s, const uint64_t length, const uint64_t * s_mask, const uint64_t mask_length);
+		SecretKey(const uint64_t * s, const uint64_t length, const uint64_t * s_mask, const uint64_t mask_length, const Context * context);
 
     public:
 
@@ -141,7 +141,7 @@ namespace certFHE {
 
 #endif
 
-		unsigned char * serialize() const;
+		std::pair<unsigned char *, int> serialize() const;
 
 		static std::pair <SecretKey, Context> deserialize(unsigned char * serialization);
 

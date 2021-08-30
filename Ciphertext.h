@@ -72,8 +72,9 @@ namespace certFHE{
 		/**
 		 * Serialization (into bytes) function
 		 * This function ASSUMES all the ciphertexts were encrypted under the same context (or at least an equal one)
+		 * Returns a pointer to the serialization array and its byte length
 		**/
-		static unsigned char * serialize(const int ctxt_count, Ciphertext ** to_serialize_arr);
+		static std::pair <unsigned char *, int> serialize(const int ctxt_count, Ciphertext ** to_serialize_arr);
 
 		/**
 		 * This method takes a full serialization array (containing one or more serialized ciphertexts)

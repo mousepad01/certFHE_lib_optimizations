@@ -23,7 +23,7 @@ namespace certFHE{
 
 #if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
 
-	unsigned char * Ciphertext::serialize(const int ctxt_count, Ciphertext ** to_serialize_arr) {
+	std::pair <unsigned char *, int> Ciphertext::serialize(const int ctxt_count, Ciphertext ** to_serialize_arr) {
 
 		/**
 		 * For multithreading extended support, before anything else all mutexes are locked
@@ -211,7 +211,7 @@ namespace certFHE{
 			
 		delete[] locks;
 
-		return serialization;
+		return { serialization, ser_byte_length };
 	}
 
 	std::pair <Ciphertext **, Context> Ciphertext::deserialize(unsigned char * serialization) {

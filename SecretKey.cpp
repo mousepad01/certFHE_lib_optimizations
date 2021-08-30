@@ -272,11 +272,11 @@ namespace certFHE{
 		return secKey;
 	}
 
-	unsigned char * SecretKey::serialize() const {
+	std::pair<unsigned char *, int> SecretKey::serialize() const {
 
-		int ser_byte_length = 4 + 2 + (int)this->length + (int)this->mask_length;
+		int ser_length = 4 + 2 + (int)this->length + (int)this->mask_length;
 
-		uint64_t * serialization = new uint64_t[ser_byte_length];
+		uint64_t * serialization = new uint64_t[ser_length];
 
 		Context * context = this->certFHEContext;
 
@@ -288,13 +288,13 @@ namespace certFHE{
 		serialization[4] = this->length;
 		serialization[5] = this->mask_length;
 
-		for (int i = 0; i < serialization[0]; i++)
+		for (int i = 0; i < serialization[4]; i++)
 			serialization[6 + i] = this->s[i];
 
-		for (int i = 0; i < serialization[1]; i++)
+		for (int i = 0; i < serialization[5]; i++)
 			serialization[6 + this->length + i] = this->s_mask[i];
 
-		return (unsigned char *)serialization;
+		return { (unsigned char *)serialization, (int)(ser_length * sizeof(uint64_t)) };
 	}
 
 	std::pair <SecretKey, Context> SecretKey::deserialize(unsigned char * serialization) {
@@ -315,16 +315,16 @@ namespace certFHE{
 		for (int i = 0; i < mask_length; i++)
 			s_mask[i] = ser_int64[6 + length + i];
 
-		SecretKey to_return(s, length, s_mask, mask_length);
-
-		delete[] s;
-		delete[] s_mask;
+		SecretKey to_return(s, length, s_mask, mask_length, &context);
 
 		for (int i = 0; i < length; i++)
 			s[i] = 0;
 
 		for (int i = 0; i < mask_length; i++)
 			s_mask[i] = 0;
+
+		delete[] s;
+		delete[] s_mask;
 
 		return { to_return, context };
 	}
@@ -333,7 +333,9 @@ namespace certFHE{
 
 #pragma region Constructors and destructor
 
-	SecretKey::SecretKey(const uint64_t * s, const uint64_t length, const uint64_t * s_mask, const uint64_t mask_length) {
+	SecretKey::SecretKey(const uint64_t * s, const uint64_t length, const uint64_t * s_mask, const uint64_t mask_length, const Context * context) {
+
+		this->certFHEContext = new Context(*context);
 
 		this->s = new uint64_t[length];
 		this->length = length;

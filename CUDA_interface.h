@@ -4,7 +4,7 @@
 /**
  * Macro to enable (parametrized) CUDA for CCC operations and storage on VRAM
 **/
-#define CERTFHE_USE_CUDA true
+#define CERTFHE_USE_CUDA false
 
 #if CERTFHE_USE_CUDA
 

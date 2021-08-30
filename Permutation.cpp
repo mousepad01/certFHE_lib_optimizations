@@ -33,7 +33,7 @@ namespace certFHE{
 		return invP;
 	}
 
-	unsigned char * Permutation::serialize() const {
+	std::pair<unsigned char *, int> Permutation::serialize() const {
 
 		int ser_byte_length = 2 + (int)this->length + 4 * (int)this->inversions_cnt;
 
@@ -53,7 +53,7 @@ namespace certFHE{
 			serialization[2 + this->length + 4 * i + 3] = this->inversions[i].snd_u64_r;
 		}
 
-		return (unsigned char *)serialization;
+		return { (unsigned char *)serialization, ser_byte_length };
 	}
 
 	Permutation Permutation::deserialize(unsigned char * serialization) {

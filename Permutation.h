@@ -97,7 +97,7 @@ namespace certFHE{
        Permutation operator + (const Permutation & other) const;
        Permutation & operator += (const Permutation & other);
 
-	   unsigned char * serialize() const;
+	   std::pair<unsigned char *, int> serialize() const;
 
 	   static Permutation deserialize(unsigned char * serialization);
     };
