@@ -118,9 +118,9 @@ namespace certFHE {
 		while (thisnodes != 0 && thisnodes->current != 0) {
 
 #if CERTFHE_USE_CUDA
-			rez ^= thisnodes->current->decrypt(sk, decryption_cached_values, vram_decryption_cached_values);
+			rez &= thisnodes->current->decrypt(sk, decryption_cached_values, vram_decryption_cached_values);
 #else
-			rez ^= thisnodes->current->decrypt(sk, decryption_cached_values);
+			rez &= thisnodes->current->decrypt(sk, decryption_cached_values);
 #endif
 			thisnodes = thisnodes->next;
 		}
