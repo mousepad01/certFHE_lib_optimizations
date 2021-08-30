@@ -2,13 +2,6 @@
 
 namespace certFHE {
 
-	std::unordered_map <CNODE *, unsigned char> CNODE::decryption_cached_values;
-
-#if CERTFHE_USE_CUDA
-
-	std::unordered_map <CNODE *, unsigned char> CNODE::vram_decryption_cached_values;
-#endif
-
 	CNODE::CNODE(const CNODE & other) {
 
 		this->deflen_count = other.deflen_count;
@@ -50,15 +43,6 @@ namespace certFHE {
 		out << "deflen_count=" << cnode.deflen_count << " " << "ref_cnt=" << cnode.downstream_reference_count << '\n';
 
 		return out;
-	}
-
-	void CNODE::clear_decryption_cache() { 
-
-		decryption_cached_values.clear(); 
-
-#if CERTFHE_USE_CUDA
-		vram_decryption_cached_values.clear(); 
-#endif
 	}
 }
 

@@ -21,6 +21,8 @@ namespace certFHE{
      * Class used for storing a ciphertext
     **/
 	class Ciphertext{
+
+	public:
     
 		/**
 		 * CNODE associated with the ciphertext

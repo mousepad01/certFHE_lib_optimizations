@@ -18,13 +18,6 @@ namespace certFHE {
 
 	protected:
 
-		static std::unordered_map <CNODE *, unsigned char> decryption_cached_values;
-
-#if CERTFHE_USE_CUDA
-
-		static std::unordered_map <CNODE *, unsigned char> vram_decryption_cached_values;
-#endif
-
 		/**
 		 * certFHE context
 		 * ASSUMED to have the exact same values for its attributes
@@ -97,7 +90,11 @@ namespace certFHE {
 		**/
 		virtual CNODE * make_deep_copy() = 0; 
 
-		virtual uint64_t decrypt(const SecretKey & sk) = 0;
+#if CERTFHE_USE_CUDA
+		virtual uint64_t decrypt(const SecretKey & sk, std::unordered_map <CNODE *, unsigned char> * decryption_cached_values, std::unordered_map <CNODE *, unsigned char> * vram_decryption_cached_values) = 0;
+#else
+		virtual uint64_t decrypt(const SecretKey & sk, std::unordered_map <CNODE *, unsigned char> * decryption_cached_values) = 0;
+#endif
 
 		/**
 		 * Used to permute both inplace or on a new (deep) copy
@@ -137,14 +134,6 @@ namespace certFHE {
 		 * Decides whether to decrease reference count or actually delete the node
 		**/
 		void try_delete();
-
-	public:
-
-		/**
-		 * Method used to clear the decryption cache
-		 * Should ALWAYS BE CALLED between decryptions, if additions or multiplications are being performed
-		**/
-		static void clear_decryption_cache();
 
 		// Other
 

@@ -143,7 +143,7 @@ namespace certFHE {
 			}
 		}
 		else
-			associated_ctxt->concurrency_guard->set_union(node_to_ctxt[this]->concurrency_guard);
+			associated_ctxt->concurrency_guard->set_union(node_to_ctxt.at(this)->concurrency_guard);
 	}
 
 #endif

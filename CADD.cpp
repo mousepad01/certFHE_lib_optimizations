@@ -113,13 +113,16 @@ namespace certFHE {
 		//}
 	}
 
-	uint64_t CADD::decrypt(const SecretKey & sk) {
-
+#if CERTFHE_USE_CUDA
+	uint64_t CADD::decrypt(const SecretKey & sk, std::unordered_map <CNODE *, unsigned char> * decryption_cached_values, std::unordered_map <CNODE *, unsigned char> * vram_decryption_cached_values) {
+#else
+	uint64_t CADD::decrypt(const SecretKey & sk, std::unordered_map <CNODE *, unsigned char> * decryption_cached_values) {
+#endif
 		if (OPValues::decryption_cache) {
 
-			auto cache_entry = CNODE::decryption_cached_values.find(this);
+			auto cache_entry = decryption_cached_values->find(this);
 
-			if (cache_entry != CNODE::decryption_cached_values.end())
+			if (cache_entry != decryption_cached_values->end())
 				return (uint64_t)cache_entry->second;
 		}
 
@@ -132,12 +135,16 @@ namespace certFHE {
 
 		while (thisnodes != 0 && thisnodes->current != 0) {
 
-			rez ^= thisnodes->current->decrypt(sk);
+#if CERTFHE_USE_CUDA
+			rez ^= thisnodes->current->decrypt(sk, decryption_cached_values, vram_decryption_cached_values);
+#else
+			rez ^= thisnodes->current->decrypt(sk, decryption_cached_values);
+#endif
 			thisnodes = thisnodes->next;
 		}
 		
 		if (OPValues::decryption_cache)
-			CNODE::decryption_cached_values[this] = (unsigned char)rez;
+			(*decryption_cached_values)[this] = (unsigned char)rez;
 
 		return rez;
 	}

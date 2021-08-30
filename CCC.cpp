@@ -736,7 +736,7 @@ namespace certFHE {
 		return 0;
 	}
 
-	uint64_t CCC::decrypt(const SecretKey & sk) {
+	uint64_t CCC::decrypt(const SecretKey & sk, std::unordered_map <CNODE *, unsigned char> * decryption_cached_values, std::unordered_map <CNODE *, unsigned char> * vram_decryption_cached_values) {
 
 		uint64_t dec = 0;
 
@@ -744,9 +744,9 @@ namespace certFHE {
 
 			if (OPValues::decryption_cache) {
 
-				auto cache_entry = CNODE::vram_decryption_cached_values.find(this);
+				auto cache_entry = vram_decryption_cached_values->find(this);
 
-				if (cache_entry != CNODE::vram_decryption_cached_values.end())
+				if (cache_entry != vram_decryption_cached_values->end())
 					return (uint64_t)cache_entry->second;
 			}
 
@@ -759,15 +759,15 @@ namespace certFHE {
 			dec = CUDA_interface::VRAM_ciphertext_decryption(deflen_to_u64, deflen_cnt, ctxt, sk.getVramMaskKey());
 
 			if (OPValues::decryption_cache)
-				CNODE::vram_decryption_cached_values[this] = (unsigned char)dec;
+				(*vram_decryption_cached_values)[this] = (unsigned char)dec;
 		}
 		else{
 
 			if (OPValues::decryption_cache) {
 
-				auto cache_entry = CNODE::decryption_cached_values.find(this);
+				auto cache_entry = decryption_cached_values->find(this);
 
-				if (cache_entry != CNODE::decryption_cached_values.end())
+				if (cache_entry != decryption_cached_values->end())
 					return (uint64_t)cache_entry->second;
 			}
 
@@ -887,7 +887,7 @@ namespace certFHE {
 			}
 
 			if (OPValues::decryption_cache)
-				CNODE::decryption_cached_values[this] = (unsigned char)dec;
+				(*decryption_cached_values)[this] = (unsigned char)dec;
 		}
 
 		return dec;
@@ -1304,13 +1304,13 @@ namespace certFHE {
 		return mul_result;
 	}
 
-	uint64_t CCC::decrypt(const SecretKey & sk) {
+	uint64_t CCC::decrypt(const SecretKey & sk, std::unordered_map <CNODE *, unsigned char> * decryption_cached_values) {
 
 		if (OPValues::decryption_cache) {
 
-			auto cache_entry = CNODE::decryption_cached_values.find(this);
+			auto cache_entry = decryption_cached_values->find(this);
 
-			if (cache_entry != CNODE::decryption_cached_values.end())
+			if (cache_entry != decryption_cached_values->end())
 				return (uint64_t)cache_entry->second;
 		}
 
@@ -1432,7 +1432,7 @@ namespace certFHE {
 		}
 
 		if (OPValues::decryption_cache)
-			CNODE::decryption_cached_values[this] = (unsigned char)dec;
+			(*decryption_cached_values)[this] = (unsigned char)dec;
 
 		return dec;
 	}
@@ -1621,7 +1621,7 @@ namespace certFHE {
 			node_to_ctxt[this] = associated_ctxt;
 
 		else 
-			associated_ctxt->concurrency_guard->set_union(node_to_ctxt[this]->concurrency_guard);
+			associated_ctxt->concurrency_guard->set_union(node_to_ctxt.at(this)->concurrency_guard);
 	}
 
 #endif

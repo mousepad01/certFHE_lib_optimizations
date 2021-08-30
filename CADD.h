@@ -42,7 +42,11 @@ namespace certFHE {
 
 		void upstream_merging() override;
 
-		uint64_t decrypt(const SecretKey & sk) override;
+#if CERTFHE_USE_CUDA
+		uint64_t decrypt(const SecretKey & sk, std::unordered_map <CNODE *, unsigned char> * decryption_cached_values, std::unordered_map <CNODE *, unsigned char> * vram_decryption_cached_values) override;
+#else
+		uint64_t decrypt(const SecretKey & sk, std::unordered_map <CNODE *, unsigned char> * decryption_cached_values) override;
+#endif
 
 		CNODE * permute(const Permutation & perm, bool force_deep_copy) override;
 

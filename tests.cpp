@@ -842,7 +842,7 @@ void average_rndloaded_test(const std::vector <int> randoms,
 									out.flush();
 								}
 
-								certFHE::CNODE::clear_decryption_cache();
+								
 
 								break;
 
@@ -875,7 +875,7 @@ void average_rndloaded_test(const std::vector <int> randoms,
 							}
 						}
 
-						certFHE::CNODE::clear_decryption_cache();
+						
 
 						timer.start();
 
@@ -1415,11 +1415,7 @@ void average_thrfct_test(certFHE::SecretKey & sk, certFHE::Permutation & perm,
 
 					temp = cs[i]->applyPermutation(perm);
 
-					certFHE::CNODE::clear_decryption_cache();
-
 					pp = sk.decrypt(*cs[i]).getValue() & 0x01;
-
-					certFHE::CNODE::clear_decryption_cache();
 
 					if (val[i] != pp) {
 
@@ -1437,8 +1433,6 @@ void average_thrfct_test(certFHE::SecretKey & sk, certFHE::Permutation & perm,
 				}
 			}
 
-			certFHE::CNODE::clear_decryption_cache();
-
 			for (int pos = 0; pos < max_index; pos++) {
 
 				uint64_t p = sk.decrypt(*cs[pos]).getValue() & 0x01;
@@ -1452,8 +1446,6 @@ void average_thrfct_test(certFHE::SecretKey & sk, certFHE::Permutation & perm,
 					out_mutex.unlock();
 				}
 			}
-
-			certFHE::CNODE::clear_decryption_cache();
 
 			int to_delete_cnt = 0;
 			if (DEL_FACTOR > 0)
@@ -1762,11 +1754,7 @@ void average_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 
 									t_acc += t;
 
-									certFHE::CNODE::clear_decryption_cache();
-
 									pp = sk.decrypt(*cs[i]).getValue() & 0x01;
-
-									certFHE::CNODE::clear_decryption_cache();
 
 									if (val[i] != pp) {
 										
@@ -1787,8 +1775,6 @@ void average_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 							double t_acc_dec = 0;
 							double t_dec;
 
-							certFHE::CNODE::clear_decryption_cache();
-
 							for (int pos = 0; pos < max_index; pos++) {
 
 								timer.start();
@@ -1806,8 +1792,6 @@ void average_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 									out.flush();
 								}
 							}
-
-							certFHE::CNODE::clear_decryption_cache();
 
 							timer.start();
 
@@ -1857,8 +1841,6 @@ void average_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 
 						std::mutex out_mutex;
 
-						int rand_offset = 0;
-
 						timer.start();
 
 						for (int thr = 0; thr < THR_CNT; thr++) {
@@ -1868,7 +1850,6 @@ void average_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 								std::ref(out), std::ref(out_mutex),
 								ROUNDS_PER_THREAD, LEFT_CTXT_CNT, EPOCH_CNT, DEL_FACTOR, PERM);
 
-							rand_offset += ROUNDS_PER_THREAD * 10;
 						}
 
 						for (int thr = 0; thr < THR_CNT; thr++)
@@ -2207,7 +2188,7 @@ void average_predefined_test(std::string path_sufix = "\\average_test\\debug_sta
 		std::fstream log(STATS_PATH + "averagetest_" + path_sufix + ".txt", std::ios::out);
 		std::fstream log_old(STATS_PATH + "averagetest_" + path_sufix + "_old.txt", std::ios::out);
 
-		average_test(100, 110, 0, 0, 1247, 16, 100, 10, 0, log, log_old, permutations, true);
+		average_test(100, 100, 0, 0, 1247, 16, 100, 10, 0, log, log_old, permutations, true);
 
 		log.close();
 		log_old.close();
@@ -2216,7 +2197,7 @@ void average_predefined_test(std::string path_sufix = "\\average_test\\debug_sta
 
 		std::fstream log(STATS_PATH + "averagetest_" + path_sufix + ".txt", std::ios::out);
 
-		average_test(100, 110, 0, 0, 1247, 16, 100, 10, 0, log, std::cout, permutations, false);
+		average_test(100, 100, 0, 0, 1247, 16, 100, 10, 0, log, std::cout, permutations, false);
 
 		log.close();
 	}
@@ -2231,7 +2212,7 @@ void old_implementation_compare_statistics_tests() {
 		<< "To plot them, call average_test_plot function from plotter.py (dectime parameter - whether you want to plot decryption times in the same graph or not)\n"
 		<< "NOTE: plotter.py needs to be in the same directory in which the result files are located\n\n";
 
-	average_predefined_test("debug_stats", false, false);
+	average_predefined_test("mthr_stats", false, false);
 
 	std::cout << "First test done\n\n";
 
@@ -2374,7 +2355,7 @@ void serialization_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1
 				double t_acc_dec = 0;
 				double t_dec;
 
-				certFHE::CNODE::clear_decryption_cache();
+				
 
 				for (int pos = 0; pos < CS_CNT; pos++) {
 
@@ -2394,7 +2375,7 @@ void serialization_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1
 					}
 				}
 
-				certFHE::CNODE::clear_decryption_cache();
+				
 
 				out << "Operations done: " << t_acc << " " << TIME_MEASURE_UNIT
 					<< ", decryption " << t_acc_dec << " " << TIME_MEASURE_UNIT << "\n";
@@ -2432,7 +2413,7 @@ void serialization_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1
 
 				t_ser_acc += t_ser;
 
-				certFHE::CNODE::clear_decryption_cache();
+				
 
 				out << "Deserialization done: " << t_ser_acc << " " << TIME_MEASURE_UNIT << "\n";
 				out << "Decrypting deserialized ciphertexts...\n";
@@ -2451,7 +2432,7 @@ void serialization_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1
 				out << "Deserialized ciphertext decryption done\n";
 				out.flush();
 
-				certFHE::CNODE::clear_decryption_cache();
+				
 
 				delete[] serialized;
 
@@ -2554,7 +2535,7 @@ void save_rnd_ser_test(const int ROUNDS = 100, const int CS_CNT = 20, const int 
 		}
 	}
 
-	certFHE::CNODE::clear_decryption_cache();
+	
 
 	for (int pos = 0; pos < CS_CNT; pos++) {
 
@@ -2567,7 +2548,7 @@ void save_rnd_ser_test(const int ROUNDS = 100, const int CS_CNT = 20, const int 
 		}
 	}
 
-	certFHE::CNODE::clear_decryption_cache();
+	
 
 	auto ser_res = certFHE::Ciphertext::serialize(CS_CNT, cs);
 	unsigned char * serialized = ser_res.first;
@@ -2575,7 +2556,7 @@ void save_rnd_ser_test(const int ROUNDS = 100, const int CS_CNT = 20, const int 
 	auto deserialized_res = certFHE::Ciphertext::deserialize(serialized);
 	certFHE::Ciphertext ** deserialized = deserialized_res.first;
 
-	certFHE::CNODE::clear_decryption_cache();
+	
 
 	for (int i = 0; i < CS_CNT; i++) {
 
@@ -2588,17 +2569,14 @@ void save_rnd_ser_test(const int ROUNDS = 100, const int CS_CNT = 20, const int 
 		}
 	}
 
-	certFHE::CNODE::clear_decryption_cache();
+	
 
 	for (int ct = 0; ct < CS_CNT; ct++)
 		delete deserialized[ct];
 
 	delete[] deserialized;
 
-	for (int ct = 0; ct < CS_CNT; ct++)
-		delete cs[ct];
-
-	// save in file
+	// save in file: the key, the serialization, and (if active) CNODE_disjoint_set stats
 	std::fstream out(out_name, std::ios::binary | std::ios::out);
 
 	std::pair <unsigned char *, int> sk_ser_res = sk.serialize();
@@ -2612,8 +2590,25 @@ void save_rnd_ser_test(const int ROUNDS = 100, const int CS_CNT = 20, const int 
 	out.write((const char *)&CS_CNT, 4);
 	out.write((const char *)val, 4 * CS_CNT);
 
+	// for each ctxt, check if it has common root with other ctxts
+	for (int i = 0; i < CS_CNT - 1; i++) {
+
+		for (int j = i + 1; j < CS_CNT; j++) {
+
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
+			bool k = cs[i]->concurrency_guard->get_root() == cs[j]->concurrency_guard->get_root();
+#else
+			bool k = 0;
+#endif
+			out.write((const char *)&k, 1);
+		}
+	}
+	
 	out.flush();
 	out.close();
+
+	for (int ct = 0; ct < CS_CNT; ct++)
+		delete cs[ct];
 
 	delete[] val;
 	delete[] serialized;
@@ -2655,7 +2650,7 @@ void load_rnd_ser_test(std::string in_name = "ser") {
 	auto deserialized_res = certFHE::Ciphertext::deserialize(ser);
 	certFHE::Ciphertext ** deserialized = deserialized_res.first;
 
-	certFHE::CNODE::clear_decryption_cache();
+	
 
 	for (int i = 0; i < CS_CNT; i++) {
 
@@ -2668,7 +2663,25 @@ void load_rnd_ser_test(std::string in_name = "ser") {
 		}
 	}
 
-	certFHE::CNODE::clear_decryption_cache();
+	
+
+	// for each ctxt, check if it has common root with other ctxts
+	for (int i = 0; i < CS_CNT - 1; i++) {
+
+		for (int j = i + 1; j < CS_CNT; j++) {
+
+#if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
+			bool k = deserialized[i]->concurrency_guard->get_root() == deserialized[j]->concurrency_guard->get_root();
+#else
+			bool k = 0;
+#endif
+			bool saved_k;
+			in.read((char *)&saved_k, 1);
+
+			if (k != saved_k)
+				std::cout << "WRONG disjoint set stat: expecting " << saved_k << " got " << k << '\n';
+		}
+	}
 
 	for (int ct = 0; ct < CS_CNT; ct++)
 		delete deserialized[ct];
@@ -2680,12 +2693,12 @@ void load_rnd_ser_test(std::string in_name = "ser") {
 
 int main(){
 
-	//old_implementation_compare_statistics_tests();
+	old_implementation_compare_statistics_tests();
 
 	//serialization_predefined_test("release_stats");
 
-	save_rnd_ser_test(100, 100, 1247, 16, "ser1");
-	load_rnd_ser_test("ser1");
+	//save_rnd_ser_test(100, 100, 1247, 16, "ser1");
+	//load_rnd_ser_test("ser1");
 
     return 0;
 }

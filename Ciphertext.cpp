@@ -38,7 +38,7 @@ namespace certFHE{
 
 			std::mutex * mtx = &(to_serialize_arr[i]->concurrency_guard->get_root()->mtx);
 
-			if(mtxs.find(mtx) == mtxs.end())
+			if (mtxs.find(mtx) == mtxs.end()) 
 				mtxs.insert(mtx);
 		}	
 
@@ -126,7 +126,8 @@ namespace certFHE{
 					temp_guard_id += 1;
 			}
 
-			to_serialize_arr[i]->node->serialize_recon(addr_to_id);
+			if(addr_to_id.find(to_serialize_arr[i]->node) == addr_to_id.end())
+				to_serialize_arr[i]->node->serialize_recon(addr_to_id);
 		}
 
 		/**
@@ -300,11 +301,7 @@ namespace certFHE{
 
 				deserialized[ctxt_i]->node = (CNODE *)id_to_addr.at(node_id);
 				deserialized[ctxt_i]->node->downstream_reference_count += 1;
-
-				//DEBUG
-				if (guard_id && serialized_no_extended_multithreading_support)
-					throw std::runtime_error("Serialization corrupted");
-
+				
 				if (guard_id) {
 
 					if (guard_id_to_addr.find(guard_id) == guard_id_to_addr.end()) 
@@ -337,7 +334,7 @@ namespace certFHE{
 			}
 		}
 
-		if (serialized_no_extended_multithreading_support)
+		//if (serialized_no_extended_multithreading_support)
 			concurrency_guard_structure_rebuild(ctxt_cnt, deserialized);
 
 		return { deserialized, *context };
@@ -370,7 +367,15 @@ namespace certFHE{
 		if (*this->node->context != *sk.getContext())
 			throw std::runtime_error("ciphertext and secret key do not have the same context");
 
-		uint64_t dec = this->node->decrypt(sk);
+		std::unordered_map <CNODE *, unsigned char> decryption_cached_values;
+
+#if CERTFHE_USE_CUDA
+		std::unordered_map <CNODE *, unsigned char> vram_decryption_cached_values;
+		uint64_t dec = this->node->decrypt(sk, &decryption_cached_values, &vram_decryption_cached_values);
+#else
+		uint64_t dec = this->node->decrypt(sk, &decryption_cached_values);
+#endif
+		
 		return dec;
 	}
 
@@ -432,7 +437,7 @@ namespace certFHE{
 
 #else
 
-	unsigned char * Ciphertext::serialize(const int ctxt_count, Ciphertext ** to_serialize_arr) {
+	std::pair <unsigned char *, int> Ciphertext::serialize(const int ctxt_count, Ciphertext ** to_serialize_arr) {
 
 		/**
 		 * Serialization for:
@@ -474,7 +479,8 @@ namespace certFHE{
 			addr_to_id[to_serialize_arr[i]] = { temp_ctxt_id, (int)(3 * sizeof(uint32_t)) }; // ID of the current Ciphertext, ID of its associated CNODE, guard ID (0) for extended multithreading compatibility
 			temp_ctxt_id += 0b100;
 
-			to_serialize_arr[i]->node->serialize_recon(addr_to_id);
+			if (addr_to_id.find(to_serialize_arr[i]->node) == addr_to_id.end())
+				to_serialize_arr[i]->node->serialize_recon(addr_to_id);
 		}
 
 		/**
@@ -554,7 +560,7 @@ namespace certFHE{
 		}
 		std::cout << "\n";*/
 
-		return serialization;
+		return { serialization, ser_byte_length };
 	}
 
 	std::pair <Ciphertext **, Context> Ciphertext::deserialize(unsigned char * serialization) {
@@ -664,7 +670,15 @@ namespace certFHE{
 		if (*this->node->context != *sk.getContext())
 			throw std::runtime_error("ciphertext and secret key do not have the same context");
 
-		uint64_t dec = this->node->decrypt(sk);
+		std::unordered_map <CNODE *, unsigned char> decryption_cached_values;
+
+#if CERTFHE_USE_CUDA
+		std::unordered_map <CNODE *, unsigned char> vram_decryption_cached_values;
+		uint64_t dec = this->node->decrypt(sk, &decryption_cached_values, &vram_decryption_cached_values);
+#else
+		uint64_t dec = this->node->decrypt(sk, &decryption_cached_values);
+#endif
+
 		return dec;
 	}
 

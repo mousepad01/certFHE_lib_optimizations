@@ -52,7 +52,11 @@ namespace certFHE {
 
 		CNODE * make_deep_copy() override  = 0;
 
-		uint64_t decrypt(const SecretKey & sk) override = 0;
+#if CERTFHE_USE_CUDA
+		uint64_t decrypt(const SecretKey & sk, std::unordered_map <CNODE *, unsigned char> * decryption_cached_values, std::unordered_map <CNODE *, unsigned char> * vram_decryption_cached_values) = 0;
+#else
+		uint64_t decrypt(const SecretKey & sk, std::unordered_map <CNODE *, unsigned char> * decryption_cached_values) = 0;
+#endif
 
 		CNODE * permute(const Permutation & perm, bool force_deep_copy) override = 0;
 

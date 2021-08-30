@@ -155,7 +155,11 @@ namespace certFHE {
 		**/
 		static CCC * multiply(CCC * fst, CCC * snd);
 
-		uint64_t decrypt(const SecretKey & sk) override;
+#if CERTFHE_USE_CUDA
+		uint64_t decrypt(const SecretKey & sk, std::unordered_map <CNODE *, unsigned char> * decryption_cached_values, std::unordered_map <CNODE *, unsigned char> * vram_decryption_cached_values) override;
+#else
+		uint64_t decrypt(const SecretKey & sk, std::unordered_map <CNODE *, unsigned char> * decryption_cached_values) override;
+#endif
 
 		/**
 		 * It will create a copy and permute it if the ref count is > 1
