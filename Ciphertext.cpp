@@ -26,34 +26,6 @@ namespace certFHE {
 		return lock;
 	}
 
-	std::pair <std::unique_lock <std::mutex> **, int> Ciphertext::lock_guard(Ciphertext ** ctxts, int ctxt_cnt) {
-
-		std::lock_guard <std::mutex> guard(op_mutex);
-
-		std::set <std::mutex *> mtxs;
-		for (int i = 0; i < ctxt_cnt; i++) {
-
-			if (ctxts[i]->concurrency_guard == 0)
-				throw std::runtime_error("concurrency guard cannot be null");
-
-			std::mutex * mtx = &(ctxts[i]->concurrency_guard->get_root()->mtx);
-
-			if (mtxs.find(mtx) == mtxs.end())
-				mtxs.insert(mtx);
-		}
-
-		std::unique_lock <std::mutex> ** locks = new std::unique_lock <std::mutex> *[mtxs.size()];
-
-		int aux_i = 0;
-		for (auto mtx_addr : mtxs) {
-
-			locks[aux_i] = new std::unique_lock <std::mutex>(*mtx_addr);
-			aux_i += 1;
-		}
-
-		return { locks, (int)mtxs.size() };
-	}
-
 	std::pair <std::unique_lock <std::mutex> *, std::unique_lock <std::mutex> *> Ciphertext::lock_guard_and_union(const Ciphertext * fst, const Ciphertext * snd, const Ciphertext * res, bool CCC_shortcut) {
 
 		std::lock_guard <std::mutex> guard(op_mutex);
@@ -106,10 +78,38 @@ namespace certFHE {
 		 * Corresponding mutexes are found and sorted (by memory address) and then locked inside multiple std::unique_lock objects
 		**/
 
-		auto lock_res = Ciphertext::lock_guard(to_serialize_arr, ctxt_count);
+		std::unique_lock <std::mutex> ** locks; 
+		std::mutex ** mtxs_arr = new std::mutex *[ctxt_count];
 
-		std::unique_lock <std::mutex> ** locks = lock_res.first;
-		int locks_cnt = lock_res.second;
+		int locks_cnt;
+
+		{
+			std::lock_guard <std::mutex> guard(op_mutex);
+
+			std::set <std::mutex *> mtxs;
+			for (int i = 0; i < ctxt_count; i++) {
+
+				if (to_serialize_arr[i]->concurrency_guard == 0)
+					throw std::runtime_error("concurrency guard cannot be null");
+
+				std::mutex * mtx = &(to_serialize_arr[i]->concurrency_guard->get_root()->mtx);
+				mtxs_arr[i] = mtx;
+
+				if (mtxs.find(mtx) == mtxs.end())
+					mtxs.insert(mtx);
+			}
+
+			locks = new std::unique_lock <std::mutex> *[mtxs.size()];
+
+			int aux_i = 0;
+			for (auto mtx_addr : mtxs) {
+
+				locks[aux_i] = new std::unique_lock <std::mutex>(*mtx_addr);
+				aux_i += 1;
+			}
+
+			locks_cnt = mtxs.size();
+		}
 
 		/**
 		 * Serialization for:
@@ -175,11 +175,9 @@ namespace certFHE {
 			addr_to_id[to_serialize_arr[i]] = { temp_ctxt_id, (int)(3 * sizeof(uint32_t)) }; // ID of the current Ciphertext, ID of its associated CNODE, guard ID
 			temp_ctxt_id += 0b100;
 
-			std::mutex * mtx = &(to_serialize_arr[i]->concurrency_guard->get_root()->mtx);
+			if (addr_to_guard_id.find(mtxs_arr[i]) == addr_to_guard_id.end()) {
 
-			if (addr_to_guard_id.find(mtx) == addr_to_guard_id.end()) {
-
-				addr_to_guard_id[mtx] = temp_guard_id;
+				addr_to_guard_id[mtxs_arr[i]] = temp_guard_id;
 
 				temp_guard_id += 1;
 				if (temp_guard_id == 0)
@@ -231,7 +229,7 @@ namespace certFHE {
 
 			ser_int32[0] = addr_to_id.at(to_serialize_arr[i]).first;
 			ser_int32[1] = addr_to_id.at(to_serialize_arr[i]->node).first;
-			ser_int32[2] = addr_to_guard_id.at(&(to_serialize_arr[i]->concurrency_guard->get_root()->mtx));
+			ser_int32[2] = addr_to_guard_id.at(mtxs_arr[i]);
 
 			ser_offset += 3 * sizeof(uint32_t);
 		}
@@ -271,6 +269,7 @@ namespace certFHE {
 			delete locks[i];
 
 		delete[] locks;
+		delete[] mtxs_arr;
 
 		return { serialization, ser_byte_length };
 	}
@@ -1393,11 +1392,6 @@ namespace certFHE {
 
 		CMUL * mul_result = new CMUL(fst->context);
 
-		/**
-		 * From now on, fst and snd nodes
-		 * are referenced inside mul_result
-		 * so the reference count increases for both of them
-		**/
 		fst->downstream_reference_count += 1;
 		snd->downstream_reference_count += 1;
 
@@ -1494,9 +1488,6 @@ namespace certFHE {
 		CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
 		CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
 
-		/**
-		 * When two ctxt refer to a CCC, operations are performed directly
-		**/
 		if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
 			addition_result = CCC::add(ccc_thisnode, ccc_othernode);
 
@@ -1522,9 +1513,6 @@ namespace certFHE {
 		CCC * ccc_thisnode = dynamic_cast <CCC *> (this->node);
 		CCC * ccc_othernode = dynamic_cast <CCC *> (c.node);
 
-		/**
-		 * When two ctxt refer to a CCC, operations are performed directly
-		**/
 		if (ccc_thisnode && ccc_othernode && this->node->deflen_count * c.node->deflen_count < OPValues::max_ccc_deflen_size)
 			mul_result = CCC::multiply(ccc_thisnode, ccc_othernode);
 

@@ -916,10 +916,12 @@ void average_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1000,
 
 							delete thr_val[thr];
 							delete thr_args[thr];
+							delete thrs[thr];
 						}
 
 						delete thr_args;
 						delete thr_val;
+						delete thrs;
 
 						for (int c_left = 0; c_left < max_index; c_left++) 
 							delete cs[c_left];
@@ -1242,7 +1244,7 @@ void average_predefined_test(std::string path_sufix = "\\average_test\\debug_sta
 		std::fstream log(STATS_PATH + "averagetest_" + path_sufix + ".txt", std::ios::out);
 		std::fstream log_old(STATS_PATH + "averagetest_" + path_sufix + "_old.txt", std::ios::out);
 
-		average_test(100, 50, 30, 5, 1247, 16, 100, 10, 0, log, log_old, permutations, true);
+		average_test(200, 100, 40, 0, 1247, 16, 100, 10, 0, log, log_old, permutations, true);
 
 		log.close();
 		log_old.close();
@@ -1251,7 +1253,7 @@ void average_predefined_test(std::string path_sufix = "\\average_test\\debug_sta
 
 		std::fstream log(STATS_PATH + "averagetest_" + path_sufix + ".txt", std::ios::out);
 
-		average_test(100, 50, 30, 5, 1247, 16, 100, 10, 0, log, std::cout, permutations, false);
+		average_test(200, 100, 40, 0, 1247, 16, 100, 10, 0, log, std::cout, permutations, false);
 
 		log.close();
 	}
@@ -1266,7 +1268,7 @@ void old_implementation_compare_statistics_tests() {
 		<< "To plot them, call average_test_plot function from plotter.py (dectime parameter - whether you want to plot decryption times in the same graph or not)\n"
 		<< "NOTE: plotter.py needs to be in the same directory in which the result files are located\n\n";
 
-	average_predefined_test("mthr_stats", false, false);
+	average_predefined_test("multithr_debug_stats", false, false);
 
 	std::cout << "First test done\n\n";
 
@@ -1275,7 +1277,7 @@ void old_implementation_compare_statistics_tests() {
 		<< "To plot them, call array_ctxt_tests_plot from plotter.py (op parameter - Addition or Multiplication)\n"
 		<< "NOTE: plotter.py needs to be in the same directory in which the result files are located\n\n";
 
-	//array_ctxt_predefined_test("statsGPU", true);
+	//array_ctxt_predefined_test("debug_stats", true);
 
 	std::cout << "Second test done\n\n";
 }
@@ -1409,8 +1411,6 @@ void serialization_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1
 				double t_acc_dec = 0;
 				double t_dec;
 
-				
-
 				for (int pos = 0; pos < CS_CNT; pos++) {
 
 					timer.start();
@@ -1428,8 +1428,6 @@ void serialization_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1
 						out.flush();
 					}
 				}
-
-				
 
 				out << "Operations done: " << t_acc << " " << TIME_MEASURE_UNIT
 					<< ", decryption " << t_acc_dec << " " << TIME_MEASURE_UNIT << "\n";
@@ -1467,8 +1465,6 @@ void serialization_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1
 
 				t_ser_acc += t_ser;
 
-				
-
 				out << "Deserialization done: " << t_ser_acc << " " << TIME_MEASURE_UNIT << "\n";
 				out << "Decrypting deserialized ciphertexts...\n";
 				out.flush();
@@ -1485,8 +1481,6 @@ void serialization_test(const int TEST_COUNT = 10, const int ROUNDS_PER_TEST = 1
 				}
 				out << "Deserialized ciphertext decryption done\n";
 				out.flush();
-
-				
 
 				delete[] serialized;
 
@@ -1521,7 +1515,7 @@ void serialization_predefined_test(std::string path_sufix = "\\serialization_tes
 
 	std::fstream log(STATS_PATH + "sertest_" + path_sufix + ".txt", std::ios::out);
 
-	serialization_test(1000, 100, 100, 1247, 16, log);
+	serialization_test(1000, 30, 100, 1247, 16, log);
 
 	log.close();
 }
@@ -1589,8 +1583,6 @@ void save_rnd_ser_test(const int ROUNDS = 100, const int CS_CNT = 20, const int 
 		}
 	}
 
-	
-
 	for (int pos = 0; pos < CS_CNT; pos++) {
 
 		uint64_t p = sk.decrypt(*cs[pos]).getValue() & 0x01;
@@ -1602,15 +1594,11 @@ void save_rnd_ser_test(const int ROUNDS = 100, const int CS_CNT = 20, const int 
 		}
 	}
 
-	
-
 	auto ser_res = certFHE::Ciphertext::serialize(CS_CNT, cs);
 	unsigned char * serialized = ser_res.first;
 
 	auto deserialized_res = certFHE::Ciphertext::deserialize(serialized);
 	certFHE::Ciphertext ** deserialized = deserialized_res.first;
-
-	
 
 	for (int i = 0; i < CS_CNT; i++) {
 
@@ -1622,8 +1610,6 @@ void save_rnd_ser_test(const int ROUNDS = 100, const int CS_CNT = 20, const int 
 			std::cout.flush();
 		}
 	}
-
-	
 
 	for (int ct = 0; ct < CS_CNT; ct++)
 		delete deserialized[ct];
@@ -1704,8 +1690,6 @@ void load_rnd_ser_test(std::string in_name = "ser") {
 	auto deserialized_res = certFHE::Ciphertext::deserialize(ser);
 	certFHE::Ciphertext ** deserialized = deserialized_res.first;
 
-	
-
 	for (int i = 0; i < CS_CNT; i++) {
 
 		uint64_t p = sk.decrypt(*deserialized[i]).getValue() & 0x01;
@@ -1716,8 +1700,6 @@ void load_rnd_ser_test(std::string in_name = "ser") {
 			std::cout.flush();
 		}
 	}
-
-	
 
 	// for each ctxt, check if it has common root with other ctxts
 	for (int i = 0; i < CS_CNT - 1; i++) {
@@ -1749,7 +1731,7 @@ int main(){
 
 	//old_implementation_compare_statistics_tests();
 
-	//serialization_predefined_test("release_stats");
+	//serialization_predefined_test("debug_multithr_stats");
 
 	//save_rnd_ser_test(100, 100, 1247, 16, "ser1");
 	//load_rnd_ser_test("ser1");

@@ -78,14 +78,6 @@ namespace certFHE{
 		static std::unique_lock <std::mutex> * lock_guard(const Ciphertext * ctxt);
 
 		/**
-		 * Method for finding the roots and locking the corresponding mutexes
-		 * for an arbitrary number of ciphertexts
-		 *
-		 * Returns an array of mutexes and their count
-		**/
-		static std::pair <std::unique_lock <std::mutex> **, int> lock_guard(Ciphertext ** ctxts, int ctxt_cnt);
-
-		/**
 		 * Method that finds the fst and snd roots, locks them and then performs union between res and fst, and res and snd
 		 * (It does NOT lock res guard)
 		 *
