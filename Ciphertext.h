@@ -33,10 +33,15 @@ namespace certFHE{
 #if CERTFHE_MULTITHREADING_EXTENDED_SUPPORT
 
 		/**
+		 * Mutex for synchronization of operations on disjoint sets
+		**/
+		static std::mutex op_mutex;
+
+		/**
 		 * Used to get a common mutex for all ciphertexts 
 		 * that (might) share a common internal CNODE
 		**/
-		CNODE_disjoint_set * concurrency_guard;
+		mutable CNODE_disjoint_set * concurrency_guard;
 
 #endif
 
@@ -66,6 +71,28 @@ namespace certFHE{
 		 * NOTE: it has the potential of significantly slowing down the deserialization 
 		**/
 		static void concurrency_guard_structure_rebuild(const int ctxt_count, Ciphertext ** deserialized);
+
+		/**
+		 * Method for finding the root and locking its mutex under the op_mutex
+		**/
+		static std::unique_lock <std::mutex> * lock_guard(const Ciphertext * ctxt);
+
+		/**
+		 * Method for finding the roots and locking the corresponding mutexes
+		 * for an arbitrary number of ciphertexts
+		 *
+		 * Returns an array of mutexes and their count
+		**/
+		static std::pair <std::unique_lock <std::mutex> **, int> lock_guard(Ciphertext ** ctxts, int ctxt_cnt);
+
+		/**
+		 * Method that finds the fst and snd roots, locks them and then performs union between res and fst, and res and snd
+		 * (It does NOT lock res guard)
+		 *
+		 * NOTES: -> Currently used for +, *, +=, *=
+		 *		  -> It also performs the CCC op shortcut check
+		**/
+		static std::pair <std::unique_lock <std::mutex> *, std::unique_lock <std::mutex> *> lock_guard_and_union(const Ciphertext * fst, const Ciphertext * snd, const Ciphertext * res, bool CCC_shortcut);
 
 #endif
 

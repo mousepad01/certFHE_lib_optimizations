@@ -4,7 +4,7 @@
 namespace certFHE {
 
 	void CMUL::upstream_merging() {
-		
+
 		if (OPValues::no_merging)
 			return;
 

@@ -488,7 +488,7 @@ void average_thrfct_test(certFHE::SecretKey & sk, certFHE::Permutation & perm,
 			}
 
 			for (int pos = 0; pos < max_index; pos++) {
-
+			
 				uint64_t p = sk.decrypt(*cs[pos]).getValue() & 0x01;
 
 				if (p != val[pos]) {
@@ -1242,7 +1242,7 @@ void average_predefined_test(std::string path_sufix = "\\average_test\\debug_sta
 		std::fstream log(STATS_PATH + "averagetest_" + path_sufix + ".txt", std::ios::out);
 		std::fstream log_old(STATS_PATH + "averagetest_" + path_sufix + "_old.txt", std::ios::out);
 
-		average_test(100, 90, 10, 5, 1247, 16, 100, 10, 0, log, log_old, permutations, true);
+		average_test(100, 50, 30, 5, 1247, 16, 100, 10, 0, log, log_old, permutations, true);
 
 		log.close();
 		log_old.close();
@@ -1251,7 +1251,7 @@ void average_predefined_test(std::string path_sufix = "\\average_test\\debug_sta
 
 		std::fstream log(STATS_PATH + "averagetest_" + path_sufix + ".txt", std::ios::out);
 
-		average_test(100, 90, 10, 5, 1247, 16, 100, 10, 0, log, std::cout, permutations, false);
+		average_test(100, 50, 30, 5, 1247, 16, 100, 10, 0, log, std::cout, permutations, false);
 
 		log.close();
 	}
@@ -1747,7 +1747,7 @@ void load_rnd_ser_test(std::string in_name = "ser") {
 
 int main(){
 
-	old_implementation_compare_statistics_tests();
+	//old_implementation_compare_statistics_tests();
 
 	//serialization_predefined_test("release_stats");
 
