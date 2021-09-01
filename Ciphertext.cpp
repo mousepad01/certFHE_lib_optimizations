@@ -167,10 +167,10 @@ namespace certFHE {
 		for (int i = 0; i < ctxt_count; i++) {
 
 			if (to_serialize_arr[i]->node == 0)
-				throw std::invalid_argument("Cannot operate on ciphertext with no value");
+				throw std::invalid_argument("Cannot serialize ciphertext with no value");
 
 			if (addr_to_id.find(to_serialize_arr[i]) != addr_to_id.end())
-				continue;
+				throw std::invalid_argument("Duplicate Ciphertext object found when trying to serialize");
 
 			addr_to_id[to_serialize_arr[i]] = { temp_ctxt_id, (int)(3 * sizeof(uint32_t)) }; // ID of the current Ciphertext, ID of its associated CNODE, guard ID
 			temp_ctxt_id += 0b100;
@@ -1104,10 +1104,10 @@ namespace certFHE {
 		for (int i = 0; i < ctxt_count; i++) {
 
 			if (to_serialize_arr[i]->node == 0)
-				throw std::invalid_argument("Cannot operate on ciphertext with no value");
+				throw std::invalid_argument("Cannot serialize ciphertext with no value");
 
 			if (addr_to_id.find(to_serialize_arr[i]) != addr_to_id.end())
-				continue;
+				throw std::invalid_argument("Duplicate Ciphertext object found when trying to serialize");
 
 			addr_to_id[to_serialize_arr[i]] = { temp_ctxt_id, (int)(3 * sizeof(uint32_t)) }; // ID of the current Ciphertext, ID of its associated CNODE, guard ID (0) for extended multithreading compatibility
 			temp_ctxt_id += 0b100;
