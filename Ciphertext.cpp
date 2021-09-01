@@ -113,7 +113,7 @@ namespace certFHE {
 
 		/**
 		 * Serialization for:
-		 *		Ciphertext: id 4 bytes, node id 4 bytes
+		 *		Ciphertext: id 4 bytes, node id 4 bytes, concurrency guard 4 bytes (0 if multithreading support is disabled)
 		 *		CCC: id 4 bytes, deflen cnt 8 bytes, ctxt (deflen cnt * deflen to u64 * sizeof(u64)) bytes
 		 *		CADD, CMUL: id 4 bytes, deflen cnt 8 bytes, upstream ref cnt 8 bytes, upstream ref IDs (sizeof(u32) * upstream ref cnt) bytes
 		**/
@@ -1074,7 +1074,7 @@ namespace certFHE {
 
 		/**
 		 * Serialization for:
-		 *		Ciphertext: id 4 bytes, node id 4 bytes
+		 *		Ciphertext: id 4 bytes, node id 4 bytes, concurrency guard 4 bytes (0 if multithreading support is disabled)
 		 *		CCC: id 4 bytes, deflen cnt 8 bytes, ctxt (deflen cnt * deflen to u64 * sizeof(u64)) bytes
 		 *		CADD, CMUL: id 4 bytes, deflen cnt 8 bytes, upstream ref cnt 8 bytes, upstream ref IDs (sizeof(u32) * upstream ref cnt) bytes
 		**/
